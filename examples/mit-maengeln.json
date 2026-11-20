@@ -46,7 +46,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829762683.712424,
+        "expires": 1829764507.14787,
         "secure": false,
         "httpOnly": false
       }
@@ -86,7 +86,8 @@
         "method": "post"
       }
     ],
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.1.0",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.2.0",
+    "sandbox": true,
     "generator": "WordPress 6.2",
     "http": {
       "url": "http://shop.example/tracked.html",
@@ -160,7 +161,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829762683.712424,
+          "expires": 1829764507.14787,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,

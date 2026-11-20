@@ -1,6 +1,6 @@
 {
   "name": "spurlos",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Ruft eine Website wie ein neuer Besucher auf und zeigt, was vor jedem Klick an fremde Server geht und welche Cookies gesetzt werden.",
   "keywords": [
     "privacy",
