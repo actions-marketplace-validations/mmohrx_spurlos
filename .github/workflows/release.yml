@@ -83,6 +83,6 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      # trusted publishing needs npm 11.5.1 or newer
-      - run: npm install -g npm@latest
+      # trusted publishing needs npm 11.5.1 or newer; pinned, as this step holds the token that may publish
+      - run: npm install -g npm@11.21.3
       - run: npm publish --access public

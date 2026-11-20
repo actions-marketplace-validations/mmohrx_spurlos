@@ -63,6 +63,8 @@ try {
   const ua = values['user-agent']
   const s = await scan(url, ua ? { userAgent: ua } : {})
   const results = runChecks(s)
+  // on stderr, so it neither ends up in --json nor gets lost; the Docker image sets SPURLOS_NO_SANDBOX and stays quiet
+  if (!s.sandbox && process.env.SPURLOS_NO_SANDBOX !== '1') console.error(`spurlos: ${say.noSandbox}`)
   const width = Math.min(process.stdout.columns || 80, 100)
   console.log(values.json ? json(s, results, lang) : text(s, results, lang, { color, verbose: values.verbose ?? false, width }))
   // exitCode, not exit(): on a pipe stdout is written asynchronously, and exit() would cut a long report short

@@ -89,6 +89,8 @@ export type Scan = {
   generator?: string
   /** the user agent the page was opened with */
   userAgent: string
+  /** whether Chromium ran in its own sandbox; without it, an exploit in the page reaches the user running spurlos */
+  sandbox: boolean
 }
 
 export type ScanOptions = {
@@ -117,13 +119,30 @@ async function probeHttp(url: string, f: typeof fetch, userAgent: string): Promi
   }
 }
 
+/**
+ * spurlos opens pages it does not trust, so Chromium gets its sandbox wherever the system allows one (Playwright
+ * leaves it off by default). Linux without user namespaces, Docker's default seccomp profile among them, has none;
+ * there Chromium runs without, and the Scan says so. SPURLOS_NO_SANDBOX=1 skips the attempt where the container
+ * itself is the boundary.
+ */
+async function launch(): Promise<{ browser: Browser; sandbox: boolean }> {
+  if (process.env.SPURLOS_NO_SANDBOX !== '1') {
+    try {
+      return { browser: await chromium.launch({ chromiumSandbox: true }), sandbox: true }
+    } catch (e) {
+      if (!(e instanceof Error && /sandbox/i.test(e.message))) throw e
+    }
+  }
+  return { browser: await chromium.launch(), sandbox: false }
+}
+
 /** Opens the URL in a fresh browser, as a first-time visitor who clicks nothing, and records what happens. */
 export async function scan(url: string, options: ScanOptions = {}): Promise<Scan> {
-  const browser = await chromium.launch()
+  const { browser, sandbox } = await launch()
   try {
     const chrome = browser.version()
     const userAgent = options.userAgent ?? browserAgent(chrome)
-    const context = await browser.newContext({ locale: 'de-DE', userAgent })
+    const context = await browser.newContext({ locale: 'de-DE', userAgent, acceptDownloads: false })
     await options.setup?.(context)
 
     const requests: Request[] = []
@@ -181,6 +200,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       legal: [],
       forms,
       userAgent,
+      sandbox,
     }
     if (tls?.validTo) result.certificate = { validTo: tls.validTo, issuer: tls.issuer ?? '' }
     if (metaCsp) result.metaCsp = metaCsp
@@ -202,7 +222,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
 
 /** A second, separate browser for opening single URLs: only the documents load, nothing of it counts towards the scan. */
 async function documentsOnly(browser: Browser, options: ScanOptions) {
-  const context = await browser.newContext({ userAgent: options.userAgent ?? BOT_AGENT })
+  const context = await browser.newContext({ userAgent: options.userAgent ?? BOT_AGENT, acceptDownloads: false })
   await context.route('**/*', route => (route.request().resourceType() === 'document' ? route.continue() : route.abort()))
   // registered after the filter, so the tests' routes take precedence over it
   await options.setup?.(context)

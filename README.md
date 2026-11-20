@@ -89,6 +89,8 @@ Impressum, Datenschutzerklärung und die Weiterleitung von http fragt spurlos of
 spurlos/0.1.0 (+https://github.com/mmohrx/spurlos)
 ```
 
+Weil spurlos fremde Seiten öffnet, läuft Chromium in seiner eigenen Sandbox, wo das System eine erlaubt (macOS, Windows, Linux mit User-Namespaces). Fehlt sie, meldet spurlos das auf stderr. Im Docker-Image läuft Chromium ohne Sandbox, dort ist der Container als Benutzer `node` die Grenze; prüfe unbekannte Seiten unter Linux am besten so. Downloads einer Seite nimmt spurlos nicht an.
+
 ## In der CI
 
 ```

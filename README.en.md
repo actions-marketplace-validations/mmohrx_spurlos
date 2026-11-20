@@ -89,6 +89,8 @@ The legal notice, the privacy policy and the http redirect are requested openly 
 spurlos/0.1.0 (+https://github.com/mmohrx/spurlos)
 ```
 
+Because spurlos opens pages it does not know, Chromium runs in its own sandbox wherever the system allows one (macOS, Windows, Linux with user namespaces). Without one, spurlos says so on stderr. In the Docker image Chromium runs without its sandbox, as the container, running as user `node`, is the boundary; on Linux, that is the best way to check unknown sites. spurlos accepts no downloads from a page.
+
 ## In CI
 
 ```

@@ -59,6 +59,7 @@ const de = {
   legalNotChecked: 'nicht geprüft',
   legalUnreachable: (error: string) => `nicht erreichbar (${error})`,
   noResponse: 'keine Antwort',
+  noSandbox: 'Hinweis: Chromium lief ohne Sandbox, weil das System keine erlaubt. Prüfe fremde Seiten dann am besten im Docker-Image.',
   legalOk: 'erreichbar',
   legalStatus: (status: number) => `antwortet mit Status ${status}`,
 
@@ -138,6 +139,7 @@ const en: typeof de = {
   legalNotChecked: 'not checked',
   legalUnreachable: error => `not reachable (${error})`,
   noResponse: 'no response',
+  noSandbox: 'Note: Chromium ran without its sandbox, as the system allows none. Best check untrusted sites with the Docker image then.',
   legalOk: 'reachable',
   legalStatus: status => `answers with status ${status}`,
 
@@ -168,7 +170,7 @@ const en: typeof de = {
 const MESSAGES: Record<Lang, typeof de> = { de, en }
 
 /** the messages the CLI prints around the report */
-export const cliMessages = (lang: Lang) => ({ invalidUrl: MESSAGES[lang].invalidUrl, failed: MESSAGES[lang].failed })
+export const cliMessages = (lang: Lang) => ({ invalidUrl: MESSAGES[lang].invalidUrl, failed: MESSAGES[lang].failed, noSandbox: MESSAGES[lang].noSandbox })
 
 function lifetime(t: typeof de, expires: number, now: number): string {
   if (expires < 0) return t.session
