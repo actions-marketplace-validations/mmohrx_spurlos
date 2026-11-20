@@ -2,6 +2,7 @@ name: Release
 
 # Pushing a tag like v1.2.3 runs CI and publishes the image to GHCR:
 # ghcr.io/<owner>/<repo>:1.2.3, :1.2, :1 and :latest (amd64 + arm64).
+# Once the repo is public it also publishes the package to npm.
 # The tag has to match the version in package.json, as spurlos names that version in its user agent.
 on:
   push:
@@ -56,3 +57,33 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: true
           sbom: true
+
+  npm:
+    name: Publish to npm
+    needs: ci
+    # npm attaches provenance only for public repositories; while the repo is private, releases skip npm
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # trusted publishing: npm trusts this workflow, no token in the secrets
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - name: Tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME, package.json says $version"
+            exit 1
+          fi
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # trusted publishing needs npm 11.5.1 or newer
+      - run: npm install -g npm@latest
+      - run: npm publish --access public
