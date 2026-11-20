@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import type { Result } from '../src/checks.ts'
-import { clean, text } from '../src/report.ts'
+import { clean, json, text } from '../src/report.ts'
 import type { Scan } from '../src/scan.ts'
 
 test('what the page says cannot steer the terminal', () => {
@@ -17,5 +17,9 @@ test('what the page says cannot steer the terminal', () => {
     expect(report).not.toContain('‮')
     expect(report).not.toContain('/\x1b[31m')
   }
+  // JSON keeps the values as sent, escaped so that printing it is harmless too
+  const out = json(scan, results)
+  expect(out).not.toMatch(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f\u202a-\u202e]/)
+  expect(JSON.parse(out).results[0].findings[0].value).toBe(evil)
   expect(clean('Größe „ok“ – fine')).toBe('Größe „ok“ – fine')
 })

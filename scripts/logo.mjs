@@ -69,10 +69,10 @@ function logo(c) {
   const s = h / BOX.h
   const markW = BOX.w * s
   const baseY = pad + asc
-  const top = baseY - asc - (h - asc - desc) / 2
-  const mark = `<g transform="translate(${n(pad - BOX.x * s)} ${n(top - BOX.y * s)}) scale(${n(s)})">${markEls(MARK, c)}</g>`
+  const top = pad - (h - asc - desc) / 2
+  const glyph = `<g transform="translate(${n(pad - BOX.x * s)} ${n(top - BOX.y * s)}) scale(${n(s)})">${markEls(MARK, c)}</g>`
   const text = `<path transform="translate(${n(pad + markW + gap)} ${n(baseY)})" fill="${c.fg}" d="${word.d}"/>`
-  return svg(pad + markW + gap + word.width + pad, pad + asc + desc + pad, mark + text)
+  return svg(pad + markW + gap + word.width + pad, pad + asc + desc + pad, glyph + text)
 }
 
 // only the mark, tightly cut

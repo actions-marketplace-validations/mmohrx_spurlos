@@ -1,4 +1,4 @@
-import { certLevel, cookieLevel, disclosureLevel, formLevel, httpLevel, legalLevel, storageLevel, type FormFinding, type HttpRedirect, type LegalKind, type Level, type Result } from './checks.ts'
+import { certLevel, cookieLevel, SEVERITY, disclosureLevel, formLevel, httpLevel, legalLevel, storageLevel, type FormFinding, type HttpRedirect, type LegalKind, type Level, type Result } from './checks.ts'
 import { styleText } from 'node:util'
 import { VERSION, type Scan } from './scan.ts'
 
@@ -48,8 +48,6 @@ const de = {
   disclosureNone: 'Weder Header noch Seite nennen die Software dahinter.',
   disclosure: (versions: number) => (versions ? `${plural(versions, 'Angabe', 'Angaben')} mit Versionsnummer` : 'nur Namen, keine Versionen'),
   disclosureWhy: 'Mit der Versionsnummer lässt sich gezielt nach bekannten Lücken suchen.',
-  disclosureHeader: (name: string, value: string) => `Header ${name}: ${value}`,
-  disclosureMeta: (value: string) => `<meta name="generator">: ${value}`,
   disclosureHint: 'Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off in PHP oder server_tokens off in nginx.',
   cookiesNecessary: 'Nur bekannte Einträge, wie sie Frameworks und Proxys für den Betrieb setzen.',
 
@@ -74,11 +72,10 @@ const de = {
   noHsts: 'Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.',
 
   headersOk: 'alle gesetzt',
-  headersMissing: (n: number) => `${n} von 5 fehlen`,
+  headersMissing: (n: number, total: number) => `${n} von ${total} fehlen`,
   headerMissing: (h: string) => `${h} fehlt`,
 
   formsNone: 'keine auf der Seite',
-  forms: (n: number) => `${n}`,
   form: {
     unencrypted: 'sendet unverschlüsselt über http',
     'third-party': 'sendet an einen fremden Server',
@@ -127,8 +124,6 @@ const en: typeof de = {
   disclosureNone: 'Neither headers nor the page name the software behind it.',
   disclosure: versions => (versions ? `${plural(versions, 'entry', 'entries')} with a version number` : 'names only, no versions'),
   disclosureWhy: 'A version number allows a targeted search for known holes.',
-  disclosureHeader: (name, value) => `Header ${name}: ${value}`,
-  disclosureMeta: value => `<meta name="generator">: ${value}`,
   disclosureHint: 'Version numbers can usually be switched off, e.g. with expose_php = Off in PHP or server_tokens off in nginx.',
   cookiesNecessary: 'Only known entries, as frameworks and proxies set them to run a site.',
 
@@ -153,11 +148,10 @@ const en: typeof de = {
   noHsts: 'No HSTS header (Strict-Transport-Security): browsers do not remember to use https only.',
 
   headersOk: 'all set',
-  headersMissing: n => `${n} of 5 missing`,
+  headersMissing: (n, total) => `${n} of ${total} missing`,
   headerMissing: h => `${h} missing`,
 
   formsNone: 'none on the page',
-  forms: n => `${n}`,
   form: {
     unencrypted: 'sends unencrypted over http',
     'third-party': 'sends to a third-party server',
@@ -165,7 +159,7 @@ const en: typeof de = {
   },
 }
 
-export const MESSAGES: Record<Lang, typeof de> = { de, en }
+const MESSAGES: Record<Lang, typeof de> = { de, en }
 
 function lifetime(t: typeof de, expires: number, now: number): string {
   if (expires < 0) return t.session
@@ -173,85 +167,87 @@ function lifetime(t: typeof de, expires: number, now: number): string {
   return days < 1 ? t.underADay : t.days(days)
 }
 
-type Item = [Level, string]
-/** a check as the report shows it: a short value next to the title, an explanation under it, then each finding with its own light */
-type Section = { value: string; explain?: string; items?: Item[]; notes?: string[] }
+/** one finding: what it is, and after a dash what spurlos makes of it */
+type Item = { level: Level; label: string; detail?: string }
+/** a check as the report shows it: a short value next to the title, each finding with its own light, notes under them */
+type Section = { value: string; items: Item[]; notes: string[] }
+
+const item = (level: Level, label: string, detail?: string): Item => (detail === undefined ? { level, label } : { level, label, detail })
 
 function section(t: typeof de, r: Result, now: number): Section {
   switch (r.check) {
     case 'third-party':
-      if (!r.hosts.length) return { value: t.none, explain: t.thirdPartyNone }
+      if (!r.hosts.length) return { value: t.none, items: [], notes: [t.thirdPartyNone] }
       return {
         value: `${r.hosts.length}`,
-        explain: t.thirdParty,
-        items: r.hosts.map(h => ['red', `${h.host}${h.service ? ` – ${h.service.name}` : ''} (${t.requests(h.requests)})`]),
+        items: r.hosts.map(h => item('red', h.host, h.service ? `${h.service.name} (${t.requests(h.requests)})` : t.requests(h.requests))),
+        notes: [t.thirdParty],
       }
 
     case 'cookies': {
-      if (!r.cookies.length && !r.storage.length) return { value: t.cookiesNone }
-      const items: Item[] = [
-        ...r.cookies.map((c): Item => {
-          const notes = [
+      if (!r.cookies.length && !r.storage.length) return { value: t.cookiesNone, items: [], notes: [] }
+      const items = [
+        ...r.cookies.map(c => {
+          const about = [
             c.thirdParty ? t.cookieForeign : t.cookieOwn,
             c.service?.name ?? t.unknown,
             lifetime(t, c.expires, now),
             ...(c.missing.length ? [t.cookieMissing(c.missing)] : []),
           ]
-          return [cookieLevel(c), `Cookie ${c.name} (${c.domain}) – ${notes.join(', ')}`]
+          return item(cookieLevel(c), `Cookie ${c.name} (${c.domain})`, about.join(', '))
         }),
-        ...r.storage.map((s): Item => [storageLevel(s), `${s.area}: ${s.key} – ${s.service?.name ?? t.unknown}`]),
+        ...r.storage.map(s => item(storageLevel(s), `${s.area}: ${s.key}`, s.service?.name ?? t.unknown)),
       ]
       const unknown = r.storage.some(s => !s.service) || r.cookies.some(c => !c.service && !c.thirdParty)
       const note = unknown && r.level !== 'red' ? t.cookiesReview : r.level === 'green' ? t.cookiesNecessary : null
-      const notes = [...(note ? [note] : []), ...(r.cookies.some(c => c.missing.length) ? [t.cookieMissingNote] : [])]
-      return { value: t.cookies(r.cookies.length, r.storage.length), explain: t.cookiesBefore, items, notes }
+      const missing = r.cookies.some(c => c.missing.length) ? t.cookieMissingNote : null
+      return { value: t.cookies(r.cookies.length, r.storage.length), items, notes: [t.cookiesBefore, note, missing].filter(n => n !== null) }
     }
 
     case 'legal':
       return {
         value: t.legal(r.level === 'green'),
-        items: r.pages.map((p): Item => {
-          if (!p.link) return [legalLevel(p), `${t.legalName[p.kind]}: ${t.legalNoLink}`]
+        items: r.pages.map(p => {
+          if (!p.link) return item(legalLevel(p), `${t.legalName[p.kind]}: ${t.legalNoLink}`)
           const v = p.visit
           const state = !v ? t.legalNotChecked : 'error' in v ? t.legalUnreachable(v.error) : v.status < 300 ? t.legalOk : t.legalStatus(v.status)
-          return [legalLevel(p), `${t.legalName[p.kind]}: ${t.quote(p.link.text || p.link.href)} → ${p.link.href} – ${state}`]
+          return item(legalLevel(p), `${t.legalName[p.kind]}: ${t.quote(p.link.text || p.link.href)} → ${p.link.href}`, state)
         }),
+        notes: [],
       }
 
     case 'https': {
       const items: (Item | null)[] = [
-        r.https ? null : ['red', t.noHttps],
+        r.https ? null : item('red', t.noHttps),
         r.certDaysLeft === undefined
           ? null
-          : [certLevel(r.certDaysLeft), r.certDaysLeft < 0 ? t.certExpired : t.certDays(r.certDaysLeft) + (r.certDaysLeft < 14 ? t.certRenew : '')],
-        r.http ? [httpLevel(r.http), t.http[r.http]] : null,
-        r.https && !r.hsts ? ['yellow', t.noHsts] : null,
+          : item(certLevel(r.certDaysLeft), r.certDaysLeft < 0 ? t.certExpired : t.certDays(r.certDaysLeft) + (r.certDaysLeft < 14 ? t.certRenew : '')),
+        r.http ? item(httpLevel(r.http), t.http[r.http]) : null,
+        r.https && !r.hsts ? item('yellow', t.noHsts) : null,
       ]
-      return { value: t.https[r.level], items: items.filter((i): i is Item => i !== null) }
+      return { value: t.https[r.level], items: items.filter(i => i !== null), notes: [] }
     }
 
     case 'headers':
-      if (!r.missing.length) return { value: t.headersOk }
-      return { value: t.headersMissing(r.missing.length), items: r.missing.map(m => ['yellow', t.headerMissing(m)]) }
+      if (!r.missing.length) return { value: t.headersOk, items: [], notes: [] }
+      return { value: t.headersMissing(r.missing.length, r.checked), items: r.missing.map(m => item('yellow', t.headerMissing(m))), notes: [] }
 
     case 'disclosure': {
-      if (!r.findings.length) return { value: t.none, explain: t.disclosureNone }
+      if (!r.findings.length) return { value: t.none, items: [], notes: [t.disclosureNone] }
       const versions = r.findings.filter(d => d.version).length
       return {
         value: t.disclosure(versions),
-        ...(versions ? { explain: t.disclosureWhy } : {}),
-        items: r.findings.map((d): Item => [disclosureLevel(d), d.source === 'header' ? t.disclosureHeader(d.name, d.value) : t.disclosureMeta(d.value)]),
-        ...(versions ? { notes: [t.disclosureHint] } : {}),
+        items: r.findings.map(d => item(disclosureLevel(d), d.source === 'header' ? `Header ${d.name}: ${d.value}` : `<meta name="generator">: ${d.value}`)),
+        notes: versions ? [t.disclosureWhy, t.disclosureHint] : [],
       }
     }
 
     case 'forms':
-      if (!r.forms.length) return { value: t.formsNone }
-      return { value: t.forms(r.forms.length), items: r.forms.map(f => [formLevel(f), `${f.method.toUpperCase()} ${f.action} – ${t.form[f.problem ?? 'ok']}`]) }
+      if (!r.forms.length) return { value: t.formsNone, items: [], notes: [] }
+      return { value: `${r.forms.length}`, items: r.forms.map(f => item(formLevel(f), `${f.method.toUpperCase()} ${f.action}`, t.form[f.problem ?? 'ok'])), notes: [] }
   }
 }
 
-const SEVERITY: Level[] = ['red', 'yellow', 'green']
 /** in a terminal with colors the lights become colored marks, which line up better than emoji */
 const MARK: Record<Level, string> = { red: '✖', yellow: '▲', green: '✔' }
 const BADGE = { red: ['bgRed', 'white', 'bold'], yellow: ['bgYellow', 'black', 'bold'], green: ['bgGreen', 'black', 'bold'] } as const
@@ -262,7 +258,18 @@ export type TextOptions = { now?: number; color?: boolean; verbose?: boolean; wi
  * Link texts, header values, cookie names and addresses come from the page. Control characters in them could
  * move the cursor, recolor or rewrite the terminal, bidi overrides could reorder what the reader sees; both become a visible �.
  */
-export const clean = (s: string) => s.replace(/[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '\ufffd')
+const UNSAFE = /[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g
+export const clean = (s: string) => s.replace(UNSAFE, '\ufffd')
+// what JSON.stringify leaves as it is: DEL, C1 and the bidi marks; C0 it escapes itself, and its own line breaks must stay
+const UNSAFE_IN_JSON = /[\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g
+
+/**
+ * The full result as JSON. The values stay as the page sent them; JSON.stringify escapes C0 control characters,
+ * the rest of UNSAFE is escaped here, so printing the JSON cannot steer the terminal either.
+ */
+export function json(scan: Scan, results: Result[], lang: Lang = 'de'): string {
+  return JSON.stringify({ scan, results, note: MESSAGES[lang].disclaimer }, null, 2).replace(UNSAFE_IN_JSON, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
+}
 
 /** words to lines of at most max characters; a longer word keeps a line of its own */
 function wrap(s: string, max: number): string[] {
@@ -297,32 +304,29 @@ export function text(scan: Scan, results: Result[], lang: Lang = 'de', options: 
     ? counts.map(([l, n]) => style(BADGE[l], ` ${t.summary[l](n).toLocaleUpperCase(lang)} `)).join(' ')
     : counts.map(([l, n]) => t.summary[l](n)).join(' · ')
 
-  const block = (r: Result): string[] => {
-    const s = section(t, r, now)
-    const head = `${mark(r.level)} ${style('bold', t.title[r.check].padEnd(titleWidth))}  ${style(r.level, s.value)}`
+  // everything from the page goes through clean() here, in one place, before it reaches the terminal
+  const block = (r: Result, s: Section): string[] => {
+    const head = `${mark(r.level)} ${style('bold', t.title[r.check].padEnd(titleWidth))}  ${style(r.level, clean(s.value))}`
     if (r.level === 'green' && !verbose) return [head]
-
-    const items = s.items ?? []
-    const tree = items.map(([l, raw], i) => {
-      const text = clean(raw)
-      // what follows the dash says what the finding is; dimmed, the thing itself stands out
-      const dash = text.indexOf(' – ')
-      const shown = dash > 0 ? text.slice(0, dash) + style('dim', text.slice(dash)) : text
-      return `  ${style('dim', i === items.length - 1 ? '└─' : '├─')} ${dot(l)} ${shown}`
+    const tree = s.items.map(({ level, label, detail }, i) => {
+      // the thing itself stands out, what spurlos makes of it is dimmed
+      const about = detail === undefined ? '' : style('dim', ` – ${clean(detail)}`)
+      return `  ${style('dim', i === s.items.length - 1 ? '└─' : '├─')} ${dot(level)} ${clean(label)}${about}`
     })
-    const indent = items.length ? '     ' : '  '
-    const tail = [...(s.explain ? [s.explain] : []), ...(s.notes ?? [])].flatMap(note =>
-      wrap(note, width - indent.length - 2).map((line, i) => `${indent}${style('dim', `${i ? ' ' : '→'} ${line}`)}`),
+    const indent = s.items.length ? '     ' : '  '
+    const notes = s.notes.flatMap(note =>
+      wrap(clean(note), width - indent.length - 2).map((line, i) => `${indent}${style('dim', `${i ? ' ' : '→'} ${line}`)}`),
     )
-    return [head, ...tree, ...tail]
+    return [head, ...tree, ...notes]
   }
 
   // the worst first, so a reader sees at once what to fix; checks with the same light keep their order
-  const sorted = [...results].sort((a, b) => SEVERITY.indexOf(a.level) - SEVERITY.indexOf(b.level))
-  const blocks = sorted.map(block)
+  const sorted = results.map(r => ({ r, s: section(t, r, now) })).sort((a, b) => SEVERITY.indexOf(a.r.level) - SEVERITY.indexOf(b.r.level))
+  const blocks = sorted.map(({ r, s }) => block(r, s))
   // single lines stay together, anything longer gets air around it
   const body = blocks.flatMap((b, i) => (b.length > 1 || (blocks[i + 1]?.length ?? 0) > 1 || i === blocks.length - 1 ? [...b, ''] : b))
-  const hidden = !verbose && results.some(r => r.level === 'green' && section(t, r, now).items?.length)
+  // green checks that would have shown more with --verbose
+  const hidden = !verbose && sorted.some(({ r, s }) => r.level === 'green' && s.items.length)
 
   return [
     `${style('bold', 'spurlos')} ${style('dim', VERSION)}  ${style('cyan', clean(scan.finalUrl))}`,

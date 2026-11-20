@@ -55,13 +55,13 @@
       }
     ],
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.1.0",
+    "metaCsp": "default-src 'self'",
+    "metaReferrer": "no-referrer",
     "http": {
       "url": "http://shop.example/",
       "status": 200,
       "finalUrl": "https://shop.example/"
-    },
-    "metaCsp": "default-src 'self'",
-    "metaReferrer": "no-referrer"
+    }
   },
   "results": [
     {
@@ -115,7 +115,8 @@
     {
       "check": "headers",
       "level": "green",
-      "missing": []
+      "missing": [],
+      "checked": 5
     },
     {
       "check": "forms",

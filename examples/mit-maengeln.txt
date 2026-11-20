@@ -2,7 +2,7 @@ spurlos 0.1.0  https://shop.example/tracked.html
 5 Mängel · 2 Hinweise
 
 🔴 Fremde Server              4
-  ├─ 🔴 cdn.unbekannt.example (1 Anfrage)
+  ├─ 🔴 cdn.unbekannt.example – 1 Anfrage
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 Anfrage)
   └─ 🔴 www.youtube.com – YouTube (1 Anfrage)

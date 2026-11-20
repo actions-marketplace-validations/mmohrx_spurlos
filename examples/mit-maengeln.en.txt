@@ -2,7 +2,7 @@ spurlos 0.1.0  https://shop.example/tracked.html
 5 problems · 2 notes
 
 🔴 Third-party servers              4
-  ├─ 🔴 cdn.unbekannt.example (1 request)
+  ├─ 🔴 cdn.unbekannt.example – 1 request
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 request)
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 request)
   └─ 🔴 www.youtube.com – YouTube (1 request)

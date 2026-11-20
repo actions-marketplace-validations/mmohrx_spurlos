@@ -3,7 +3,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { chromium } from 'playwright'
 import { runChecks } from '../src/checks.ts'
-import { MESSAGES, text } from '../src/report.ts'
+import { json, text } from '../src/report.ts'
 import { scan } from '../src/scan.ts'
 import { offline, redirects, SITE, staysOnHttp } from '../test/site.ts'
 
@@ -21,7 +21,7 @@ for (const p of pages) {
   const results = runChecks(s)
   await writeFile(new URL(`${p.name}.txt`, out), text(s, results, 'de', { verbose: true }) + '\n')
   await writeFile(new URL(`${p.name}.en.txt`, out), text(s, results, 'en', { verbose: true }) + '\n')
-  await writeFile(new URL(`${p.name}.json`, out), JSON.stringify({ scan: s, results, note: MESSAGES.de.disclaimer }, null, 2) + '\n')
+  await writeFile(new URL(`${p.name}.json`, out), json(s, results) + '\n')
   colored.push(text(s, results, 'de', { color: true }))
 }
 

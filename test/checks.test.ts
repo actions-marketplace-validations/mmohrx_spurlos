@@ -175,7 +175,7 @@ describe('headers', () => {
       'referrer-policy': 'strict-origin-when-cross-origin',
       'permissions-policy': 'camera=()',
     }
-    expect(headers({ ...base, headers: h })).toEqual({ check: 'headers', level: 'green', missing: [] })
+    expect(headers({ ...base, headers: h })).toEqual({ check: 'headers', level: 'green', missing: [], checked: 5 })
   })
 
   test('a CSP or referrer policy in a meta tag counts, frame-ancestors there does not', () => {

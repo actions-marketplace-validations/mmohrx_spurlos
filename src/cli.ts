@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
 import { runChecks } from './checks.ts'
-import { MESSAGES, text, type Lang } from './report.ts'
+import { clean, json, text, type Lang } from './report.ts'
 import { scan } from './scan.ts'
 
 // colors only in a terminal that wants them: tty.hasColors() honours NO_COLOR, FORCE_COLOR and TERM
-const colors = () => process.stdout.isTTY && process.stdout.hasColors()
+const color = process.stdout.isTTY && process.stdout.hasColors()
 
 const USAGE = `spurlos <url> [--lang de|en] [--verbose] [--json] [--user-agent <kennung>]
 
@@ -49,9 +49,12 @@ try {
   const ua = values['user-agent']
   const s = await scan(url, ua ? { userAgent: ua } : {})
   const results = runChecks(s)
-  console.log(values.json ? JSON.stringify({ scan: s, results, note: MESSAGES[lang].disclaimer }, null, 2) : text(s, results, lang, { color: colors(), verbose: values.verbose ?? false, width: Math.min(process.stdout.columns || 80, 100) }))
+  const width = Math.min(process.stdout.columns || 80, 100)
+  console.log(values.json ? json(s, results, lang) : text(s, results, lang, { color, verbose: values.verbose ?? false, width }))
   process.exit(results.some(r => r.level === 'red') ? 1 : 0)
 } catch (e) {
-  console.error(`spurlos: ${url} ließ sich nicht prüfen: ${e instanceof Error ? e.message : String(e)}`)
+  // the first line says what went wrong (Playwright adds a call log below); it may quote what the server sent
+  const reason = (e instanceof Error ? e.message : String(e)).split('\n')[0] ?? ''
+  console.error(clean(`spurlos: ${url} ließ sich nicht prüfen: ${reason}`))
   process.exit(2)
 }

@@ -9,17 +9,12 @@ const HOME = 'https://github.com/mmohrx/spurlos'
 /** Open about itself, for the requests where a bot check changes nothing: the legal pages and the http probe. */
 export const BOT_AGENT = `spurlos/${VERSION} (+${HOME})`
 
-const PLATFORM: Record<string, string> = {
-  darwin: 'Macintosh; Intel Mac OS X 10_15_7',
-  win32: 'Windows NT 10.0; Win64; x64',
+/** how Chrome names the platform, in the user agent and in the client hints */
+const PLATFORM: Record<string, { ua: string; ch: string }> = {
+  darwin: { ua: 'Macintosh; Intel Mac OS X 10_15_7', ch: 'macOS' },
+  win32: { ua: 'Windows NT 10.0; Win64; x64', ch: 'Windows' },
 }
-
-/**
- * For the page itself: a regular Chrome, with spurlos added but no URL. Many cookie banners and trackers stay away
- * from what they take for a bot – HeadlessChrome or a URL in the user agent – and the scan would miss what real
- * visitors get. The page still sees spurlos in its logs.
- */
-const CH_PLATFORM: Record<string, string> = { darwin: 'macOS', win32: 'Windows' }
+const LINUX = { ua: 'X11; Linux x86_64', ch: 'Linux' }
 
 /**
  * Chromium still names itself HeadlessChrome in its client hints (sec-ch-ua, navigator.userAgentData), whatever the
@@ -38,7 +33,7 @@ async function plainBrands(context: BrowserContext, page: Page, userAgent: strin
         { brand: 'Not/A)Brand', version: '8' },
       ],
       fullVersion: chromeVersion,
-      platform: CH_PLATFORM[process.platform] ?? 'Linux',
+      platform: (PLATFORM[process.platform] ?? LINUX).ch,
       platformVersion: '',
       architecture: '',
       model: '',
@@ -47,9 +42,14 @@ async function plainBrands(context: BrowserContext, page: Page, userAgent: strin
   })
 }
 
+/**
+ * For the page itself: a regular Chrome, with spurlos added but no URL. Many cookie banners and trackers stay away
+ * from what they take for a bot – HeadlessChrome or a URL in the user agent – and the scan would miss what real
+ * visitors get. The page still sees spurlos in its logs.
+ */
 export function browserAgent(chromeVersion: string, platform = process.platform): string {
   const major = chromeVersion.split('.')[0]
-  return `Mozilla/5.0 (${PLATFORM[platform] ?? 'X11; Linux x86_64'}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36 spurlos/${VERSION}`
+  return `Mozilla/5.0 (${(PLATFORM[platform] ?? LINUX).ua}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36 spurlos/${VERSION}`
 }
 
 export type Request = { url: string; host: string; type: string }
@@ -118,7 +118,8 @@ async function probeHttp(url: string, f: typeof fetch, userAgent: string): Promi
 export async function scan(url: string, options: ScanOptions = {}): Promise<Scan> {
   const browser = await chromium.launch()
   try {
-    const userAgent = options.userAgent ?? browserAgent(browser.version())
+    const chrome = browser.version()
+    const userAgent = options.userAgent ?? browserAgent(chrome)
     const context = await browser.newContext({ locale: 'de-DE', userAgent })
     await options.setup?.(context)
 
@@ -129,9 +130,9 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     })
 
     const page = await context.newPage()
-    if (!options.userAgent) await plainBrands(context, page, userAgent, browser.version())
+    if (!options.userAgent) await plainBrands(context, page, userAgent, chrome)
     const response = await page.goto(url, { waitUntil: 'load' })
-    if (!response) throw new Error('keine Antwort erhalten')
+    if (!response) throw new Error('no response')
     const settled = await page
       .waitForLoadState('networkidle', { timeout: options.settleMs ?? 10_000 })
       .then(() => true, () => false)
@@ -144,7 +145,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       httpOnly: c.httpOnly,
     }))
     const { storage, links, forms, metaCsp, metaReferrer, generator } = await page.evaluate(() => {
-      const storage: { area: 'localStorage' | 'sessionStorage'; key: string }[] = []
+      const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
         const s = window[area]
         for (let i = 0; i < s.length; i++) storage.push({ area, key: s.key(i) ?? '' })
@@ -179,12 +180,17 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       userAgent,
     }
     if (tls?.validTo) result.certificate = { validTo: tls.validTo, issuer: tls.issuer ?? '' }
-    if (finalUrl.startsWith('https:')) result.http = await probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch, options.userAgent ?? BOT_AGENT)
     if (metaCsp) result.metaCsp = metaCsp
     if (metaReferrer) result.metaReferrer = metaReferrer
     if (generator) result.generator = generator
-    // one page can be both Impressum and Datenschutz; open it once
-    for (const href of new Set(legalLinks(links).map(l => l.href))) result.legal.push(await visitor(href))
+    // the http probe and the legal pages do not depend on each other: ask them all at once.
+    // One page can be both Impressum and Datenschutz; open it once.
+    const [http, ...legal] = await Promise.all([
+      finalUrl.startsWith('https:') ? probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch, options.userAgent ?? BOT_AGENT) : undefined,
+      ...[...new Set(legalLinks(links).map(l => l.href))].map(visitor),
+    ])
+    if (http) result.http = http
+    result.legal = legal.filter(v => v !== undefined)
     return result
   } finally {
     await browser.close()
@@ -201,7 +207,7 @@ async function documentsOnly(browser: Browser, options: ScanOptions) {
     const page = await context.newPage()
     try {
       const r = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 })
-      return r ? { url, status: r.status(), finalUrl: page.url() } : { url, error: 'keine Antwort' }
+      return r ? { url, status: r.status(), finalUrl: page.url() } : { url, error: 'no response' }
     } catch (e) {
       return { url, error: e instanceof Error ? (e.message.split('\n')[0] ?? e.message) : String(e) }
     } finally {

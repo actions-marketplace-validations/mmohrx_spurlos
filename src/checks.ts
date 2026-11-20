@@ -23,11 +23,13 @@ export type Result =
   | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
   | { check: 'https'; level: Level; https: boolean; certDaysLeft?: number; http?: HttpRedirect; hsts: boolean }
-  | { check: 'headers'; level: Level; missing: string[] }
+  | { check: 'headers'; level: Level; missing: string[]; checked: number }
   | { check: 'forms'; level: Level; forms: FormFinding[] }
   | { check: 'disclosure'; level: Level; findings: Disclosure[] }
 
-export const worst = (levels: Level[]): Level => (levels.includes('red') ? 'red' : levels.includes('yellow') ? 'yellow' : 'green')
+/** worst first */
+export const SEVERITY: Level[] = ['red', 'yellow', 'green']
+export const worst = (levels: Level[]): Level => SEVERITY.find(l => levels.includes(l)) ?? 'green'
 
 const services = knownServices as Service[]
 // the most specific host wins: maps.googleapis.com before googleapis.com
@@ -40,12 +42,15 @@ export function site(host: string): string {
   return getDomain(host) ?? host
 }
 
+const ownSite = (scan: Scan) => site(new URL(scan.finalUrl).hostname)
+const isHttps = (scan: Scan) => scan.finalUrl.startsWith('https:')
+
 export function serviceOfHost(host: string): Service | undefined {
   return byHost.find(({ h }) => host === h || host.endsWith('.' + h))?.s
 }
 
 /** Session and security cookies of common frameworks and proxies: needed to run the site, not to follow anyone. */
-export const isNecessary = (s: Service | undefined) => s?.category === 'necessary'
+const isNecessary = (s: Service | undefined) => s?.category === 'necessary'
 
 // names in services.json are prefixes (_ga also covers GA4's _ga_ABC123),
 // or with a leading * suffixes (*-session covers Laravel's <app>-session)
@@ -62,7 +67,7 @@ export function serviceOfStorage(key: string): Service | undefined {
 
 /** Every request to another site than the page's own counts: it hands the visitor's IP to someone else. */
 export function thirdParty(scan: Scan): Result {
-  const own = site(new URL(scan.finalUrl).hostname)
+  const own = ownSite(scan)
   const counts = new Map<string, number>()
   for (const r of scan.requests) if (site(r.host) !== own) counts.set(r.host, (counts.get(r.host) ?? 0) + 1)
   const hosts = [...counts]
@@ -97,8 +102,8 @@ export const formLevel = (f: FormFinding): Level => (f.problem === 'unencrypted'
  * storage entry is yellow, as it may be needed to run the site and wants a look.
  */
 export function cookies(scan: Scan): Result {
-  const own = site(new URL(scan.finalUrl).hostname)
-  const https = scan.finalUrl.startsWith('https:')
+  const own = ownSite(scan)
+  const https = isHttps(scan)
   const found = scan.cookies.map((c): CookieFinding => {
     const service = serviceOfCookie(c.name)
     const missing: CookieFinding['missing'] = []
@@ -126,7 +131,6 @@ export function legalLinks(links: Link[]): (Link & { kind: LegalKind })[] {
   return out
 }
 
-
 /** Impressum and Datenschutz each need a link on the page that opens without error. */
 export function legal(scan: Scan): Result {
   const found = legalLinks(scan.links)
@@ -145,10 +149,10 @@ export function legal(scan: Scan): Result {
 
 /** A page without https, an expired certificate or http left without redirect is red; a certificate close to its end or no HSTS yellow. */
 export function https(scan: Scan, now = Date.now()): Result {
-  const isHttps = scan.finalUrl.startsWith('https:')
+  const secure = isHttps(scan)
   const hsts = 'strict-transport-security' in scan.headers
-  const levels: Level[] = [isHttps ? 'green' : 'red']
-  const r: Extract<Result, { check: 'https' }> = { check: 'https', level: 'green', https: isHttps, hsts }
+  const levels: Level[] = [secure ? 'green' : 'red']
+  const r: Extract<Result, { check: 'https' }> = { check: 'https', level: 'green', https: secure, hsts }
 
   if (scan.certificate) {
     r.certDaysLeft = Math.floor((scan.certificate.validTo * 1000 - now) / 86_400_000)
@@ -158,7 +162,7 @@ export function https(scan: Scan, now = Date.now()): Result {
     r.http = 'error' in scan.http ? 'unreachable' : scan.http.finalUrl.startsWith('https:') ? 'redirects' : 'no-redirect'
     levels.push(httpLevel(r.http))
   }
-  if (isHttps && !hsts) levels.push('yellow')
+  if (secure && !hsts) levels.push('yellow')
   r.level = worst(levels)
   return r
 }
@@ -168,19 +172,20 @@ export function headers(scan: Scan): Result {
   const h = scan.headers
   const csp = h['content-security-policy'] ?? ''
   // a CSP or referrer policy in a <meta> tag counts, but browsers ignore frame-ancestors there
-  const missing = [
+  const checked = [
     !csp && !scan.metaCsp && 'Content-Security-Policy',
     !h['x-frame-options'] && !/frame-ancestors/i.test(csp) && 'X-Frame-Options',
     h['x-content-type-options']?.toLowerCase() !== 'nosniff' && 'X-Content-Type-Options',
     !h['referrer-policy'] && !scan.metaReferrer && 'Referrer-Policy',
     !h['permissions-policy'] && 'Permissions-Policy',
-  ].filter((m): m is string => typeof m === 'string')
-  return { check: 'headers', level: missing.length ? 'yellow' : 'green', missing }
+  ]
+  const missing = checked.filter((m): m is string => typeof m === 'string')
+  return { check: 'headers', level: missing.length ? 'yellow' : 'green', missing, checked: checked.length }
 }
 
 /** A form that sends over plain http is red; one that sends to another site yellow, as the entries go to someone else. */
 export function forms(scan: Scan): Result {
-  const own = site(new URL(scan.finalUrl).hostname)
+  const own = ownSite(scan)
   const found = scan.forms
     .filter(f => /^https?:/.test(f.action))
     .map((f): FormFinding => {
