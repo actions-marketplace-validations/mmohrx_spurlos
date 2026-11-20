@@ -1,8 +1,9 @@
 // Writes the example reports in examples/: both test pages, checked offline as https://shop.example,
-// as text (de, en), as JSON and as a picture of the colored output. Run with `npm run examples`.
+// as text in every language, as JSON and as a picture of the colored output. Run with `npm run examples`.
 import { mkdir, writeFile } from 'node:fs/promises'
 import { chromium } from 'playwright'
 import { runChecks } from '../src/checks.ts'
+import { DEFAULT_LANG, LANGS } from '../src/lang/index.ts'
 import { json, text } from '../src/report.ts'
 import { scan } from '../src/scan.ts'
 import { offline, redirects, SITE, staysOnHttp } from '../test/site.ts'
@@ -19,10 +20,13 @@ const colored: string[] = []
 for (const p of pages) {
   const s = await scan(p.url, { setup: offline, fetch: p.fetch })
   const results = runChecks(s)
-  await writeFile(new URL(`${p.name}.txt`, out), text(s, results, 'de', { verbose: true }) + '\n')
-  await writeFile(new URL(`${p.name}.en.txt`, out), text(s, results, 'en', { verbose: true }) + '\n')
-  await writeFile(new URL(`${p.name}.json`, out), json(s, results) + '\n')
-  colored.push(text(s, results, 'de', { color: true }))
+  // the default language keeps the bare name: mit-maengeln.txt, mit-maengeln.en.txt
+  for (const lang of LANGS) {
+    const suffix = lang === DEFAULT_LANG ? '' : `.${lang}`
+    await writeFile(new URL(`${p.name}${suffix}.txt`, out), text(s, results, lang, { verbose: true }) + '\n')
+  }
+  await writeFile(new URL(`${p.name}.json`, out), json(s, results, DEFAULT_LANG) + '\n')
+  colored.push(text(s, results, DEFAULT_LANG, { color: true }))
 }
 
 // the colored output as a terminal would show it, for the README

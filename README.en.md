@@ -46,7 +46,7 @@ npx spurlos <url> --lang en
 
 | Option | |
 |---|---|
-| `--lang de\|en` | language of the report, default `de` |
+| `--lang de\|en` | language of the report. Without it, `SPURLOS_LANG` applies, then the system language (`LANG`), else `de` |
 | `--verbose`, `-v` | details for the green checks too |
 | `--json` | the full result as JSON |
 | `--user-agent <string>` | your own user agent for every request |

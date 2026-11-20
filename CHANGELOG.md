@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Ohne `--lang` richtet sich die Sprache nach `SPURLOS_LANG`, dann nach der Sprache des Systems (`LC_ALL`, `LC_MESSAGES`, `LANG`), sonst Deutsch.
+- Die Hilfe (`--help`) gibt es auch auf Englisch.
+- Texte je Sprache in `src/lang/`, damit weitere Sprachen dazukommen können.
+
 ## 0.2.0 – 2026-11-20
 
 - Bericht neu gestaltet: Bilanz als Plaketten, Mängel zuerst, Befunde als Baum, grüne Prüfungen einzeilig. `--verbose` (`-v`) zeigt alle Details. Farben nur im Terminal, nicht mit `NO_COLOR`.

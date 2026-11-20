@@ -28,7 +28,7 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(s).toMatchObject({ metaCsp: "default-src 'self'", metaReferrer: 'no-referrer' })
 
     // green checks take one line each; their findings show with verbose
-    const short = text(s, results)
+    const short = text(s, results, 'de')
     expect(short).not.toContain('Impressum: „Impressum“')
     expect(short).toContain('--verbose')
     const long = text(s, results, 'de', { verbose: true })
@@ -71,7 +71,7 @@ describe('scan', { timeout: 30_000 }, () => {
     // set without Secure on an https page
     expect(pick(results, 'cookies').cookies.find(c => c.name === 'session')?.missing).toEqual(['Secure'])
 
-    const report = text(s, results)
+    const report = text(s, results, 'de')
     expect(report).toContain('Google Fonts')
     // each finding carries its own light, so the reader sees which one makes the check red or yellow
     expect(report).toContain('🔴 Cookie _ga (shop.example) – eigen, Google Analytics')

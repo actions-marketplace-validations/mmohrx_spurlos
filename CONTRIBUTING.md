@@ -36,7 +36,8 @@ pnpm test       # läuft ohne Netz gegen test/sites
 ```
 
 - Eine neue Prüfung bekommt einen Fall in `test/sites/` und eine Zeile in der Ampel-Tabelle im README.
-- Jede Meldung im Bericht gibt es auf Deutsch und Englisch, in [`src/report.ts`](src/report.ts).
+- Jede Meldung gibt es in jeder Sprache, je eine Datei in [`src/lang/`](src/lang/).
+- Eine neue Sprache: `src/lang/de.ts` kopieren, z. B. nach `fr.ts`, als `const fr: Messages` typisieren, übersetzen und in `MESSAGES` in `src/lang/index.ts` eintragen. `pnpm typecheck` zeigt jeden Text, der noch fehlt. Danach `--lang` im README ergänzen und `pnpm examples` laufen lassen.
 - Ändert sich der Bericht, `pnpm examples` laufen lassen und `examples/` mit committen.
 
 ## Lizenz

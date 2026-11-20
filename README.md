@@ -46,7 +46,7 @@ npx spurlos <url>
 
 | Option | |
 |---|---|
-| `--lang de\|en` | Sprache des Berichts, Standard `de` |
+| `--lang de\|en` | Sprache des Berichts. Ohne Angabe gilt `SPURLOS_LANG`, dann die Sprache des Systems (`LANG`), sonst `de` |
 | `--verbose`, `-v` | Details auch zu den grünen Prüfungen |
 | `--json` | vollständiges Ergebnis als JSON |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |

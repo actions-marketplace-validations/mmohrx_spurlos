@@ -12,7 +12,8 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 ## Code
 
 - Prüfungen und ihre Ampel: `src/checks.ts`. Eine neue Prüfung bekommt einen eigenen `check` im Typ `Result`, eine Zeile in der Ampel-Tabelle im README und einen Fall in `test/sites/`.
-- Texte des Berichts: `src/report.ts`. Jede Meldung gibt es auf Deutsch (`de`) und Englisch (`en`) mit derselben Aussage; der Typ von `en` erzwingt, dass keine fehlt. Deutsch mit „du“, Anführungszeichen als Paar „…“.
+- Texte: eine Datei je Sprache in `src/lang/` (Bericht, Hilfe, Fehlermeldungen); `src/report.ts` nur die Darstellung. `de.ts` ist die Vorlage, jede andere Sprache ist als `Messages` typisiert, damit `pnpm typecheck` fehlende Texte meldet. Jede Meldung sagt in jeder Sprache dasselbe. Deutsch mit „du“, Anführungszeichen als Paar „…“.
+- Sprache: `--lang`, sonst `SPURLOS_LANG`, sonst `LC_ALL`/`LC_MESSAGES`/`LANG`, sonst `de` (`pickLang` in `src/lang/index.ts`). Bericht-Funktionen bekommen die Sprache immer übergeben, damit Tests und `pnpm examples` nicht vom System abhängen.
 - Bekannte Dienste: nur in `src/services.json`. Hosts gelten samt Subdomains, Cookie-Namen als Anfang, mit `*` vorn als Ende.
 - Paketmanager ist pnpm (`packageManager` in `package.json`), nicht npm.
 

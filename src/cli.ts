@@ -1,55 +1,47 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
 import { runChecks } from './checks.ts'
-import { clean, cliMessages, json, text, type Lang } from './report.ts'
+import { LANGS, MESSAGES, pickLang } from './lang/index.ts'
+import { clean, json, text } from './report.ts'
 import { scan } from './scan.ts'
 
 // colors only in a terminal that wants them: tty.hasColors() honours NO_COLOR, FORCE_COLOR and TERM
 const color = process.stdout.isTTY && process.stdout.hasColors()
 
-const USAGE = `spurlos <url> [--lang de|en] [--verbose] [--json] [--user-agent <kennung>]
-
-Ruft die Seite wie ein neuer Besucher auf, der nichts anklickt, und zeigt,
-welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
-
-  --lang   Sprache des Berichts: de (Standard) oder en
-  --verbose  Details auch zu den grünen Prüfungen
-  --json   Ergebnis als JSON statt als Text
-  --user-agent  eigene Browserkennung für alle Aufrufe
-  --help   diese Hilfe
-
-Exit-Code: 0 ohne roten Befund, 1 mit rotem Befund, 2 bei einem Fehler.`
-
 const OPTIONS = {
   json: { type: 'boolean' },
   verbose: { type: 'boolean', short: 'v' },
-  lang: { type: 'string', default: 'de' },
+  lang: { type: 'string' },
   'user-agent': { type: 'string' },
   help: { type: 'boolean', short: 'h' },
 } as const
+
+const langList = LANGS.join('|')
 
 let parsed
 try {
   parsed = parseArgs({ allowPositionals: true, options: OPTIONS })
 } catch (e) {
   // a wrong option is a usage error (2), not a red finding (1)
-  console.error(`spurlos: ${e instanceof Error ? e.message : String(e)}\n\n${USAGE}`)
+  console.error(`spurlos: ${e instanceof Error ? e.message : String(e)}\n\n${MESSAGES[pickLang(undefined).lang].usage(langList)}`)
   process.exit(2)
 }
 const { values, positionals } = parsed
 
+const { lang, unknown } = pickLang(values.lang)
+const say = MESSAGES[lang]
+
+// the help comes even with an unknown language, in the one that applies without it
 const arg = positionals[0]
 if (values.help || !arg) {
-  console.log(USAGE)
+  console.log(say.usage(langList))
   process.exit(values.help ? 0 : 2)
 }
 
-if (values.lang !== 'de' && values.lang !== 'en') {
-  console.error(`spurlos: --lang kennt nur de und en, nicht ${values.lang} / --lang only knows de and en.`)
+if (unknown) {
+  console.error(clean(`spurlos: ${say.unknownLang(unknown.from, unknown.value, langList)}`))
   process.exit(2)
 }
-const lang: Lang = values.lang
-const say = cliMessages(lang)
 
 let url: string
 try {

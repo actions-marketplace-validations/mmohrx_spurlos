@@ -21,7 +21,7 @@ test('what the page says cannot steer the terminal', () => {
     expect(report).not.toContain('/\x1b[31m')
   }
   // JSON keeps the values as sent, escaped so that printing it is harmless too
-  const out = json(scan, results)
+  const out = json(scan, results, 'de')
   expect(out).not.toMatch(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f؜‪-‮]/)
   expect(JSON.parse(out).results[0].findings[0].value).toBe(evil)
   expect(clean('Größe „ok“ – fine')).toBe('Größe „ok“ – fine')
