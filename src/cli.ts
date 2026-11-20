@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util'
 import { runChecks } from './checks.ts'
-import { clean, json, text, type Lang } from './report.ts'
+import { clean, cliMessages, json, text, type Lang } from './report.ts'
 import { scan } from './scan.ts'
 
 // colors only in a terminal that wants them: tty.hasColors() honours NO_COLOR, FORCE_COLOR and TERM
@@ -20,10 +20,23 @@ welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
 
 Exit-Code: 0 ohne roten Befund, 1 mit rotem Befund, 2 bei einem Fehler.`
 
-const { values, positionals } = parseArgs({
-  allowPositionals: true,
-  options: { json: { type: 'boolean' }, verbose: { type: 'boolean', short: 'v' }, lang: { type: 'string', default: 'de' }, 'user-agent': { type: 'string' }, help: { type: 'boolean', short: 'h' } },
-})
+const OPTIONS = {
+  json: { type: 'boolean' },
+  verbose: { type: 'boolean', short: 'v' },
+  lang: { type: 'string', default: 'de' },
+  'user-agent': { type: 'string' },
+  help: { type: 'boolean', short: 'h' },
+} as const
+
+let parsed
+try {
+  parsed = parseArgs({ allowPositionals: true, options: OPTIONS })
+} catch (e) {
+  // a wrong option is a usage error (2), not a red finding (1)
+  console.error(`spurlos: ${e instanceof Error ? e.message : String(e)}\n\n${USAGE}`)
+  process.exit(2)
+}
+const { values, positionals } = parsed
 
 const arg = positionals[0]
 if (values.help || !arg) {
@@ -32,16 +45,17 @@ if (values.help || !arg) {
 }
 
 if (values.lang !== 'de' && values.lang !== 'en') {
-  console.error(`spurlos: --lang kennt nur de und en, nicht ${values.lang}.`)
+  console.error(`spurlos: --lang kennt nur de und en, nicht ${values.lang} / --lang only knows de and en.`)
   process.exit(2)
 }
 const lang: Lang = values.lang
+const say = cliMessages(lang)
 
 let url: string
 try {
-  url = new URL(/^https?:\/\//.test(arg) ? arg : `https://${arg}`).href
+  url = new URL(/^https?:\/\//i.test(arg) ? arg : `https://${arg}`).href
 } catch {
-  console.error(`spurlos: ${arg} ist keine gültige Adresse.`)
+  console.error(clean(`spurlos: ${say.invalidUrl(arg)}`))
   process.exit(2)
 }
 
@@ -51,10 +65,11 @@ try {
   const results = runChecks(s)
   const width = Math.min(process.stdout.columns || 80, 100)
   console.log(values.json ? json(s, results, lang) : text(s, results, lang, { color, verbose: values.verbose ?? false, width }))
-  process.exit(results.some(r => r.level === 'red') ? 1 : 0)
+  // exitCode, not exit(): on a pipe stdout is written asynchronously, and exit() would cut a long report short
+  process.exitCode = results.some(r => r.level === 'red') ? 1 : 0
 } catch (e) {
   // the first line says what went wrong (Playwright adds a call log below); it may quote what the server sent
   const reason = (e instanceof Error ? e.message : String(e)).split('\n')[0] ?? ''
-  console.error(clean(`spurlos: ${url} ließ sich nicht prüfen: ${reason}`))
-  process.exit(2)
+  console.error(clean(`spurlos: ${say.failed(url, reason)}`))
+  process.exitCode = 2
 }

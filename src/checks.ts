@@ -43,6 +43,8 @@ export function site(host: string): string {
 }
 
 const ownSite = (scan: Scan) => site(new URL(scan.finalUrl).hostname)
+/** the site asked for and the one it ended on: a redirect from brand.com to brand.de leaves both the site's own */
+const ownSites = (scan: Scan) => new Set([site(new URL(scan.url).hostname), ownSite(scan)])
 const isHttps = (scan: Scan) => scan.finalUrl.startsWith('https:')
 
 export function serviceOfHost(host: string): Service | undefined {
@@ -67,9 +69,9 @@ export function serviceOfStorage(key: string): Service | undefined {
 
 /** Every request to another site than the page's own counts: it hands the visitor's IP to someone else. */
 export function thirdParty(scan: Scan): Result {
-  const own = ownSite(scan)
+  const own = ownSites(scan)
   const counts = new Map<string, number>()
-  for (const r of scan.requests) if (site(r.host) !== own) counts.set(r.host, (counts.get(r.host) ?? 0) + 1)
+  for (const r of scan.requests) if (!own.has(site(r.host))) counts.set(r.host, (counts.get(r.host) ?? 0) + 1)
   const hosts = [...counts]
     .map(([host, requests]) => ({ host, service: serviceOfHost(host), requests }))
     .sort((a, b) => a.host.localeCompare(b.host))
@@ -102,14 +104,14 @@ export const formLevel = (f: FormFinding): Level => (f.problem === 'unencrypted'
  * storage entry is yellow, as it may be needed to run the site and wants a look.
  */
 export function cookies(scan: Scan): Result {
-  const own = ownSite(scan)
+  const own = ownSites(scan)
   const https = isHttps(scan)
   const found = scan.cookies.map((c): CookieFinding => {
     const service = serviceOfCookie(c.name)
     const missing: CookieFinding['missing'] = []
     if (https && !c.secure) missing.push('Secure')
     if (service?.httpOnly && !c.httpOnly) missing.push('HttpOnly')
-    return { ...c, thirdParty: site(c.domain) !== own, service, missing }
+    return { ...c, thirdParty: !own.has(site(c.domain)), service, missing }
   })
   const storage = scan.storage.map(e => ({ ...e, service: serviceOfStorage(e.key) }))
   const level = worst([...found.map(cookieLevel), ...storage.map(storageLevel)])
@@ -121,11 +123,17 @@ const LEGAL: Record<LegalKind, RegExp> = {
   datenschutz: /datenschutz|privacy|data[ -]?protection/i,
 }
 
-/** The first link per kind whose text or address names it. A link like „Impressum & Datenschutz“ counts for both. */
-export function legalLinks(links: Link[]): (Link & { kind: LegalKind })[] {
+/**
+ * The first link per kind whose text or address names it, on the page's own site if there is one: a cookie banner's
+ * link to policies.google.com/privacy is Google's policy, not the site's. A link like „Impressum & Datenschutz“
+ * counts for both.
+ */
+export function legalLinks(links: Link[], pageUrl?: string): (Link & { kind: LegalKind })[] {
+  const own = pageUrl ? site(new URL(pageUrl).hostname) : undefined
   const out: (Link & { kind: LegalKind })[] = []
   for (const kind of ['impressum', 'datenschutz'] as const) {
-    const l = links.find(l => /^https?:/.test(l.href) && (LEGAL[kind].test(l.text) || LEGAL[kind].test(l.href)))
+    const candidates = links.filter(l => /^https?:/.test(l.href) && (LEGAL[kind].test(l.text) || LEGAL[kind].test(l.href)))
+    const l = candidates.find(l => site(new URL(l.href).hostname) === own) ?? candidates[0]
     if (l) out.push({ ...l, kind })
   }
   return out
@@ -133,7 +141,7 @@ export function legalLinks(links: Link[]): (Link & { kind: LegalKind })[] {
 
 /** Impressum and Datenschutz each need a link on the page that opens without error. */
 export function legal(scan: Scan): Result {
-  const found = legalLinks(scan.links)
+  const found = legalLinks(scan.links, scan.finalUrl)
   const pages = (['impressum', 'datenschutz'] as const).map(kind => {
     const link = found.find(l => l.kind === kind)
     const page: LegalPage = { kind }
@@ -150,7 +158,9 @@ export function legal(scan: Scan): Result {
 /** A page without https, an expired certificate or http left without redirect is red; a certificate close to its end or no HSTS yellow. */
 export function https(scan: Scan, now = Date.now()): Result {
   const secure = isHttps(scan)
-  const hsts = 'strict-transport-security' in scan.headers
+  // max-age=0 tells browsers to forget HSTS, so it counts as none
+  const maxAge = /max-age\s*=\s*"?(\d+)/i.exec(scan.headers['strict-transport-security'] ?? '')?.[1]
+  const hsts = Number(maxAge) > 0
   const levels: Level[] = [secure ? 'green' : 'red']
   const r: Extract<Result, { check: 'https' }> = { check: 'https', level: 'green', https: secure, hsts }
 
@@ -175,7 +185,8 @@ export function headers(scan: Scan): Result {
   const checked = [
     !csp && !scan.metaCsp && 'Content-Security-Policy',
     !h['x-frame-options'] && !/frame-ancestors/i.test(csp) && 'X-Frame-Options',
-    h['x-content-type-options']?.toLowerCase() !== 'nosniff' && 'X-Content-Type-Options',
+    // a header sent twice arrives joined: "nosniff, nosniff"
+    !(h['x-content-type-options'] ?? '').split(',').some(v => v.trim().toLowerCase() === 'nosniff') && 'X-Content-Type-Options',
     !h['referrer-policy'] && !scan.metaReferrer && 'Referrer-Policy',
     !h['permissions-policy'] && 'Permissions-Policy',
   ]

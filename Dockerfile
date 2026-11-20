@@ -2,7 +2,7 @@ FROM node:24-bookworm-slim AS build
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 # the pnpm version CI uses too, from packageManager in package.json
-RUN npm install -g "$(node -p "require('./package.json').packageManager")"
+RUN npm install -g "$(node -p "require('./package.json').packageManager.split('+')[0]")"
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.json tsconfig.build.json ./
 COPY src src

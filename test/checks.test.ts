@@ -11,6 +11,11 @@ describe('thirdParty', () => {
     expect(r).toMatchObject({ level: 'green', hosts: [] })
   })
 
+  test('a redirect to another domain leaves the domain asked for the own one', () => {
+    const r = thirdParty({ ...base, url: 'https://firma.com/', requests: [req('firma.com'), req('www.firma.de')] })
+    expect(r).toMatchObject({ level: 'green', hosts: [] })
+  })
+
   test('other sites are red and counted per host', () => {
     const r = thirdParty({ ...base, requests: [req('fonts.gstatic.com'), req('fonts.gstatic.com'), req('cdn.anders.de')] })
     expect(r.level).toBe('red')
@@ -118,6 +123,13 @@ describe('legal', () => {
     expect(legalLinks([{ text: 'Rechtliches', href: 'https://www.firma.de/datenschutz.html' }])[0]?.kind).toBe('datenschutz')
   })
 
+  test('a link on the own site wins over a third party policy that comes first', () => {
+    const page = [{ text: 'Privacy', href: 'https://policies.google.com/privacy' }, ...links]
+    expect(legalLinks(page, 'https://www.firma.de/').find(l => l.kind === 'datenschutz')?.href).toBe('https://www.firma.de/en/privacy')
+    // without one of its own, the other link still counts, so the report can show where it leads
+    expect(legalLinks(page.slice(0, 1), 'https://www.firma.de/')[0]?.href).toBe('https://policies.google.com/privacy')
+  })
+
   test('a link that names both counts for both', () => {
     const both = [{ text: 'Impressum & Datenschutz', href: 'https://www.firma.de/impressum/' }]
     expect(legalLinks(both).map(l => l.kind)).toEqual(['impressum', 'datenschutz'])
@@ -165,6 +177,11 @@ describe('https', () => {
   test('a page over plain http is red', () => {
     expect(https({ ...base, finalUrl: 'http://www.firma.de/' }, NOW)).toMatchObject({ level: 'red', https: false })
   })
+
+  test('HSTS with max-age=0 switches it off and counts as none', () => {
+    expect(https({ ...good, headers: { 'strict-transport-security': 'max-age=0' } }, NOW)).toMatchObject({ level: 'yellow', hsts: false })
+    expect(https({ ...good, headers: { 'strict-transport-security': 'includeSubDomains; max-age="600"' } }, NOW)).toMatchObject({ hsts: true })
+  })
 })
 
 describe('headers', () => {
@@ -181,6 +198,11 @@ describe('headers', () => {
   test('a CSP or referrer policy in a meta tag counts, frame-ancestors there does not', () => {
     const r = headers({ ...base, metaCsp: "default-src 'self'; frame-ancestors 'none'", metaReferrer: 'no-referrer' })
     expect(r).toMatchObject({ missing: ['X-Frame-Options', 'X-Content-Type-Options', 'Permissions-Policy'] })
+  })
+
+  test('a header sent twice still counts', () => {
+    const r = headers({ ...base, headers: { 'x-content-type-options': 'nosniff, nosniff' } })
+    expect(r.check === 'headers' && r.missing).not.toContain('X-Content-Type-Options')
   })
 
   test('frame-ancestors in the CSP stands in for X-Frame-Options, otherwise each missing one is listed', () => {

@@ -57,6 +57,9 @@ export type Cookie = { name: string; domain: string; expires: number; secure: bo
 export type StorageEntry = { area: 'localStorage' | 'sessionStorage'; key: string }
 export type Link = { text: string; href: string }
 export type Form = { action: string; method: string }
+/** what a Visit's error says when the server sent nothing at all; the report translates it */
+export const NO_RESPONSE = 'no response'
+
 /** Where a URL ended up when opened on its own: status and final URL, or why it could not be opened. */
 export type Visit = { url: string; status: number; finalUrl: string } | { url: string; error: string }
 
@@ -132,7 +135,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const page = await context.newPage()
     if (!options.userAgent) await plainBrands(context, page, userAgent, chrome)
     const response = await page.goto(url, { waitUntil: 'load' })
-    if (!response) throw new Error('no response')
+    if (!response) throw new Error(NO_RESPONSE)
     const settled = await page
       .waitForLoadState('networkidle', { timeout: options.settleMs ?? 10_000 })
       .then(() => true, () => false)
@@ -187,7 +190,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     // One page can be both Impressum and Datenschutz; open it once.
     const [http, ...legal] = await Promise.all([
       finalUrl.startsWith('https:') ? probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch, options.userAgent ?? BOT_AGENT) : undefined,
-      ...[...new Set(legalLinks(links).map(l => l.href))].map(visitor),
+      ...[...new Set(legalLinks(links, finalUrl).map(l => l.href))].map(visitor),
     ])
     if (http) result.http = http
     result.legal = legal.filter(v => v !== undefined)
@@ -207,7 +210,7 @@ async function documentsOnly(browser: Browser, options: ScanOptions) {
     const page = await context.newPage()
     try {
       const r = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 })
-      return r ? { url, status: r.status(), finalUrl: page.url() } : { url, error: 'no response' }
+      return r ? { url, status: r.status(), finalUrl: page.url() } : { url, error: NO_RESPONSE }
     } catch (e) {
       return { url, error: e instanceof Error ? (e.message.split('\n')[0] ?? e.message) : String(e) }
     } finally {

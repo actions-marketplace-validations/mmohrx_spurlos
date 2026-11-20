@@ -1,6 +1,6 @@
 import { certLevel, cookieLevel, SEVERITY, disclosureLevel, formLevel, httpLevel, legalLevel, storageLevel, type FormFinding, type HttpRedirect, type LegalKind, type Level, type Result } from './checks.ts'
 import { styleText } from 'node:util'
-import { VERSION, type Scan } from './scan.ts'
+import { NO_RESPONSE, VERSION, type Scan } from './scan.ts'
 
 export type Lang = 'de' | 'en'
 
@@ -10,6 +10,8 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 const de = {
   disclaimer: 'Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.',
   openedAs: (url: string) => `aufgerufen als ${url}`,
+  invalidUrl: (arg: string) => `${arg} ist keine gültige Adresse.`,
+  failed: (url: string, reason: string) => `${url} ließ sich nicht prüfen: ${reason === NO_RESPONSE ? 'keine Antwort' : reason}`,
   title: {
     'third-party': 'Fremde Server',
     cookies: 'Cookies und Speicher',
@@ -56,6 +58,7 @@ const de = {
   legalNoLink: 'kein Link auf der Seite gefunden',
   legalNotChecked: 'nicht geprüft',
   legalUnreachable: (error: string) => `nicht erreichbar (${error})`,
+  noResponse: 'keine Antwort',
   legalOk: 'erreichbar',
   legalStatus: (status: number) => `antwortet mit Status ${status}`,
 
@@ -86,6 +89,8 @@ const de = {
 const en: typeof de = {
   disclaimer: 'Technical pre-check – not legal advice, and no statement on whether the site complies with the GDPR.',
   openedAs: url => `opened as ${url}`,
+  invalidUrl: arg => `${arg} is not a valid address.`,
+  failed: (url, reason) => `${url} could not be checked: ${reason}`,
   title: {
     'third-party': 'Third-party servers',
     cookies: 'Cookies and storage',
@@ -132,6 +137,7 @@ const en: typeof de = {
   legalNoLink: 'no link found on the page',
   legalNotChecked: 'not checked',
   legalUnreachable: error => `not reachable (${error})`,
+  noResponse: 'no response',
   legalOk: 'reachable',
   legalStatus: status => `answers with status ${status}`,
 
@@ -160,6 +166,9 @@ const en: typeof de = {
 }
 
 const MESSAGES: Record<Lang, typeof de> = { de, en }
+
+/** the messages the CLI prints around the report */
+export const cliMessages = (lang: Lang) => ({ invalidUrl: MESSAGES[lang].invalidUrl, failed: MESSAGES[lang].failed })
 
 function lifetime(t: typeof de, expires: number, now: number): string {
   if (expires < 0) return t.session
@@ -210,7 +219,7 @@ function section(t: typeof de, r: Result, now: number): Section {
         items: r.pages.map(p => {
           if (!p.link) return item(legalLevel(p), `${t.legalName[p.kind]}: ${t.legalNoLink}`)
           const v = p.visit
-          const state = !v ? t.legalNotChecked : 'error' in v ? t.legalUnreachable(v.error) : v.status < 300 ? t.legalOk : t.legalStatus(v.status)
+          const state = !v ? t.legalNotChecked : 'error' in v ? t.legalUnreachable(v.error === NO_RESPONSE ? t.noResponse : v.error) : v.status < 300 ? t.legalOk : t.legalStatus(v.status)
           return item(legalLevel(p), `${t.legalName[p.kind]}: ${t.quote(p.link.text || p.link.href)} → ${p.link.href}`, state)
         }),
         notes: [],
@@ -258,10 +267,10 @@ export type TextOptions = { now?: number; color?: boolean; verbose?: boolean; wi
  * Link texts, header values, cookie names and addresses come from the page. Control characters in them could
  * move the cursor, recolor or rewrite the terminal, bidi overrides could reorder what the reader sees; both become a visible �.
  */
-const UNSAFE = /[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g
+const UNSAFE = /[\u0000-\u001f\u007f-\u009f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g
 export const clean = (s: string) => s.replace(UNSAFE, '\ufffd')
 // what JSON.stringify leaves as it is: DEL, C1 and the bidi marks; C0 it escapes itself, and its own line breaks must stay
-const UNSAFE_IN_JSON = /[\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g
+const UNSAFE_IN_JSON = /[\u007f-\u009f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g
 
 /**
  * The full result as JSON. The values stay as the page sent them; JSON.stringify escapes C0 control characters,
