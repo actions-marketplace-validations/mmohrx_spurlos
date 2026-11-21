@@ -146,6 +146,7 @@
   { "name": "Google", "category": "other", "hosts": ["google.com", "gstatic.com", "googleapis.com", "googleusercontent.com"] },
   { "name": "Google Sign-In", "category": "other", "hosts": ["accounts.google.com"], "cookies": ["g_state"] },
   { "name": "Trusted Shops", "category": "other", "hosts": ["trustedshops.com", "trustedshops.de"] },
+  { "name": "Wir sind Handwerk", "category": "other", "hosts": ["wsh.de", "wirsindhandwerk.de"] },
   { "name": "Reputon", "category": "other", "hosts": ["reputon.com"] },
   { "name": "Trustpilot", "category": "other", "hosts": ["trustpilot.com"] },
   { "name": "Calendly", "category": "other", "hosts": ["calendly.com"] },
