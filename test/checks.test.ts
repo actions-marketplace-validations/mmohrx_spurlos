@@ -122,6 +122,15 @@ describe('own servers on other sites', () => {
     expect(own({ finalUrl: 'https://www.google.de/', own: ['google-analytics.com'] }, 'www.google-analytics.com')).toEqual({ 'www.google-analytics.com': null })
   })
 
+  test('a page that is a known service itself owns that service’s servers, by the usual reasons', () => {
+    const doctolib = { url: 'https://www.doctolib.de/', finalUrl: 'https://www.doctolib.de/' }
+    expect(own(doctolib, 'media.doctolib.com', 'www.googletagmanager.com')).toEqual({ 'media.doctolib.com': 'name', 'www.googletagmanager.com': null })
+    const c = cookies({ ...base, ...doctolib, cookies: [{ name: 'x', domain: 'doctolib.com', expires: -1, secure: true, httpOnly: true }] })
+    expect(c).toMatchObject({ level: 'yellow', cookies: [{ thirdParty: true, own: 'name' }] })
+    // wix.com runs on Wix: its servers stay the platform's
+    expect(own({ url: 'https://www.wix.com/', finalUrl: 'https://www.wix.com/', headers: { 'x-wix-request-id': '1' } }, 'static.parastorage.com')).toEqual({ 'static.parastorage.com': 'platform' })
+  })
+
   test('their cookies are yellow, not red, and say why', () => {
     const r = cookies({ ...base, own: ['ztat.net'], cookies: [{ name: 'x', domain: 'ztat.net', expires: -1, secure: true, httpOnly: true }] })
     expect(r).toMatchObject({ level: 'yellow', cookies: [{ thirdParty: true, own: 'option' }] })

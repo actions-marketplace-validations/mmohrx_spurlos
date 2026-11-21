@@ -159,9 +159,12 @@ export function ownership(scan: Scan): (host: string) => OwnReason | undefined {
   const certified = certificateSites(scan, own)
   const labels = [...own].map(s => getDomainWithoutSuffix(s) ?? s)
   const platform = platformOf(scan)
+  // a page that is a known service itself (doctolib.de) may own that service's other servers (doctolib.com)
+  const itself = new Set([...own].map(serviceOfHost))
   return host => {
     const service = serviceOfHost(host)
-    if (service) return platform && service === platform ? 'platform' : undefined
+    if (service && service === platform) return 'platform'
+    if (service && !itself.has(service)) return undefined
     if (declared.some(d => host === d || host.endsWith('.' + d))) return 'option'
     if (certified.has(site(host))) return 'certificate'
     const names = namesOf(getDomainWithoutSuffix(host) ?? host)
