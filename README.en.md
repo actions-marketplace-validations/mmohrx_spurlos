@@ -46,11 +46,12 @@ npx spurlos <url> --lang en
 
 | Option | |
 |---|---|
-| `--lang de\|en` | language of the report. Without it, `SPURLOS_LANG` applies, then the system language (`LANG`), else `de` |
+| `--lang de\|en` | language of the report. Without it, `SPURLOS_LANG` applies, then the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`), else `de` |
 | `--verbose`, `-v` | details for the green checks too |
 | `--json` | the full result as JSON |
 | `--html` | the report as a self-contained HTML page, e.g. to pass on: `spurlos example.com --html > report.html` |
 | `--user-agent <string>` | your own user agent for every request |
+| `--help`, `-h` | help |
 
 The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. In a terminal the report is colored; redirected to a file or a pipe, or with `NO_COLOR` set, it stays plain text.
 
@@ -61,10 +62,10 @@ The summary comes first, then the checks, red ones first. Red and yellow checks 
 | Third-party servers | none | – | at least one request to another domain |
 | Cookies and storage | nothing set, or only known session and security cookies | first-party cookies or entries spurlos does not know; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a third-party cookie or one of a known tracker |
 | Legal notice and privacy policy | both linked and reachable | – | a link is missing or the page answers with an error |
-| HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS, nothing answers on http, certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
+| HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing answers on http, certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
 | Security headers | all set | one or more missing | – |
 | Forms | none, or all send encrypted to the site itself | one sends to a third-party server | one sends unencrypted over http |
-| Software details | nothing, or only the software's name | a version number in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-Generator` or `<meta name="generator">` | – |
+| Software details | nothing, or only the software's name | a version number in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` or `<meta name="generator">` | – |
 
 The headers checked are `Content-Security-Policy`, `X-Frame-Options` (or `frame-ancestors` in the CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` and `Permissions-Policy`. CSP and Referrer-Policy also count as a `<meta>` tag, for hosts like GitHub Pages where headers cannot be set. spurlos recognizes the legal notice and privacy policy by link text or address, in German and English. A link like “Impressum & Datenschutz” counts for both.
 
@@ -120,7 +121,13 @@ As with the CLI, the language follows `--lang`, `SPURLOS_LANG` or the system, an
 npx spurlos https://staging.company.com --lang en || echo "new traces"
 ```
 
-Exit code `0` without a red finding, `1` with one, `2` if the page could not be checked. With `--json` you get the full result, every request included.
+Exit code `0` without a red finding, `1` with one, `2` if the page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, `--json` together with `--html`).
+
+With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate, links, forms), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. The red checks, for example:
+
+```
+npx spurlos https://staging.company.com --json | jq -r '.results[] | select(.level == "red") | .check'
+```
 
 ## Adding known services
 

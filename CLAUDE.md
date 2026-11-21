@@ -23,6 +23,12 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 - Vor jedem Commit: `pnpm typecheck && pnpm test`.
 - Ändert sich der Bericht, danach `pnpm examples` und `examples/` mit committen, damit README-Bild und Beispielberichte zum Code passen.
 
+## Doku
+
+- Ändert sich, was Nutzer sehen oder worauf sie sich verlassen (Optionen, Exit-Codes, Umgebungsvariablen, Ampel-Regeln und Schwellen, geprüfte Header, Felder in `--json`, das MCP-Werkzeug), im selben Commit `README.md` und `README.en.md` anpassen, dazu die Hilfe in `src/lang/`. Beide READMEs sagen dasselbe.
+- Ändert sich, wie man beiträgt (Dienste, Sprachen, Tests), auch `CONTRIBUTING.md`.
+- Vor dem Commit die Doku gegen den geänderten Code lesen, nicht aus dem Gedächtnis: Namen, Werte und Listen müssen genau stimmen.
+
 ## Logo
 
 `scripts/logo.mjs` erzeugt alles in `assets/` (Anleitung im Kopf der Datei). Die Dateien dort nicht von Hand ändern.

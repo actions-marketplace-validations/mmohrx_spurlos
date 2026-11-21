@@ -46,11 +46,12 @@ npx spurlos <url>
 
 | Option | |
 |---|---|
-| `--lang de\|en` | Sprache des Berichts. Ohne Angabe gilt `SPURLOS_LANG`, dann die Sprache des Systems (`LANG`), sonst `de` |
+| `--lang de\|en` | Sprache des Berichts. Ohne Angabe gilt `SPURLOS_LANG`, dann die Sprache des Systems (`LC_ALL`, `LC_MESSAGES`, `LANG`), sonst `de` |
 | `--verbose`, `-v` | Details auch zu den grünen Prüfungen |
 | `--json` | vollständiges Ergebnis als JSON |
 | `--html` | Bericht als eigenständige HTML-Seite, etwa zum Weiterschicken: `spurlos firma.de --html > bericht.html` |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
+| `--help`, `-h` | Hilfe |
 
 Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Im Terminal ist der Bericht farbig. Leitest du die Ausgabe in eine Datei oder eine Pipe um oder setzt `NO_COLOR`, bleibt es reiner Text.
 
@@ -61,10 +62,10 @@ Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und ge
 | Fremde Server | keine | – | mindestens eine Anfrage an eine andere Domain |
 | Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies | eigene Cookies oder Einträge, die spurlos nicht kennt; ein Cookie ohne `Secure` auf einer https-Seite; ein Sitzungs-Cookie ohne `HttpOnly` | Cookie einer fremden Domain oder eines bekannten Trackers |
 | Impressum und Datenschutz | beide verlinkt und erreichbar | – | ein Link fehlt oder die Seite antwortet mit einem Fehler |
-| HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS, über http antwortet nichts, Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
+| HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS (oder `max-age=0`), über http antwortet nichts, Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
 | Sicherheits-Header | alle gesetzt | einer oder mehrere fehlen | – |
 | Formulare | keine oder alle senden verschlüsselt an die eigene Seite | eines sendet an einen fremden Server | eines sendet unverschlüsselt über http |
-| Verratene Details | nichts, oder nur der Name der Software | eine Versionsnummer in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-Generator` oder `<meta name="generator">` | – |
+| Verratene Details | nichts, oder nur der Name der Software | eine Versionsnummer in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` oder `<meta name="generator">` | – |
 
 Geprüft werden bei den Headern `Content-Security-Policy`, `X-Frame-Options` (oder `frame-ancestors` in der CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` und `Permissions-Policy`. CSP und Referrer-Policy zählen auch als `<meta>`-Tag, für Hoster wie GitHub Pages, bei denen sich keine Header setzen lassen. Impressum und Datenschutzerklärung erkennt spurlos am Linktext oder an der Adresse, auf Deutsch und Englisch. Ein Link wie „Impressum & Datenschutz“ zählt für beides.
 
@@ -120,7 +121,13 @@ Die Sprache richtet sich wie bei der CLI nach `--lang`, `SPURLOS_LANG` oder dem 
 npx spurlos https://staging.firma.de || echo "neue Spuren"
 ```
 
-Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn die Seite sich nicht prüfen ließ. Mit `--json` kommt das vollständige Ergebnis samt aller Anfragen als JSON.
+Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn die Seite sich nicht prüfen ließ oder der Aufruf falsch war (unbekannte Option, ungültige URL, unbekannte Sprache, `--json` zusammen mit `--html`).
+
+Mit `--json` kommt das vollständige Ergebnis als JSON: `scan` enthält die Rohdaten (alle Anfragen, Cookies, Speicher, Header, Zertifikat, Links, Formulare), `results` je Prüfung ein Objekt mit `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) und den Befunden, `note` den Hinweis auf die fehlende Rechtsberatung. Die roten Prüfungen etwa:
+
+```
+npx spurlos https://staging.firma.de --json | jq -r '.results[] | select(.level == "red") | .check'
+```
 
 ## Bekannte Dienste ergänzen
 
