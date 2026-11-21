@@ -17,8 +17,11 @@ export type StorageFinding = Scan['storage'][number] & { service: Service | unde
 export type Disclosure = { source: 'header' | 'meta'; name: string; value: string; version: boolean }
 export type LegalKind = 'impressum' | 'datenschutz'
 export type LegalPage = { kind: LegalKind; link?: Link; visit?: Visit }
-/** redirects: http sends on to https · no-redirect: the page answers over plain http · unreachable: nothing answers on http */
-export type HttpRedirect = 'redirects' | 'no-redirect' | 'unreachable'
+/**
+ * redirects: http sends on to https · no-redirect: the page answers over plain http · unreachable: nothing answers on http ·
+ * refused: http answers with an error (4xx, 5xx), often a bot check, so whether it redirects stays open
+ */
+export type HttpRedirect = 'redirects' | 'no-redirect' | 'unreachable' | 'refused'
 export type FormFinding = Form & { problem?: 'unencrypted' | 'third-party' }
 /** insecure: loaded over http on an https page · no-integrity: a script or stylesheet of another site without integrity="…" */
 export type ResourceFinding = Resource & { problem: 'insecure' | 'no-integrity' }
@@ -130,8 +133,8 @@ export const disclosureLevel = (d: Disclosure): Level => (d.version ? 'yellow' :
 export const storageLevel = (e: StorageFinding): Level => (isNecessary(e.service) ? 'green' : 'yellow')
 export const legalLevel = (p: LegalPage): Level => (ok(p.visit) ? 'green' : 'red')
 export const certLevel = (daysLeft: number): Level => (daysLeft < 7 ? 'red' : daysLeft < 14 ? 'yellow' : 'green')
-/** nothing on http is yellow: browsers mostly try https first, but old http:// links break */
-export const httpLevel = (h: HttpRedirect): Level => (h === 'no-redirect' ? 'red' : h === 'unreachable' ? 'yellow' : 'green')
+/** nothing on http is yellow: browsers mostly try https first, but old http:// links break; refused is yellow, as it is left open */
+export const httpLevel = (h: HttpRedirect): Level => (h === 'no-redirect' ? 'red' : h === 'redirects' ? 'green' : 'yellow')
 export const formLevel = (f: FormFinding): Level => (f.problem === 'unencrypted' ? 'red' : f.problem ? 'yellow' : 'green')
 /** over http the browser blocks scripts, stylesheets and frames, and upgrades or drops images and media: red, yellow */
 export const resourceLevel = (r: ResourceFinding): Level =>
@@ -208,7 +211,8 @@ export function https(scan: Scan, now = Date.now()): Result {
     levels.push(certLevel(r.certDaysLeft))
   }
   if (scan.http) {
-    r.http = 'error' in scan.http ? 'unreachable' : scan.http.finalUrl.startsWith('https:') ? 'redirects' : 'no-redirect'
+    const h = scan.http
+    r.http = 'error' in h ? 'unreachable' : h.finalUrl.startsWith('https:') ? 'redirects' : h.status >= 400 ? 'refused' : 'no-redirect'
     levels.push(httpLevel(r.http))
   }
   if (secure && !hsts) levels.push('yellow')

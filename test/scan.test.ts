@@ -37,6 +37,24 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(long).not.toContain('--verbose')
   })
 
+  test('links and forms inside shadow roots count', async () => {
+    const s = await scan(`${SITE}/components.html`, { setup: offline, fetch: redirects })
+    const results = runChecks(s)
+    expect(pick(results, 'legal').level).toBe('green')
+    expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
+    expect(pick(results, 'forms').forms.map(f => [f.action, f.problem])).toEqual([['http://shop.example/newsletter', 'unencrypted']])
+  })
+
+  test('a server that refuses http://, often a bot check, leaves the redirect open', async () => {
+    const refuses: typeof fetch = async input => {
+      const r = new Response(null, { status: 403 })
+      Object.defineProperty(r, 'url', { value: String(input) })
+      return r
+    }
+    const s = await scan(`${SITE}/`, { setup: offline, fetch: refuses })
+    expect(pick(runChecks(s), 'https')).toMatchObject({ level: 'yellow', http: 'refused' })
+  })
+
   test('a page with fonts, tag manager, video, cookies and leaky forms', async () => {
     const s = await scan(`${SITE}/tracked.html`, { setup: offline, fetch: staysOnHttp })
     const results = runChecks(s)

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Seite aus Web Components</title>
+</head>
+<body>
+  <h1>Seite aus Web Components</h1>
+  <site-shell></site-shell>
+  <script>
+    // the footer sits two shadow roots deep, as in portals built from web components
+    customElements.define('site-footer', class extends HTMLElement {
+      connectedCallback() {
+        this.attachShadow({ mode: 'open' }).innerHTML =
+          '<form action="http://shop.example/newsletter" method="post"><input name="mail"></form>' +
+          '<a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a>'
+      }
+    })
+    customElements.define('site-shell', class extends HTMLElement {
+      connectedCallback() {
+        this.attachShadow({ mode: 'open' }).innerHTML = '<main>Inhalt</main><site-footer></site-footer>'
+      }
+    })
+  </script>
+</body>
+</html>

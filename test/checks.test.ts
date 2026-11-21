@@ -177,6 +177,11 @@ describe('https', () => {
     expect(https({ ...good, http: { url: 'http://www.firma.de/', error: 'refused' } }, NOW)).toMatchObject({ level: 'yellow', http: 'unreachable' })
   })
 
+  test('an error on http, often a bot check, leaves the redirect open: yellow, not red', () => {
+    expect(https({ ...good, http: { url: 'http://www.firma.de/', status: 403, finalUrl: 'http://www.firma.de/' } }, NOW)).toMatchObject({ level: 'yellow', http: 'refused' })
+    expect(https({ ...good, http: { url: 'http://www.firma.de/', status: 503, finalUrl: 'http://www.firma.de/' } }, NOW)).toMatchObject({ level: 'yellow', http: 'refused' })
+  })
+
   test('a page over plain http is red', () => {
     expect(https({ ...base, finalUrl: 'http://www.firma.de/' }, NOW)).toMatchObject({ level: 'red', https: false })
   })

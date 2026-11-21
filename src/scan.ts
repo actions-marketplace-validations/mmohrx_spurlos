@@ -206,11 +206,15 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
         const s = window[area]
         for (let i = 0; i < s.length; i++) storage.push({ area, key: s.key(i) ?? '' })
       }
-      const links = [...document.querySelectorAll('a[href]')].map(a => ({
+      // web components keep their markup in shadow roots, footers with Impressum and Datenschutz among them
+      const roots: (Document | ShadowRoot)[] = [document]
+      for (let i = 0; i < roots.length; i++) for (const el of roots[i]!.querySelectorAll('*')) if (el.shadowRoot) roots.push(el.shadowRoot)
+      const all = (selector: string) => roots.flatMap(r => [...r.querySelectorAll(selector)])
+      const links = all('a[href]').map(a => ({
         text: (a.textContent ?? '').trim().replace(/\s+/g, ' '),
         href: (a as HTMLAnchorElement).href,
       }))
-      const forms = [...document.forms].map(f => ({ action: f.action, method: (f.getAttribute('method') ?? 'get').toLowerCase() }))
+      const forms = (all('form') as HTMLFormElement[]).map(f => ({ action: f.action, method: (f.getAttribute('method') ?? 'get').toLowerCase() }))
       // the address as the browser resolved it, also where it blocked the file (a script over http on an https page)
       const resources: Resource[] = []
       const embed = (tag: string, el: Element, url: string) => {
@@ -222,12 +226,12 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
         const type = (el.getAttribute('type') ?? '').trim().toLowerCase()
         return !el.hasAttribute('nomodule') && (type === '' || type === 'module' || /^(text|application)\/(x-)?(java|ecma)script$/.test(type))
       }
-      for (const el of document.querySelectorAll('script[src]')) if (runs(el)) embed('script', el, (el as HTMLScriptElement).src)
-      for (const el of document.querySelectorAll('link[href]')) {
+      for (const el of all('script[src]')) if (runs(el)) embed('script', el, (el as HTMLScriptElement).src)
+      for (const el of all('link[href]')) {
         if (/(^|\s)stylesheet(\s|$)/i.test(el.getAttribute('rel') ?? '')) embed('stylesheet', el, (el as HTMLLinkElement).href)
       }
       for (const tag of ['iframe', 'img', 'video', 'audio', 'source'] as const) {
-        for (const el of document.querySelectorAll(`${tag}[src]`)) embed(tag, el, (el as HTMLImageElement).src)
+        for (const el of all(`${tag}[src]`)) embed(tag, el, (el as HTMLImageElement).src)
       }
       const meta = [...document.querySelectorAll('meta[http-equiv]')].find(m => m.getAttribute('http-equiv')?.toLowerCase() === 'content-security-policy')
       const referrer = document.querySelector('meta[name="referrer" i]')?.getAttribute('content') ?? null
