@@ -68,6 +68,26 @@ describe('own servers on other sites', () => {
     return Object.fromEntries(r.hosts.map(h => [h.host, h.own ?? null]))
   }
 
+  test('the servers of the platform the page runs on, known by its headers; its apps and trackers stay red', () => {
+    const wix = { headers: { 'x-wix-request-id': '1795266227.34' } }
+    expect(own(wix, 'static.parastorage.com', 'frog.wix.com', 'www.googletagmanager.com')).toEqual({
+      'static.parastorage.com': 'platform',
+      'frog.wix.com': 'platform',
+      'www.googletagmanager.com': null,
+    })
+    // without the header the same servers are anyone's
+    expect(own({}, 'static.parastorage.com')).toEqual({ 'static.parastorage.com': null })
+    // a header with a value has to say the platform's name
+    expect(own({ headers: { 'powered-by': 'Shopify' } }, 'cdn.shopify.com', 'static.parastorage.com')).toEqual({ 'cdn.shopify.com': 'platform', 'static.parastorage.com': null })
+    expect(own({ headers: { 'powered-by': 'Something else' } }, 'cdn.shopify.com')).toEqual({ 'cdn.shopify.com': null })
+    const r = thirdParty({ ...base, ...wix, requests: [req('static.parastorage.com')] })
+    expect(r).toMatchObject({ level: 'yellow', platform: 'Wix' })
+    // a cookie on the platform's domain is the site's too
+    const c = cookies({ ...base, headers: { 'powered-by': 'Shopify' }, cookies: [{ name: '_shop_app_essential', domain: 'shop.app', expires: -1, secure: true, httpOnly: false }] })
+    if (c.check !== 'cookies') throw new Error()
+    expect(c.cookies[0]).toMatchObject({ thirdParty: true, own: 'platform' })
+  })
+
   test('--own names them, subdomains included; they are yellow', () => {
     expect(own({ own: ['ztat.net'] }, 'img01.ztat.net', 'ztat.net', 'notztat.net')).toEqual({ 'img01.ztat.net': 'option', 'ztat.net': 'option', 'notztat.net': null })
     expect(thirdParty({ ...base, own: ['ztat.net'], requests: [req('img01.ztat.net')] }).level).toBe('yellow')

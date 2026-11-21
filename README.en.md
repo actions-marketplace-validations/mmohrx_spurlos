@@ -78,7 +78,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 
 | Check | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address; and servers that seem to belong to the site (`--own`, certificate, name) | at least one request to another domain that belongs to no cookie banner, no captcha and not to the site |
+| Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address; and servers that seem to belong to the site (`--own`, certificate, name), and those of the platform it runs on (Wix, Shopify) | at least one request to another domain that belongs to no cookie banner, no captcha and not to the site |
 | Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a cookie of another domain that does not seem to belong to the site, or one of a known tracker |
 | Legal notice and privacy policy | both linked and reachable | a page turns spurlos away (`401`, `403`, `429`) or does not answer before the timeout, often a bot check | a link is missing or the page answers with another error, such as `404`; a PDF counts as reachable |
 | HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing or only an error answers on http (4xx, 5xx, often a bot check), certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
@@ -110,6 +110,8 @@ Many sites load images and scripts from a second domain of their own, Wikipedia 
 - **by its name:** the domain carries the site's name as a whole word, `media.kuketz.de` on `kuketz-blog.de`, `img.chefkoch-cdn.de` on `chefkoch.de` or `bildstatic.de` on `bild.de`. Parts of a word do not count (`ottonova.de` does not belong to `otto.de`), nor do short names and common words such as `shop` or `blog`. This is a guess; check it.
 
 A known service from `src/services.json` never belongs to the site, not even with `--own`. The same goes for cookies of these domains. It stays yellow because the IP address still goes to another host; if a provider runs it, the provider learns it too.
+
+The exception is the platform the site itself runs on. spurlos knows it by a header of the page: Wix by `x-wix-request-id`, Shopify by `powered-by: Shopify`. Its servers are then yellow (“belongs to the site’s host”), its cookies too, since they serve the site anyway and know the IP address already. Apps, trackers and other services on the site stay red. In `--json` the platform is under `platform` in `third-party`.
 
 ## How spurlos visits
 
@@ -175,7 +177,7 @@ npx spurlos https://staging.company.com --lang en || echo "new traces"
 
 Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, more than one of `--json`, `--html`, `--pdf`, one of them with several `-o`, a baseline that cannot be read, a login for addresses on different servers, anything but a host name with `--own`) or a file of `-o` could not be written. A missing or rejected login ends with `2` too, and so does a page that turns the request away with `403` or `429`. With several addresses the worst case counts; spurlos still writes the reports of the pages it could check.
 
-With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate with the names in it, links, forms, embedded files, the hosts of `--own`), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `resources`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. Servers and cookies that seem to belong to the site carry `own` with the reason (`option`, `certificate`, `name`). Under `third-party`, `selfHosted` lists the known services running on the site itself. With several addresses it is a list of such objects. The red checks, for example:
+With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate with the names in it, links, forms, embedded files, the hosts of `--own`), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `resources`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. Servers and cookies that seem to belong to the site carry `own` with the reason (`option`, `certificate`, `name`, `platform`). Under `third-party`, `selfHosted` lists the known services running on the site itself. With several addresses it is a list of such objects. The red checks, for example:
 
 ```
 npx spurlos https://staging.company.com --json | jq -r '.results[] | select(.level == "red") | .check'

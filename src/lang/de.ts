@@ -116,7 +116,10 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
     option: 'gehört laut --own zur Seite',
     certificate: 'gehört laut Zertifikat zur Seite',
     name: 'gehört dem Namen nach zur Seite',
+    platform: 'gehört zum Hoster der Seite',
   } satisfies Record<OwnReason, string>,
+  platformNote: (name: string) =>
+    `Die Seite läuft auf ${name}. Dessen Server sind gelb statt rot: Sie liefern die Seite ohnehin aus und kennen die IP-Adresse damit schon. Apps und Tracker auf der Seite zählen trotzdem.`,
   ownNote:
     'Gelb statt rot, wo ein Server zur Seite zu gehören scheint. Die IP-Adresse geht trotzdem an einen anderen Host; betreibt ihn ein Dienstleister, erfährt auch der sie. Eigene Server nennst du mit --own.',
 

@@ -6,14 +6,17 @@ export type Level = 'green' | 'yellow' | 'red'
 /**
  * httpOnly: its cookies hold a session and should be out of reach of JavaScript.
  * paths: parts of a file's path that give the service away where it is hosted on the site itself (Borlabs Cookie).
+ * headers: a platform that hosts the page itself, known by a response header of the page: a name (x-wix-request-id), or
+ * a name and a part of its value (powered-by: Shopify).
  */
-export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; storage?: string[]; paths?: string[]; httpOnly?: boolean }
+export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; storage?: string[]; paths?: string[]; httpOnly?: boolean; headers?: string[] }
 
 /**
  * Why another site counts as the page's own: named with --own · listed in the page's own certificate · named like
- * the page (media.kuketz.de on kuketz-blog.de). A known service never does.
+ * the page (media.kuketz.de on kuketz-blog.de) · it is the platform that hosts the page (Wix's servers on a Wix
+ * site). A known service never does, but for the platform's.
  */
-export type OwnReason = 'option' | 'certificate' | 'name'
+export type OwnReason = 'option' | 'certificate' | 'name' | 'platform'
 export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason }
 /**
  * missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie ·
@@ -35,7 +38,7 @@ export type FormFinding = Form & { problem?: 'unencrypted' | 'third-party' }
 export type ResourceFinding = Resource & { problem: 'insecure' | 'no-integrity' }
 
 export type Result =
-  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[] }
+  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string }
   | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
   | { check: 'https'; level: Level; https: boolean; certDaysLeft?: number; http?: HttpRedirect; hsts: boolean }
@@ -105,6 +108,17 @@ export function serviceOfPath(url: string): Service | undefined {
   return services.find(s => s.paths?.some(p => (p.endsWith('/') ? path.includes(p) : path.endsWith(p))))
 }
 
+/** The platform the page runs on, by its headers (Wix, Shopify): it serves the page, so it knows the visitor's IP anyway. */
+export function platformOf(scan: Scan): Service | undefined {
+  return services.find(s =>
+    s.headers?.some(h => {
+      const [name = '', ...rest] = h.split(':')
+      const value = scan.headers[name.trim().toLowerCase()]
+      return value !== undefined && value.toLowerCase().includes(rest.join(':').trim().toLowerCase())
+    }),
+  )
+}
+
 /** The cookie banners the page loads, by their servers, files, cookies and storage entries. */
 export function consentManagers(scan: Scan): string[] {
   const found = [
@@ -144,8 +158,10 @@ export function ownership(scan: Scan): (host: string) => OwnReason | undefined {
   const declared = scan.own ?? []
   const certified = certificateSites(scan, own)
   const labels = [...own].map(s => getDomainWithoutSuffix(s) ?? s)
+  const platform = platformOf(scan)
   return host => {
-    if (serviceOfHost(host)) return undefined
+    const service = serviceOfHost(host)
+    if (service) return platform && service === platform ? 'platform' : undefined
     if (declared.some(d => host === d || host.endsWith('.' + d))) return 'option'
     if (certified.has(site(host))) return 'certificate'
     const names = namesOf(getDomainWithoutSuffix(host) ?? host)
@@ -190,7 +206,8 @@ export function thirdParty(scan: Scan): Result {
       return { host, service: serviceOfHost(host) ?? byPath.get(host), requests, ...(reason ? { own: reason } : {}) }
     })
     .sort((a, b) => a.host.localeCompare(b.host))
-  return { check: 'third-party', level: worst(hosts.map(hostLevel)), hosts, consent: consentManagers(scan), selfHosted: [...selfHosted] }
+  const platform = platformOf(scan)
+  return { check: 'third-party', level: worst(hosts.map(hostLevel)), hosts, consent: consentManagers(scan), selfHosted: [...selfHosted], ...(platform ? { platform: platform.name } : {}) }
 }
 
 const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.status >= 200 && v.status < 300

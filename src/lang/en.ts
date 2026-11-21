@@ -114,7 +114,10 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
     option: 'belongs to the site per --own',
     certificate: 'belongs to the site per its certificate',
     name: 'belongs to the site by its name',
+    platform: 'belongs to the site’s host',
   },
+  platformNote: name =>
+    `The site runs on ${name}. Its servers are yellow, not red: they serve the site anyway and so know the IP address already. Apps and trackers on the site still count.`,
   ownNote:
     'Yellow, not red, where a server seems to belong to the site. The IP address still goes to another host; if a provider runs it, the provider learns it too. Name your own servers with --own.',
 

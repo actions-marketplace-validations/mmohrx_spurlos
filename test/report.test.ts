@@ -147,3 +147,24 @@ test('services the site runs itself are named, in either language; an older base
   const old = { check: 'third-party', level: 'green', hosts: [], consent: [] } as unknown as Result
   expect(text(page('https://shop.example/'), [old], 'de', { verbose: true })).not.toContain('Auf eigenen Servern')
 })
+
+test('the platform the site runs on is named, and gives no tips for its own servers', () => {
+  const r: Result = {
+    check: 'third-party',
+    level: 'red',
+    hosts: [
+      { host: 'cdn.shopify.com', service: { name: 'Shopify', category: 'cdn', hosts: ['cdn.shopify.com'] }, requests: 3, own: 'platform' },
+      { host: 'www.googletagmanager.com', service: { name: 'Google Tag Manager', category: 'tracking', hosts: ['googletagmanager.com'] }, requests: 1 },
+    ],
+    consent: [],
+    selfHosted: [],
+    platform: 'Shopify',
+  }
+  const de = text(page('https://shop.example/'), [r], 'de')
+  expect(de).toContain('🟡 cdn.shopify.com – Shopify, gehört zum Hoster der Seite (3 Anfragen)')
+  expect(de).toContain('Die Seite läuft auf Shopify.')
+  // the CDN tip is for libraries a site can serve itself, not for its host
+  expect(de).not.toContain('Bibliotheken von einem CDN')
+  expect(de).not.toContain('Eigene Server nennst du mit --own')
+  expect(text(page('https://shop.example/'), [r], 'en')).toContain('The site runs on Shopify.')
+})
