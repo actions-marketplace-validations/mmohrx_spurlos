@@ -3,7 +3,8 @@ import { plural } from './plural.ts'
 
 
 const en: Messages = {
-  usage: langs => `spurlos <url> [--lang ${langs}] [--verbose] [--json] [--user-agent <string>]
+  usage: langs => `spurlos <url> [--lang ${langs}] [--verbose] [--json | --html] [--user-agent <string>]
+spurlos mcp [--lang ${langs}] [--user-agent <string>]
 
 Opens the site like a new visitor who clicks nothing, and shows which
 third-party servers it contacts and which cookies it sets.
@@ -12,14 +13,23 @@ third-party servers it contacts and which cookies it sets.
                 the system language (LC_ALL, LC_MESSAGES, LANG), else de
   --verbose     details for the green checks too
   --json        the result as JSON instead of text
+  --html        the report as an HTML page, e.g.: spurlos <url> --html > report.html
   --user-agent  your own user agent for every request
   --help        this help
+
+spurlos mcp starts an MCP server over stdio: it lets an AI assistant
+check sites itself, setup in the README.
 
 Exit code: 0 without a red finding, 1 with a red finding, 2 on an error.`,
   disclaimer: 'Technical pre-check – not legal advice, and no statement on whether the site complies with the GDPR.',
   openedAs: url => `opened as ${url}`,
   unknownLang: (from, value, langs) => `${from} only knows ${langs}, not ${value}.`,
   invalidUrl: arg => `${arg} is not a valid address.`,
+  oneFormat: '--json and --html only go one at a time.',
+  mcpOnly: flags => `spurlos mcp only takes --lang and --user-agent, not ${flags}.`,
+  urlMissing: 'url is missing: the address of the site as a string, e.g. example.com.',
+  unknownFormat: value => `format only knows text and json, not ${value}.`,
+  checkedAt: date => `checked on ${date}`,
   failed: (url, reason) => `${url} could not be checked: ${reason}`,
   title: {
     'third-party': 'Third-party servers',

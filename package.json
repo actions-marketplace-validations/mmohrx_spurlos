@@ -28,7 +28,9 @@
     "spurlos": "dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "assets/logo-light.svg",
+    "assets/logo-dark.svg"
   ],
   "engines": {
     "node": ">=22"

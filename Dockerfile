@@ -19,5 +19,6 @@ COPY --from=build /app/node_modules node_modules
 RUN node_modules/.bin/playwright install --with-deps chromium-headless-shell \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/dist dist
+COPY assets/logo-light.svg assets/logo-dark.svg assets/
 USER node
 ENTRYPOINT ["node", "dist/cli.js"]

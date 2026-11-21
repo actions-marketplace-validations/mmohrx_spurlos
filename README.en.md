@@ -25,7 +25,7 @@ On the left a page with problems, on the right a clean one:
 
 ![Colored output of spurlos for a page with problems and a clean page](examples/vorschau.png)
 
-The full reports for both pages, as text in German and English and as JSON, are in [`examples/`](examples/). Both pages come from the tests and run offline as `https://shop.example`; `npm run examples` regenerates everything.
+The full reports for both pages, as text in German and English and as JSON, are in [`examples/`](examples/), along with an HTML page each. Both pages come from the tests and run offline as `https://shop.example`; `pnpm examples` regenerates everything.
 
 spurlos uses a real browser (Chromium via Playwright), so it also finds requests and cookies that only JavaScript creates. It opens the legal notice, the privacy policy and the http address separately; those visits do not count towards the page's requests and cookies. Whether http redirects to https is asked of the server directly rather than through the browser, since Chromium switches to https on its own.
 
@@ -49,6 +49,7 @@ npx spurlos <url> --lang en
 | `--lang de\|en` | language of the report. Without it, `SPURLOS_LANG` applies, then the system language (`LANG`), else `de` |
 | `--verbose`, `-v` | details for the green checks too |
 | `--json` | the full result as JSON |
+| `--html` | the report as a self-contained HTML page, e.g. to pass on: `spurlos example.com --html > report.html` |
 | `--user-agent <string>` | your own user agent for every request |
 
 The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. In a terminal the report is colored; redirected to a file or a pipe, or with `NO_COLOR` set, it stays plain text.
@@ -90,6 +91,28 @@ spurlos/0.2.0 (+https://github.com/mmohrx/spurlos)
 ```
 
 Because spurlos opens pages it does not know, Chromium runs in its own sandbox wherever the system allows one (macOS, Windows, Linux with user namespaces). Without one, spurlos says so on stderr. In the Docker image Chromium runs without its sandbox, as the container, running as user `node`, is the boundary; on Linux, that is the best way to check unknown sites. spurlos accepts no downloads from a page.
+
+The HTML report holds every finding, with the green checks folded. It loads nothing and contains no JavaScript, so it opens offline and can be sent by mail.
+
+## For AI assistants (MCP)
+
+`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`) and `format` (`text` or `json`). It runs on your machine, like the CLI.
+
+In Claude Code:
+
+```
+claude mcp add spurlos -- npx spurlos mcp
+```
+
+In other clients, e.g. Claude Desktop, under `mcpServers`:
+
+```json
+{ "spurlos": { "command": "npx", "args": ["spurlos", "mcp"] } }
+```
+
+With Docker instead of Node: `"command": "docker", "args": ["run", "-i", "--rm", "ghcr.io/mmohrx/spurlos", "mcp"]`.
+
+As with the CLI, the language follows `--lang`, `SPURLOS_LANG` or the system, and `--user-agent` applies to every request. At most two checks run at a time, others wait. Every report carries the note that it is not legal advice.
 
 ## In CI
 

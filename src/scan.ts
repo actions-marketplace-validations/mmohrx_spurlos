@@ -57,6 +57,15 @@ export type Cookie = { name: string; domain: string; expires: number; secure: bo
 export type StorageEntry = { area: 'localStorage' | 'sessionStorage'; key: string }
 export type Link = { text: string; href: string }
 export type Form = { action: string; method: string }
+/** What a user typed, as a URL to open: https:// unless they wrote http:// or https://; undefined if it is none. */
+export function toUrl(arg: string): string | undefined {
+  try {
+    return new URL(/^https?:\/\//i.test(arg) ? arg : `https://${arg}`).href
+  } catch {
+    return undefined
+  }
+}
+
 /** what a Visit's error says when the server sent nothing at all; the report translates it */
 export const NO_RESPONSE = 'no response'
 

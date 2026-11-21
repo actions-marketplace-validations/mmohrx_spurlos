@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import type { Result } from '../src/checks.ts'
-import { clean, json, text } from '../src/report.ts'
+import { clean, html, json, text } from '../src/report.ts'
 import type { Scan } from '../src/scan.ts'
 
 // escapes, so the test shows what it feeds in: ESC, BEL, a right-to-left override, an Arabic letter mark, an 8-bit CSI
@@ -25,4 +25,27 @@ test('what the page says cannot steer the terminal', () => {
   expect(out).not.toMatch(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f؜‪-‮]/)
   expect(JSON.parse(out).results[0].findings[0].value).toBe(evil)
   expect(clean('Größe „ok“ – fine')).toBe('Größe „ok“ – fine')
+})
+
+test('what the page says cannot add markup to the HTML report', () => {
+  const scan = { url: 'https://shop.example/', finalUrl: 'https://shop.example/"><script>alert(1)</script>', settled: false } as Scan
+  const results: Result[] = [
+    { check: 'disclosure', level: 'yellow', findings: [{ source: 'meta', name: 'generator', value: `<img src=x onerror=alert(1)> ${evil}`, version: true }] },
+    { check: 'headers', level: 'green', missing: [], checked: 5 },
+  ] as Result[]
+  const page = html(scan, results, 'de', { now: Date.UTC(2026, 10, 21, 12), timeZone: 'UTC' })
+  expect(page).not.toMatch(/<script|<img/)
+  expect(page).toContain('&lt;img src=x onerror=alert(1)&gt; WordPress�[2J')
+  expect(page).toContain('/&quot;&gt;&lt;script&gt;')
+  expect(page).not.toContain('‮')
+  // nothing loads from anywhere, even if something slipped through
+  expect(page).toContain(`content="default-src 'none'; style-src 'unsafe-inline'"`)
+  // the yellow check open, the green one a single line, the note when the page was still loading, the disclaimer always
+  expect(page).toMatch(/<details class="check yellow" open>/)
+  expect(page).toMatch(/<div class="check green">/)
+  expect(page).toContain('lud noch nach')
+  expect(page).toContain('geprüft am 21. November 2026 um 12:00 UTC')
+  // the logo inline, for light and dark
+  expect(page).toMatch(/<svg class="logo light"[^>]*>.*<svg class="logo dark"/s)
+  expect(page).toContain('keine Rechtsberatung')
 })

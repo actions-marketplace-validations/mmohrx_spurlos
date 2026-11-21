@@ -1,10 +1,10 @@
 // Writes the example reports in examples/: both test pages, checked offline as https://shop.example,
-// as text in every language, as JSON and as a picture of the colored output. Run with `npm run examples`.
+// as text in every language, as JSON, as an HTML page and as a picture of the colored output. Run with `pnpm examples`.
 import { mkdir, writeFile } from 'node:fs/promises'
 import { chromium } from 'playwright'
 import { runChecks } from '../src/checks.ts'
 import { DEFAULT_LANG, LANGS } from '../src/lang/index.ts'
-import { json, text } from '../src/report.ts'
+import { html as htmlReport, json, text } from '../src/report.ts'
 import { scan } from '../src/scan.ts'
 import { offline, redirects, SITE, staysOnHttp } from '../test/site.ts'
 
@@ -26,6 +26,7 @@ for (const p of pages) {
     await writeFile(new URL(`${p.name}${suffix}.txt`, out), text(s, results, lang, { verbose: true }) + '\n')
   }
   await writeFile(new URL(`${p.name}.json`, out), json(s, results, DEFAULT_LANG) + '\n')
+  await writeFile(new URL(`${p.name}.html`, out), htmlReport(s, results, DEFAULT_LANG, { timeZone: 'Europe/Berlin' }))
   colored.push(text(s, results, DEFAULT_LANG, { color: true }))
 }
 

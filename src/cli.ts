@@ -2,14 +2,16 @@
 import { parseArgs } from 'node:util'
 import { runChecks } from './checks.ts'
 import { LANGS, MESSAGES, pickLang } from './lang/index.ts'
-import { clean, json, text } from './report.ts'
-import { scan } from './scan.ts'
+import { serve } from './mcp.ts'
+import { clean, html, json, text } from './report.ts'
+import { scan, toUrl } from './scan.ts'
 
 // colors only in a terminal that wants them: tty.hasColors() honours NO_COLOR, FORCE_COLOR and TERM
 const color = process.stdout.isTTY && process.stdout.hasColors()
 
 const OPTIONS = {
   json: { type: 'boolean' },
+  html: { type: 'boolean' },
   verbose: { type: 'boolean', short: 'v' },
   lang: { type: 'string' },
   'user-agent': { type: 'string' },
@@ -43,27 +45,49 @@ if (unknown) {
   process.exit(2)
 }
 
-let url: string
-try {
-  url = new URL(/^https?:\/\//i.test(arg) ? arg : `https://${arg}`).href
-} catch {
-  console.error(clean(`spurlos: ${say.invalidUrl(arg)}`))
-  process.exit(2)
+// spurlos mcp: a server for AI assistants on stdin and stdout; it ends when stdin closes
+if (arg === 'mcp') await mcp()
+else await check(arg)
+
+async function mcp() {
+  // the format is the client's to choose, per call
+  const ignored = (['json', 'html', 'verbose'] as const).filter(f => values[f]).map(f => `--${f}`)
+  if (ignored.length) {
+    console.error(`spurlos: ${say.mcpOnly(ignored.join(', '))}`)
+    process.exit(2)
+  }
+  const ua = values['user-agent']
+  await serve(ua ? { lang, userAgent: ua } : { lang })
 }
 
-try {
-  const ua = values['user-agent']
-  const s = await scan(url, ua ? { userAgent: ua } : {})
-  const results = runChecks(s)
-  // on stderr, so it neither ends up in --json nor gets lost; the Docker image sets SPURLOS_NO_SANDBOX and stays quiet
-  if (!s.sandbox && process.env.SPURLOS_NO_SANDBOX !== '1') console.error(`spurlos: ${say.noSandbox}`)
-  const width = Math.min(process.stdout.columns || 80, 100)
-  console.log(values.json ? json(s, results, lang) : text(s, results, lang, { color, verbose: values.verbose ?? false, width }))
-  // exitCode, not exit(): on a pipe stdout is written asynchronously, and exit() would cut a long report short
-  process.exitCode = results.some(r => r.level === 'red') ? 1 : 0
-} catch (e) {
-  // the first line says what went wrong (Playwright adds a call log below); it may quote what the server sent
-  const reason = (e instanceof Error ? e.message : String(e)).split('\n')[0] ?? ''
-  console.error(clean(`spurlos: ${say.failed(url, reason)}`))
-  process.exitCode = 2
+async function check(arg: string) {
+  if (values.json && values.html) {
+    console.error(`spurlos: ${say.oneFormat}`)
+    process.exit(2)
+  }
+
+  const url = toUrl(arg)
+  if (!url) {
+    console.error(clean(`spurlos: ${say.invalidUrl(arg)}`))
+    process.exit(2)
+  }
+
+  try {
+    const ua = values['user-agent']
+    const s = await scan(url, ua ? { userAgent: ua } : {})
+    const results = runChecks(s)
+    // on stderr, so it neither ends up in --json nor gets lost; the Docker image sets SPURLOS_NO_SANDBOX and stays quiet
+    if (!s.sandbox && process.env.SPURLOS_NO_SANDBOX !== '1') console.error(`spurlos: ${say.noSandbox}`)
+    const width = Math.min(process.stdout.columns || 80, 100)
+    console.log(
+      values.json ? json(s, results, lang) : values.html ? html(s, results, lang) : text(s, results, lang, { color, verbose: values.verbose ?? false, width }),
+    )
+    // exitCode, not exit(): on a pipe stdout is written asynchronously, and exit() would cut a long report short
+    process.exitCode = results.some(r => r.level === 'red') ? 1 : 0
+  } catch (e) {
+    // the first line says what went wrong (Playwright adds a call log below); it may quote what the server sent
+    const reason = (e instanceof Error ? e.message : String(e)).split('\n')[0] ?? ''
+    console.error(clean(`spurlos: ${say.failed(url, reason)}`))
+    process.exitCode = 2
+  }
 }

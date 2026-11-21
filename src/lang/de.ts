@@ -6,7 +6,8 @@ import { plural } from './plural.ts'
 // Deutsch mit „du“, Anführungszeichen als Paar „…“.
 
 const de = {
-  usage: (langs: string) => `spurlos <url> [--lang ${langs}] [--verbose] [--json] [--user-agent <kennung>]
+  usage: (langs: string) => `spurlos <url> [--lang ${langs}] [--verbose] [--json | --html] [--user-agent <kennung>]
+spurlos mcp [--lang ${langs}] [--user-agent <kennung>]
 
 Ruft die Seite wie ein neuer Besucher auf, der nichts anklickt, und zeigt,
 welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
@@ -15,14 +16,23 @@ welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
                 die Sprache des Systems (LC_ALL, LC_MESSAGES, LANG), sonst de
   --verbose     Details auch zu den grünen Prüfungen
   --json        Ergebnis als JSON statt als Text
+  --html        Bericht als HTML-Seite, etwa: spurlos <url> --html > bericht.html
   --user-agent  eigene Browserkennung für alle Aufrufe
   --help        diese Hilfe
+
+spurlos mcp startet einen MCP-Server über stdio: Ein KI-Assistent kann
+damit selbst Seiten prüfen lassen, Einrichtung im README.
 
 Exit-Code: 0 ohne roten Befund, 1 mit rotem Befund, 2 bei einem Fehler.`,
   disclaimer: 'Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.',
   openedAs: (url: string) => `aufgerufen als ${url}`,
   unknownLang: (from: string, value: string, langs: string) => `${from} kennt nur ${langs}, nicht ${value}.`,
   invalidUrl: (arg: string) => `${arg} ist keine gültige Adresse.`,
+  oneFormat: '--json und --html gehen nur einzeln.',
+  mcpOnly: (flags: string) => `spurlos mcp nimmt nur --lang und --user-agent, nicht ${flags}.`,
+  urlMissing: 'url fehlt: die Adresse der Seite als Text, etwa firma.de.',
+  unknownFormat: (value: string) => `format kennt nur text und json, nicht ${value}.`,
+  checkedAt: (date: string) => `geprüft am ${date}`,
   failed: (url: string, reason: string) => `${url} ließ sich nicht prüfen: ${reason === NO_RESPONSE ? 'keine Antwort' : reason}`,
   title: {
     'third-party': 'Fremde Server',

@@ -25,7 +25,7 @@ Links eine Seite mit Mängeln, rechts eine saubere:
 
 ![Farbige Ausgabe von spurlos für eine Seite mit Mängeln und eine saubere Seite](examples/vorschau.png)
 
-Die vollständigen Berichte beider Seiten, als Text auf Deutsch und Englisch und als JSON, liegen in [`examples/`](examples/). Beide Seiten stammen aus den Tests und laufen offline unter `https://shop.example`; `npm run examples` erzeugt alles neu.
+Die vollständigen Berichte beider Seiten, als Text auf Deutsch und Englisch und als JSON, liegen in [`examples/`](examples/), dazu je eine HTML-Seite. Beide Seiten stammen aus den Tests und laufen offline unter `https://shop.example`; `pnpm examples` erzeugt alles neu.
 
 spurlos nutzt einen echten Browser (Chromium über Playwright). Es findet also auch Anfragen und Cookies, die erst per JavaScript entstehen. Impressum, Datenschutzerklärung und die http-Adresse ruft es getrennt davon auf; diese Aufrufe zählen nicht zu den Anfragen und Cookies der Seite. Ob http auf https weiterleitet, fragt es direkt beim Server und nicht über den Browser nach, denn Chromium wechselt von sich aus auf https.
 
@@ -49,6 +49,7 @@ npx spurlos <url>
 | `--lang de\|en` | Sprache des Berichts. Ohne Angabe gilt `SPURLOS_LANG`, dann die Sprache des Systems (`LANG`), sonst `de` |
 | `--verbose`, `-v` | Details auch zu den grünen Prüfungen |
 | `--json` | vollständiges Ergebnis als JSON |
+| `--html` | Bericht als eigenständige HTML-Seite, etwa zum Weiterschicken: `spurlos firma.de --html > bericht.html` |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
 
 Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Im Terminal ist der Bericht farbig. Leitest du die Ausgabe in eine Datei oder eine Pipe um oder setzt `NO_COLOR`, bleibt es reiner Text.
@@ -90,6 +91,28 @@ spurlos/0.2.0 (+https://github.com/mmohrx/spurlos)
 ```
 
 Weil spurlos fremde Seiten öffnet, läuft Chromium in seiner eigenen Sandbox, wo das System eine erlaubt (macOS, Windows, Linux mit User-Namespaces). Fehlt sie, meldet spurlos das auf stderr. Im Docker-Image läuft Chromium ohne Sandbox, dort ist der Container als Benutzer `node` die Grenze; prüfe unbekannte Seiten unter Linux am besten so. Downloads einer Seite nimmt spurlos nicht an.
+
+Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt. Er lädt nichts nach und enthält kein JavaScript, lässt sich also auch offline öffnen oder per Mail verschicken.
+
+## Für KI-Assistenten (MCP)
+
+`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`) und `format` (`text` oder `json`). Er läuft auf deinem Rechner, wie die CLI.
+
+In Claude Code:
+
+```
+claude mcp add spurlos -- npx spurlos mcp
+```
+
+In anderen Clients, etwa Claude Desktop, unter `mcpServers`:
+
+```json
+{ "spurlos": { "command": "npx", "args": ["spurlos", "mcp"] } }
+```
+
+Mit Docker statt Node: `"command": "docker", "args": ["run", "-i", "--rm", "ghcr.io/mmohrx/spurlos", "mcp"]`.
+
+Die Sprache richtet sich wie bei der CLI nach `--lang`, `SPURLOS_LANG` oder dem System, `--user-agent` gilt für alle Aufrufe. Höchstens zwei Prüfungen laufen gleichzeitig, weitere warten. Jeder Bericht trägt den Hinweis, dass er keine Rechtsberatung ist.
 
 ## In der CI
 
