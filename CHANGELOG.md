@@ -21,6 +21,10 @@
 - Impressum und Datenschutz: Weist die Seite spurlos ab (`401`, `403`, `429`) oder antwortet sie nicht vor dem Timeout, oft wegen eines Bot-Schutzes, ist das gelb statt rot; `404` und andere Fehler bleiben rot.
 - Gleiche Formulare stehen im Bericht einmal, mit Anzahl (`2×`); `--json` und `--baseline` zählen weiter jedes.
 - Links, Formulare und eingebundene Dateien im Shadow DOM zählen mit; vorher fehlten etwa Impressum und Datenschutz in Footern aus Web Components.
+- Weist die Seite selbst den Aufruf mit `403` oder `429` ab, meist ein Bot-Schutz, prüft spurlos nicht die Fehlerseite, sondern endet mit Exit-Code 2 und sagt, woran es lag.
+- Impressum oder Datenschutz als PDF zählen als erreichbar; vorher brach das Öffnen als Download ab.
+- Bekannte Dienste auf der eigenen Seite, an ihren Pfaden erkannt (Matomo, Sentry, Plausible), nennt die Prüfung „Fremde Server“, ohne dass sich die Ampel ändert; in `--json` unter `selfHosted`. Fremde Hosts ohne bekannten Namen benennt spurlos so ebenfalls.
+- `src/services.json`: Sentry, HolaCDN, Contentful, Bynder, Verint, Centinel; alle `bm_`-Cookies des Akamai Bot Managers.
 
 - README: Umgebungsvariablen auf einen Blick, Wartezeiten, keine Telemetrie, Basic Auth mit Docker.
 - Links zum Unterstützen (Ko-fi, GitHub Sponsors) im README, in der Hilfe, in `package.json` und als Button auf GitHub.

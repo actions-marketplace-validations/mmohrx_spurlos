@@ -29,6 +29,31 @@ describe('thirdParty', () => {
     ])
   })
 
+  test('known services on the own site are named by their paths, and change no light', () => {
+    const at = (url: string) => ({ url, host: new URL(url).hostname, type: 'fetch' })
+    const r = thirdParty({
+      ...base,
+      requests: [
+        at('https://errors.firma.de/api/65/envelope/?sentry_key=abc'),
+        at('https://www.firma.de/stats/matomo.js'),
+        at('https://www.firma.de/stats/matomo.php?idsite=1'),
+        // a cookie banner is named as one, not as self-hosted
+        at('https://www.firma.de/wp-content/plugins/borlabs-cookie/borlabs.js'),
+        at('https://www.firma.de/js/app.js'),
+      ],
+    })
+    expect(r).toMatchObject({ level: 'green', hosts: [], selfHosted: ['Sentry', 'Matomo'], consent: ['Borlabs Cookie'] })
+    expect(serviceOfStorage('sentryReplaySession')?.name).toBe('Sentry')
+  })
+
+  test('a host of another site no name gives away is named by its path', () => {
+    const r = thirdParty({ ...base, requests: [{ url: 'https://stats.agentur.de/matomo.php?idsite=3', host: 'stats.agentur.de', type: 'ping' }] })
+    if (r.check !== 'third-party') throw new Error()
+    expect(r.level).toBe('red')
+    expect(r.hosts.map(h => [h.host, h.service?.name])).toEqual([['stats.agentur.de', 'Matomo']])
+    expect(r.selfHosted).toEqual([])
+  })
+
   test('registrable domain respects public suffixes', () => {
     const uk = { ...base, finalUrl: 'https://www.firma.co.uk/' }
     expect(thirdParty({ ...uk, requests: [req('shop.firma.co.uk')] }).level).toBe('green')
@@ -362,7 +387,7 @@ describe('cookie banners', () => {
 })
 
 describe('compare', () => {
-  const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })), consent: [] })
+  const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })), consent: [], selfHosted: [] })
   const disc = (version: boolean): Result => ({ check: 'disclosure', level: version ? 'yellow' : 'green', findings: [{ source: 'header', name: 'server', value: version ? 'nginx/1.2' : 'nginx', version }] })
 
   test('findings carry a key that stays the same across scans', () => {

@@ -57,7 +57,7 @@ test('the logo for the help: the lights in color only when asked', () => {
 })
 
 const page = (finalUrl: string, extra: Partial<Scan> = {}) => ({ url: finalUrl, finalUrl, settled: true, ...extra }) as Scan
-const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })), consent: [] })
+const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })), consent: [], selfHosted: [] })
 
 test('new findings since the baseline are marked, gone ones listed', () => {
   const now = [third('a.example', 'b.example')]
@@ -138,4 +138,12 @@ test('a legal page that turns spurlos away says it could not be checked', () => 
   expect(de).toContain('🟡 Impressum: „Impressum“ → https://www.firma.de/impressum – antwortet mit Status 403, oft wegen eines Bot-Schutzes')
   expect(de).toContain('🟡 Datenschutzerklärung: „Datenschutz“ → https://www.firma.de/datenschutz – keine Antwort nach 15 Sekunden, oft wegen eines Bot-Schutzes')
   expect(text(scan, results, 'en')).toContain('answers with status 403, often because of a bot check')
+})
+
+test('services the site runs itself are named, in either language; an older baseline has none', () => {
+  const r: Result = { check: 'third-party', level: 'green', hosts: [], consent: [], selfHosted: ['Sentry', 'Matomo'] }
+  expect(text(page('https://shop.example/'), [r], 'de', { verbose: true })).toContain('Auf eigenen Servern erkannt: Sentry, Matomo.')
+  expect(text(page('https://shop.example/'), [r], 'en', { verbose: true })).toContain('Found on the site’s own servers: Sentry, Matomo.')
+  const old = { check: 'third-party', level: 'green', hosts: [], consent: [] } as unknown as Result
+  expect(text(page('https://shop.example/'), [old], 'de', { verbose: true })).not.toContain('Auf eigenen Servern')
 })

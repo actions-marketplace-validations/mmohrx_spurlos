@@ -17,8 +17,8 @@ const HARDENED = {
 export const seen: { url: string; ua: string | undefined; ch: string | undefined }[] = []
 
 /**
- * Serves test/sites under SITE (clean.html as the start page, /impressum as impressum.html) and answers every other
- * host with an empty 200 – so no test touches the network.
+ * Serves test/sites under SITE (clean.html as the start page, /impressum as impressum.html, blocked.html with 403) and
+ * answers every other host with an empty 200 – so no test touches the network.
  */
 export async function offline(context: BrowserContext) {
   await context.route('**/*', async route => {
@@ -37,7 +37,8 @@ export async function offline(context: BrowserContext) {
     // Playwright reads the file and takes the content type from its extension
     const path = fileURLToPath(new URL(file, sites))
     if (!existsSync(path)) return route.fulfill({ status: 404, body: '' })
-    return route.fulfill({ status: 200, path, headers })
+    // blocked.html stands for a bot check's error page
+    return route.fulfill({ status: file === 'blocked.html' ? 403 : 200, path, headers })
   })
 }
 

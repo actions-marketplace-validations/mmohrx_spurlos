@@ -58,7 +58,9 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       const categories = new Set(r.hosts.map(h => h.service?.category))
       const trackers = categories.has('tracking')
       const consent = r.consent.length ? [t.consentFound(r.consent.join(', ')), ...(trackers ? [t.consentButTrackers] : [])] : trackers ? [t.consentNone] : []
-      if (!r.hosts.length) return { value: t.none, items: [], notes: [t.thirdPartyNone, ...consent] }
+      // a baseline from an older spurlos has none
+      const selfHosted = r.selfHosted?.length ? [t.selfHosted(r.selfHosted.join(', '))] : []
+      if (!r.hosts.length) return { value: t.none, items: [], notes: [t.thirdPartyNone, ...selfHosted, ...consent] }
       const hints = [
         categories.has('fonts') ? t.thirdPartyHint.fonts : null,
         categories.has('cdn') ? t.thirdPartyHint.cdn : null,
@@ -73,7 +75,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           const about = h.service ? h.service.name : h.own ? t.ownBy[h.own] : undefined
           return item(key.host(h.host), hostLevel(h), h.host, about ? `${about} (${t.requests(h.requests)})` : t.requests(h.requests))
         }),
-        notes: [t.thirdParty, ...(r.hosts.some(h => h.own) ? [t.ownNote] : []), ...consent, ...hints.filter(n => n !== null)],
+        notes: [t.thirdParty, ...(r.hosts.some(h => h.own) ? [t.ownNote] : []), ...selfHosted, ...consent, ...hints.filter(n => n !== null)],
       }
     }
 

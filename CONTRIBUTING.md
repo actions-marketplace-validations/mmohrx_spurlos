@@ -11,7 +11,7 @@ spurlos meldet einen Host oder ein Cookie als „unbekannt“, obwohl du weißt,
 ```
 
 - `category`: `fonts`, `tracking` (Cookies rot), `analytics` (Statistik ohne Cookies, etwa Plausible), `consent` (Cookie-Banner: als fremder Server gelb, ihre Cookies grün), `video`, `maps`, `social`, `chat`, `payment`, `captcha` (als fremder Server gelb), `cdn`, `necessary` (für den Betrieb nötig, etwa ein CSRF-Token, Cookies grün) oder `other`. Die Kategorie entscheidet über die Ampel eines Cookies und über die Tipps im Bericht.
-- `hosts` gelten samt Subdomains, `cookies` als Anfang des Namens (`_pk_id` deckt auch `_pk_id.1.abcd` ab), mit `*` vorn als Ende (`*-session`). Einträge im Browser-Speicher stehen unter `storage`, Teile von Dateipfaden für Dienste, die auf der Seite selbst liegen (etwa WordPress-Plugins), unter `paths`: mit `/` am Ende ein Verzeichnis irgendwo im Pfad, sonst das Ende des Pfads. Präfixe für Cookies so lang wählen, dass sie keine fremden Namen treffen (`*_posthog` statt `ph_`).
+- `hosts` gelten samt Subdomains, `cookies` als Anfang des Namens (`_pk_id` deckt auch `_pk_id.1.abcd` ab), mit `*` vorn als Ende (`*-session`). Einträge im Browser-Speicher stehen unter `storage`, Teile von Dateipfaden für Dienste, die auf der Seite selbst oder auf einem unbekannten Host liegen (etwa WordPress-Plugins, ein eigenes Matomo), unter `paths`: mit `/` am Ende ein Verzeichnis irgendwo im Pfad, sonst das Ende des Pfads. Präfixe für Cookies so lang wählen, dass sie keine fremden Namen treffen (`*_posthog` statt `ph_`).
 - Nenn im Pull Request eine Quelle, etwa die Doku des Anbieters, die Host oder Cookie belegt.
 
 ## Fehler und Ideen

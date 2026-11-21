@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import { hostLevel, runChecks, type Result } from '../src/checks.ts'
 import { text } from '../src/report.ts'
-import { BOT_AGENT, scan } from '../src/scan.ts'
+import { MESSAGES } from '../src/lang/index.ts'
+import { BOT_AGENT, REFUSED, scan } from '../src/scan.ts'
 import { fetched, offline, redirects, seen, SITE, staysOnHttp } from './site.ts'
 
 const pick = <C extends Result['check']>(results: Result[], check: C) => {
@@ -43,6 +44,18 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(pick(results, 'legal').level).toBe('green')
     expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
     expect(pick(results, 'forms').forms.map(f => [f.action, f.problem])).toEqual([['http://shop.example/newsletter', 'unencrypted']])
+  })
+
+  test('a page that turns spurlos away, as bot checks do, says so instead of checking the error page', async () => {
+    await expect(scan(`${SITE}/blocked.html`, { setup: offline, fetch: redirects })).rejects.toThrow(`${REFUSED} 403`)
+    expect(MESSAGES.de.failed('https://shop.example/', `${REFUSED} 403`)).toContain('mit Status 403 abgewiesen, oft wegen eines Bot-Schutzes')
+    expect(MESSAGES.en.failed('https://shop.example/', `${REFUSED} 429`)).toContain('turned the request away with status 429')
+  })
+
+  test('a privacy policy as a PDF opens as a download, and counts as reachable', async () => {
+    const s = await scan(`${SITE}/pdf.html`, { setup: offline, fetch: redirects })
+    expect(s.legal.find(v => v.url === `${SITE}/datenschutz.pdf`)).toMatchObject({ status: 200 })
+    expect(pick(runChecks(s), 'legal').level).toBe('green')
   })
 
   test('a server that refuses http://, often a bot check, leaves the redirect open', async () => {

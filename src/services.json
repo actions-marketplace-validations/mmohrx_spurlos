@@ -23,7 +23,7 @@
   { "name": "HubSpot", "category": "tracking", "hosts": ["hs-scripts.com", "hs-analytics.net", "hscollectedforms.net", "hubspot.com"], "cookies": ["__hstc", "__hssc", "__hssrc", "hubspotutk"] },
   { "name": "Hotjar", "category": "tracking", "hosts": ["hotjar.com", "hotjar.io"], "cookies": ["_hj"] },
   { "name": "Microsoft Clarity", "category": "tracking", "hosts": ["clarity.ms"], "cookies": ["_clck", "_clsk"] },
-  { "name": "Matomo", "category": "tracking", "hosts": ["matomo.cloud"], "cookies": ["_pk_"] },
+  { "name": "Matomo", "category": "tracking", "hosts": ["matomo.cloud"], "paths": ["/matomo.php", "/matomo.js", "/piwik.php", "/piwik.js"], "cookies": ["_pk_"] },
   { "name": "etracker", "category": "tracking", "hosts": ["etracker.com", "etracker.de"] },
   { "name": "Adobe Analytics", "category": "tracking", "hosts": ["omtrdc.net", "2o7.net", "demdex.net"], "cookies": ["AMCV_", "AMCVS_"] },
   { "name": "Yandex Metrica", "category": "tracking", "hosts": ["mc.yandex.ru", "mc.yandex.com"], "cookies": ["_ym_"] },
@@ -42,7 +42,7 @@
   { "name": "Optimizely", "category": "tracking", "hosts": ["optimizely.com"], "cookies": ["optimizelyEndUserId"] },
   { "name": "Shopify Analytics", "category": "tracking", "hosts": [], "cookies": ["_shopify_y", "_shopify_s", "_shopify_sa_"] },
 
-  { "name": "Plausible", "category": "analytics", "hosts": ["plausible.io"] },
+  { "name": "Plausible", "category": "analytics", "hosts": ["plausible.io"], "paths": ["/plausible.js"] },
   { "name": "Fathom", "category": "analytics", "hosts": ["usefathom.com"] },
   { "name": "Simple Analytics", "category": "analytics", "hosts": ["simpleanalyticscdn.com"] },
   { "name": "Umami", "category": "analytics", "hosts": ["umami.is", "umami.dev"] },
@@ -80,6 +80,7 @@
   { "name": "Dailymotion", "category": "video", "hosts": ["dailymotion.com", "dmcdn.net"] },
   { "name": "JW Player", "category": "video", "hosts": ["jwplayer.com", "jwpcdn.com"] },
   { "name": "Loom", "category": "video", "hosts": ["loom.com"] },
+  { "name": "HolaCDN", "category": "video", "hosts": ["h-cdn.com", "holacdn.com"] },
 
   { "name": "Google Maps", "category": "maps", "hosts": ["maps.googleapis.com", "maps.gstatic.com", "maps.google.com"] },
   { "name": "Mapbox", "category": "maps", "hosts": ["mapbox.com"] },
@@ -118,6 +119,11 @@
   { "name": "Trustpilot", "category": "other", "hosts": ["trustpilot.com"] },
   { "name": "Calendly", "category": "other", "hosts": ["calendly.com"] },
   { "name": "Typeform", "category": "other", "hosts": ["typeform.com"] },
+  { "name": "Sentry", "category": "other", "hosts": ["sentry.io", "sentry-cdn.com"], "paths": ["/envelope/"], "storage": ["sentryReplaySession"] },
+  { "name": "Verint", "category": "other", "hosts": ["verint-cdn.com"] },
+  { "name": "Contentful", "category": "other", "hosts": ["ctfassets.net", "contentful.com"] },
+  { "name": "Bynder", "category": "other", "hosts": ["bynder.com"] },
+  { "name": "Centinel", "category": "other", "hosts": ["centinel-analytica.com", "centinelanalytica.com"] },
 
   { "name": "jsDelivr", "category": "cdn", "hosts": ["cdn.jsdelivr.net"] },
   { "name": "cdnjs (Cloudflare)", "category": "cdn", "hosts": ["cdnjs.cloudflare.com"] },
@@ -137,7 +143,7 @@
   { "name": "WordPress", "category": "necessary", "hosts": [], "cookies": ["wordpress_test_cookie"] },
   { "name": "Cloudflare", "category": "necessary", "hosts": [], "cookies": ["__cf_bm", "__cflb", "cf_clearance", "_cfuvid"] },
   { "name": "AWS Load Balancer", "category": "necessary", "hosts": [], "cookies": ["AWSALB", "AWSALBCORS", "AWSALBTG"] },
-  { "name": "Akamai Bot Manager", "category": "necessary", "hosts": [], "cookies": ["ak_bmsc", "bm_sv", "bm_sz", "_abck"] },
+  { "name": "Akamai Bot Manager", "category": "necessary", "hosts": [], "cookies": ["ak_bmsc", "bm_", "_abck"] },
   { "name": "Imperva", "category": "necessary", "hosts": [], "cookies": ["incap_ses_", "visid_incap_", "nlbi_"] },
   { "name": "Vue Router (Scroll-Positionen)", "category": "necessary", "hosts": [], "storage": ["vue-router:scroll", "vue:scroll:"] }
 ]

@@ -1,5 +1,5 @@
 import type { FormFinding, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
-import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE } from '../scan.ts'
+import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED } from '../scan.ts'
 import { plural } from './plural.ts'
 
 // The reference language: its shape is the type every other language has to fill (Messages below).
@@ -63,6 +63,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
       reason === NO_RESPONSE ? 'keine Antwort'
       : reason === AUTH_REQUIRED ? 'Die Seite verlangt eine Anmeldung. --auth oder SPURLOS_AUTH gilt nur für genau die angegebene Adresse (Schema, Host, Port).'
       : reason === AUTH_REJECTED ? 'Die Anmeldung wurde abgelehnt.'
+      : reason.startsWith(`${REFUSED} `) ? `Die Seite hat den Aufruf mit Status ${reason.slice(REFUSED.length + 1)} abgewiesen, oft wegen eines Bot-Schutzes. Ihre Fehlerseite sagt nichts darüber, was Besucher bekommen. Ist es deine Seite, lass spurlos im Bot-Schutz zu.`
       : reason
     }`,
   authFormat: '--auth und SPURLOS_AUTH brauchen benutzer:passwort.',
@@ -106,6 +107,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
     embed: 'Videos, Karten, Chats und Beiträge aus sozialen Netzwerken lassen sich so einbinden, dass sie erst nach einem Klick laden.',
     tracking: 'Tracker lassen sich so einbinden, dass sie erst laden, wenn jemand im Cookie-Banner zustimmt.',
   },
+  selfHosted: (names: string) => `Auf eigenen Servern erkannt: ${names}. Die IP-Adresse bleibt dabei bei der Seite.`,
   consentFound: (names: string) => `Cookie-Banner erkannt: ${names}.`,
   consentButTrackers: 'Die Tracker oben laden trotzdem schon, bevor jemand im Banner etwas wählt.',
   consentNone: 'Keinen bekannten Cookie-Banner erkannt.',

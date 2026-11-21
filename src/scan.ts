@@ -1,6 +1,6 @@
 import { X509Certificate } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { chromium, type Browser, type BrowserContext, type CDPSession, type Page } from 'playwright'
+import { chromium, type Browser, type BrowserContext, type CDPSession, type Page, type Response as PlaywrightResponse } from 'playwright'
 import { legalLinks } from './checks.ts'
 
 // src/ and dist/ both sit next to package.json
@@ -85,6 +85,8 @@ export const NO_RESPONSE = 'no response'
 /** why a scan stops at a 401: the page wants a login, or turned the one given down; the report translates both */
 export const AUTH_REQUIRED = 'login required'
 export const AUTH_REJECTED = 'login rejected'
+/** why a scan stops at a 403 or 429, as `refused 403`: the page turned spurlos away, often a bot check; the report translates it */
+export const REFUSED = 'refused'
 
 /** Where a URL ended up when opened on its own: status and final URL, or why it could not be opened. */
 export type Visit = { url: string; status: number; finalUrl: string } | { url: string; error: string }
@@ -229,6 +231,8 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     // the login page is not the site: say so instead of checking it
     // rejected only where the login was sent: a redirect to another origin gets none
     if (response.status() === 401) throw new Error(options.auth && new URL(page.url()).origin === new URL(url).origin ? AUTH_REJECTED : AUTH_REQUIRED)
+    // a bot check's page is not the site either: what it loads and lacks says nothing about what visitors get
+    if (response.status() === 403 || response.status() === 429) throw new Error(`${REFUSED} ${response.status()}`)
     const settled = await page
       .waitForLoadState('networkidle', { timeout: options.settleMs ?? 10_000 })
       .then(() => true, () => false)
@@ -330,11 +334,18 @@ async function documentsOnly(browser: Browser, url: string, options: ScanOptions
   await options.setup?.(context)
   return async (url: string): Promise<Visit> => {
     const page = await context.newPage()
+    // a PDF opens as a download, and goto fails though the server answered: its answer still counts
+    let answer: PlaywrightResponse | undefined
+    page.on('response', r => {
+      if (r.request().isNavigationRequest() && r.frame() === page.mainFrame()) answer = r
+    })
     try {
       const r = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 })
       return r ? { url, status: r.status(), finalUrl: page.url() } : { url, error: NO_RESPONSE }
     } catch (e) {
-      return { url, error: e instanceof Error ? (e.message.split('\n')[0] ?? e.message) : String(e) }
+      const message = e instanceof Error ? e.message : String(e)
+      if (answer && /Download is starting/.test(message)) return { url, status: answer.status(), finalUrl: answer.url() }
+      return { url, error: message.split('\n')[0] ?? message }
     } finally {
       await page.close()
     }

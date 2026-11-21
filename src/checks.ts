@@ -35,7 +35,7 @@ export type FormFinding = Form & { problem?: 'unencrypted' | 'third-party' }
 export type ResourceFinding = Resource & { problem: 'insecure' | 'no-integrity' }
 
 export type Result =
-  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[] }
+  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[] }
   | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
   | { check: 'https'; level: Level; https: boolean; certDaysLeft?: number; http?: HttpRedirect; hsts: boolean }
@@ -155,19 +155,34 @@ export function ownership(scan: Scan): (host: string) => OwnReason | undefined {
 export const hostLevel = (h: ThirdParty): Level =>
   h.own || h.service?.category === 'consent' || h.service?.category === 'captcha' ? 'yellow' : 'red'
 
-/** Every request to another site than the page's own counts. */
+/**
+ * Every request to another site than the page's own counts. A host no name gives away may by the path asked for
+ * (/matomo.php on an agency's server). selfHosted: known services the page runs on its own site, by their paths (a
+ * Sentry or Matomo of its own); they change no light, as the IP stays with the site, but the reader learns of them.
+ */
 export function thirdParty(scan: Scan): Result {
   const own = ownSites(scan)
   const owner = ownership(scan)
   const counts = new Map<string, number>()
-  for (const r of scan.requests) if (!own.has(site(r.host))) counts.set(r.host, (counts.get(r.host) ?? 0) + 1)
+  const byPath = new Map<string, Service>()
+  const selfHosted = new Set<string>()
+  for (const r of scan.requests) {
+    const service = serviceOfPath(r.url)
+    if (own.has(site(r.host))) {
+      // a cookie banner of its own is named as one already
+      if (service && service.category !== 'consent') selfHosted.add(service.name)
+      continue
+    }
+    counts.set(r.host, (counts.get(r.host) ?? 0) + 1)
+    if (service && !byPath.has(r.host)) byPath.set(r.host, service)
+  }
   const hosts = [...counts]
     .map(([host, requests]): ThirdParty => {
       const reason = owner(host)
-      return { host, service: serviceOfHost(host), requests, ...(reason ? { own: reason } : {}) }
+      return { host, service: serviceOfHost(host) ?? byPath.get(host), requests, ...(reason ? { own: reason } : {}) }
     })
     .sort((a, b) => a.host.localeCompare(b.host))
-  return { check: 'third-party', level: worst(hosts.map(hostLevel)), hosts, consent: consentManagers(scan) }
+  return { check: 'third-party', level: worst(hosts.map(hostLevel)), hosts, consent: consentManagers(scan), selfHosted: [...selfHosted] }
 }
 
 const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.status >= 200 && v.status < 300

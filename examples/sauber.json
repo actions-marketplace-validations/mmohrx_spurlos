@@ -76,7 +76,8 @@
       "check": "third-party",
       "level": "green",
       "hosts": [],
-      "consent": []
+      "consent": [],
+      "selfHosted": []
     },
     {
       "check": "cookies",

@@ -1,4 +1,4 @@
-import { AUTH_REJECTED, AUTH_REQUIRED } from '../scan.ts'
+import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED } from '../scan.ts'
 import type { Messages } from './de.ts'
 import { plural } from './plural.ts'
 
@@ -58,8 +58,10 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   checkedAt: date => `checked on ${date}`,
   failed: (url, reason) =>
     `${url} could not be checked: ${
-      reason === AUTH_REQUIRED ? 'The page asks for a login. --auth or SPURLOS_AUTH only applies to exactly the address given (scheme, host, port).'
+      reason === NO_RESPONSE ? 'no response'
+      : reason === AUTH_REQUIRED ? 'The page asks for a login. --auth or SPURLOS_AUTH only applies to exactly the address given (scheme, host, port).'
       : reason === AUTH_REJECTED ? 'The login was rejected.'
+      : reason.startsWith(`${REFUSED} `) ? `The page turned the request away with status ${reason.slice(REFUSED.length + 1)}, often because of a bot check. Its error page says nothing about what visitors get. If it is your site, let spurlos through the bot check.`
       : reason
     }`,
   authFormat: '--auth and SPURLOS_AUTH take user:password.',
@@ -103,6 +105,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
     embed: 'Videos, maps, chats and social media posts can be embedded so that they only load after a click.',
     tracking: 'Trackers can be embedded so that they only load once someone agrees in the cookie banner.',
   },
+  selfHosted: names => `Found on the site’s own servers: ${names}. The IP address stays with the site.`,
   consentFound: names => `Cookie banner found: ${names}.`,
   consentButTrackers: 'The trackers above still load before anyone chooses anything in the banner.',
   consentNone: 'No known cookie banner found.',

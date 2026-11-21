@@ -61,7 +61,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829819889.52401,
+        "expires": 1829822844.730207,
         "secure": false,
         "httpOnly": false
       }
@@ -230,7 +230,8 @@
       ],
       "consent": [
         "Usercentrics"
-      ]
+      ],
+      "selfHosted": []
     },
     {
       "check": "cookies",
@@ -250,7 +251,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829819889.52401,
+          "expires": 1829822844.730207,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,
