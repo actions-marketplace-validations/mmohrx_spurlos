@@ -78,7 +78,7 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 
 | Prüfung | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem; dazu Server, die zur Seite zu gehören scheinen (`--own`, Zertifikat, Name), und die der Plattform, auf der sie läuft (Wix, Shopify) | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner, keinem Captcha und nicht zur Seite gehört |
+| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem; dazu Server, die zur Seite zu gehören scheinen (`--own`, Zertifikat, Name), und die der Plattform, auf der sie läuft (Wix, Shopify, Squarespace) | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner, keinem Captcha und nicht zur Seite gehört |
 | Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies und solche, in denen der Cookie-Banner die Wahl speichert | eigene Cookies oder Einträge, die spurlos nicht kennt oder die zu einem Dienst wie einem Chat oder Zahlungsanbieter gehören; ein Cookie ohne `Secure` auf einer https-Seite; ein Sitzungs-Cookie ohne `HttpOnly` | Cookie einer fremden Domain, die nicht zur Seite zu gehören scheint, oder eines bekannten Trackers |
 | Impressum und Datenschutz | beide verlinkt und erreichbar | eine Seite weist spurlos ab (`401`, `403`, `429`) oder antwortet nicht vor dem Timeout, oft ein Bot-Schutz | ein Link fehlt oder die Seite antwortet mit einem anderen Fehler, etwa `404`; ein PDF zählt als erreichbar |
 | HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS (oder `max-age=0`), über http antwortet nichts oder nur ein Fehler (4xx, 5xx, oft ein Bot-Schutz), Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
@@ -111,7 +111,7 @@ Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, Wikipedi
 
 Ein bekannter Dienst aus `src/services.json` gehört nie zur Seite, auch nicht mit `--own`. Das gilt ebenso für Cookies dieser Domains. Gelb bleibt es, weil die IP-Adresse trotzdem an einen anderen Host geht; betreibt ihn ein Dienstleister, erfährt auch der sie.
 
-Die Ausnahme ist die Plattform, auf der die Seite selbst läuft. spurlos erkennt sie an einem Header der Seite: Wix an `x-wix-request-id`, Shopify an `powered-by: Shopify`. Ihre Server sind dann gelb („gehört zum Hoster der Seite“), ihre Cookies auch, denn sie liefern die Seite ohnehin aus und kennen die IP-Adresse schon. Apps, Tracker und andere Dienste auf der Seite bleiben rot. In `--json` steht die Plattform bei `third-party` unter `platform`.
+Die Ausnahme ist die Plattform, auf der die Seite selbst läuft. spurlos erkennt sie an einem Header der Seite: Wix an `x-wix-request-id`, Shopify an `powered-by: Shopify`, Squarespace an `server: Squarespace`. Ihre Server sind dann gelb („gehört zum Hoster der Seite“), ihre Cookies auch, denn sie liefern die Seite ohnehin aus und kennen die IP-Adresse schon. Apps, Tracker und andere Dienste auf der Seite bleiben rot. In `--json` steht die Plattform bei `third-party` unter `platform`.
 
 ## Wie spurlos aufruft
 
