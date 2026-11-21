@@ -147,7 +147,7 @@
   { "name": "Google Sign-In", "category": "other", "hosts": ["accounts.google.com"], "cookies": ["g_state"] },
   { "name": "Trusted Shops", "category": "other", "hosts": ["trustedshops.com", "trustedshops.de"] },
   { "name": "straitpublish", "category": "other", "hosts": ["mystrait.de"] },
-  { "name": "coco-online", "category": "other", "hosts": ["coco-online.de"] },
+  { "name": "COCO", "category": "other", "hosts": ["coco-online.de", "coco.one"] },
   { "name": "Wir sind Handwerk", "category": "other", "hosts": ["wsh.de", "wirsindhandwerk.de"] },
   { "name": "Reputon", "category": "other", "hosts": ["reputon.com"] },
   { "name": "Trustpilot", "category": "other", "hosts": ["trustpilot.com"] },
