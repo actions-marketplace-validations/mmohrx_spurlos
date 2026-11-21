@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.4.0 – 2026-11-21
 
 - Doku: Das README gibt den Überblick, die Einzelheiten zur Ampel, zur CI und dazu, wie spurlos aufruft, stehen in `docs/`.
 - `--baseline <datei>`: mit einer früheren Ausgabe von `--json` vergleichen. Der Bericht markiert neue Befunde mit `[neu]` und listet, was weggefallen ist; Exit-Code 1 nur noch bei neuen roten Befunden. In `--json` unter `compare`.

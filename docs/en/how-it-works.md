@@ -5,7 +5,7 @@
 spurlos opens the page itself as a regular Chrome and adds its name to the user agent:
 
 ```
-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.3.0
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0
 ```
 
 “HeadlessChrome” is left out on purpose, in the client hints (`sec-ch-ua`) too. Many cookie banners and trackers do not load at all for visits they take for bots. spurlos would then report a clean page while real visitors get tracked. It does not hide, though: its name is in every user agent, and `navigator.webdriver` stays `true`.
@@ -13,7 +13,7 @@ Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/15
 spurlos asks with the same user agent whether http redirects to https: some servers answer a bot there differently from a browser (DuckDuckGo serves a bot the page over http and redirects a browser). The legal notice and the privacy policy are requested openly as a bot, since they are not about trackers hiding from bots:
 
 ```
-spurlos/0.3.0 (+https://github.com/mmohrx/spurlos)
+spurlos/0.4.0 (+https://github.com/mmohrx/spurlos)
 ```
 
 Some bot protection services refuse these requests. If http:// answers with an error, spurlos reports it yellow, since whether the server redirects is then left open. The same goes for the legal notice and privacy policy when they turn spurlos away or keep it waiting. spurlos does not try to get around the bot protection.

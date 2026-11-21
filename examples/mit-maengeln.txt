@@ -1,4 +1,4 @@
-spurlos 0.3.0  https://shop.example/tracked.html
+spurlos 0.4.0  https://shop.example/tracked.html
 6 Mängel · 2 Hinweise
 
 🔴 Fremde Server              6
