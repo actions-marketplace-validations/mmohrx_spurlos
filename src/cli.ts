@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util'
 import { runChecks } from './checks.ts'
 import { LANGS, MESSAGES, pickLang } from './lang/index.ts'
 import { serve } from './mcp.ts'
-import { clean, html, json, text } from './report.ts'
+import { banner, clean, html, json, text } from './report.ts'
 import { scan, toUrl } from './scan.ts'
 
 // colors only in a terminal that wants them: tty.hasColors() honours NO_COLOR, FORCE_COLOR and TERM
@@ -36,7 +36,7 @@ const say = MESSAGES[lang]
 // the help comes even with an unknown language, in the one that applies without it
 const arg = positionals[0]
 if (values.help || !arg) {
-  console.log(say.usage(langList))
+  console.log(`${banner(color)}\n\n${say.usage(langList)}`)
   process.exit(values.help ? 0 : 2)
 }
 

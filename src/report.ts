@@ -93,6 +93,20 @@ function section(t: Messages, r: Result, now: number): Section {
   }
 }
 
+/** The logo for the help, as the terminal can draw it: the magnifier with the three lights, name and version beside it. */
+export function banner(color = false): string {
+  const style = (format: Parameters<typeof styleText>[0], s: string) => (color ? styleText(format, s, { validateStream: false }) : s)
+  const lights = (['red', 'yellow', 'green'] as const).map(l => style(l, '●')).join(' ')
+  return [
+    '   ▄▄▄▄▄',
+    ' ▄▀     ▀▄',
+    ` █ ${lights} █   ${style('bold', 'spurlos')} ${style('dim', VERSION)}`,
+    ' ▀▄     ▄▀',
+    '   ▀▀▀▀▀ ▀▄',
+    '          ▀▄',
+  ].join('\n')
+}
+
 /** in a terminal with colors the lights become colored marks, which line up better than emoji */
 const MARK: Record<Level, string> = { red: '✖', yellow: '▲', green: '✔' }
 const BADGE = { red: ['bgRed', 'white', 'bold'], yellow: ['bgYellow', 'black', 'bold'], green: ['bgGreen', 'black', 'bold'] } as const

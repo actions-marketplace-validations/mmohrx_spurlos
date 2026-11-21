@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import type { Result } from '../src/checks.ts'
-import { clean, html, json, text } from '../src/report.ts'
+import { banner, clean, html, json, text } from '../src/report.ts'
 import type { Scan } from '../src/scan.ts'
 
 // escapes, so the test shows what it feeds in: ESC, BEL, a right-to-left override, an Arabic letter mark, an 8-bit CSI
@@ -48,4 +48,10 @@ test('what the page says cannot add markup to the HTML report', () => {
   // the logo inline, for light and dark
   expect(page).toMatch(/<svg class="logo light"[^>]*>.*<svg class="logo dark"/s)
   expect(page).toContain('keine Rechtsberatung')
+})
+
+test('the logo for the help: the lights in color only when asked', () => {
+  expect(banner()).not.toContain('\x1b')
+  expect(banner()).toContain('█ ● ● ● █   spurlos')
+  expect(banner(true)).toContain('\x1b[31m●')
 })

@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - `--html`: der Bericht als eigenständige HTML-Seite mit Logo, ohne JavaScript und ohne Nachladen, zum Weiterschicken.
+- Die Hilfe zeigt das Logo, im Terminal mit farbigen Ampelpunkten.
 - `spurlos mcp`: ein MCP-Server über stdio mit dem Werkzeug `scan`, damit KI-Assistenten Seiten selbst prüfen können. Ohne neue Abhängigkeit.
 - Ohne `--lang` richtet sich die Sprache nach `SPURLOS_LANG`, dann nach der Sprache des Systems (`LC_ALL`, `LC_MESSAGES`, `LANG`), sonst Deutsch.
 - Die Hilfe (`--help`) gibt es auch auf Englisch.
