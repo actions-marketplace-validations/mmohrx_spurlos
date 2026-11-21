@@ -112,3 +112,13 @@ test('a server of the page on another site says why it counts as the page’s ow
   expect(de).toContain('Gelb statt rot, wo ein Server zur Seite zu gehören scheint.')
   expect(text(scan, results, 'en')).toContain('belongs to the site per its certificate (2 requests)')
 })
+
+test('the same form twice is one line with its count', () => {
+  const scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true } as Scan
+  const search = { action: 'https://www.firma.de/suche', method: 'get' }
+  const results = [{ check: 'forms', level: 'green', forms: [search, { action: 'https://www.firma.de/', method: 'get' }, search] }] as Result[]
+  const report = text(scan, results, 'de', { verbose: true })
+  expect(report.match(/GET https:\/\/www\.firma\.de\/suche/g)).toHaveLength(1)
+  expect(report).toContain('GET https://www.firma.de/suche – sendet verschlüsselt an die eigene Seite (2×)')
+  expect(report).toContain('Formulare                  3')
+})

@@ -154,7 +154,20 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
 
     case 'forms':
       if (!r.forms.length) return { value: t.formsNone, items: [], notes: [] }
-      return { value: `${r.forms.length}`, items: r.forms.map(f => item(key.form(f), formLevel(f), `${f.method.toUpperCase()} ${f.action}`, t.form[f.problem ?? 'ok'])), notes: [] }
+    {
+      // the same form twice, a search in header and menu, is one line; --json and --baseline keep each
+      const same = new Map<string, { form: (typeof r.forms)[number]; count: number }>()
+      for (const f of r.forms) {
+        const k = `${key.form(f)} ${f.problem ?? 'ok'}`
+        const seen = same.get(k)
+        if (seen) seen.count++
+        else same.set(k, { form: f, count: 1 })
+      }
+      const items = [...same.values()].map(({ form: f, count }) =>
+        item(key.form(f), formLevel(f), `${f.method.toUpperCase()} ${f.action}`, t.form[f.problem ?? 'ok'] + (count > 1 ? ` (${count}×)` : '')),
+      )
+      return { value: `${r.forms.length}`, items, notes: [] }
+    }
   }
 }
 

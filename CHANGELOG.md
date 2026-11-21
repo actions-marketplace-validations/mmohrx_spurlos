@@ -18,6 +18,7 @@
 - `src/services.json` kennt rund 130 Dienste statt 25, mit neuen Kategorien (`analytics`, `consent`, `social`, `chat`, `payment`) und `paths` für Dienste auf der eigenen Seite.
 - HTTPS: Antwortet http:// mit einem Fehler (4xx, 5xx), oft wegen eines Bot-Schutzes, ist das gelb statt rot; in `--json` als `http: "refused"`.
 - Eigene Server auf anderen Domains (etwa `wikimedia.org` bei Wikipedia) sind gelb statt rot, ihre Cookies auch: mit `--own <host>`, laut Zertifikat der Seite oder dem Namen nach. Der Bericht nennt den Grund, `--json` ihn als `own`. Auch im MCP-Werkzeug (`own`) und in der Action (`own`).
+- Gleiche Formulare stehen im Bericht einmal, mit Anzahl (`2×`); `--json` und `--baseline` zählen weiter jedes.
 - Links, Formulare und eingebundene Dateien im Shadow DOM zählen mit; vorher fehlten etwa Impressum und Datenschutz in Footern aus Web Components.
 
 - README: Umgebungsvariablen auf einen Blick, Wartezeiten, keine Telemetrie, Basic Auth mit Docker.
