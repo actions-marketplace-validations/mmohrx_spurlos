@@ -1,12 +1,12 @@
 import type { FormFinding, HttpRedirect, LegalKind, Level, Result } from '../checks.ts'
-import { NO_RESPONSE } from '../scan.ts'
+import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE } from '../scan.ts'
 import { plural } from './plural.ts'
 
 // The reference language: its shape is the type every other language has to fill (Messages below).
 // Deutsch mit „du“, Anführungszeichen als Paar „…“.
 
 const de = {
-  usage: (langs: string) => `spurlos <url> [--lang ${langs}] [--verbose] [--json | --html] [--user-agent <kennung>]
+  usage: (langs: string) => `spurlos <url> [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <datei>] [--auth <benutzer:passwort>] [--user-agent <kennung>]
 spurlos mcp [--lang ${langs}] [--user-agent <kennung>]
 
 Ruft die Seite wie ein neuer Besucher auf, der nichts anklickt, und zeigt,
@@ -17,6 +17,12 @@ welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
   --verbose     Details auch zu den grünen Prüfungen
   --json        Ergebnis als JSON statt als Text
   --html        Bericht als HTML-Seite, etwa: spurlos <url> --html > bericht.html
+  --pdf         Bericht als PDF, etwa: spurlos <url> --pdf > bericht.pdf
+  -o, --output  in eine Datei statt auf die Ausgabe, das Format nach der
+                Endung (.pdf, .html, .json, sonst Text): -o bericht.pdf
+  --auth        Anmeldung per HTTP Basic Auth, nur an die geprüfte Adresse;
+                besser über SPURLOS_AUTH, dann steht das Passwort nicht in
+                der Shell-Historie
   --user-agent  eigene Browserkennung für alle Aufrufe
   --help        diese Hilfe
 
@@ -28,12 +34,23 @@ Exit-Code: 0 ohne roten Befund, 1 mit rotem Befund, 2 bei einem Fehler.`,
   openedAs: (url: string) => `aufgerufen als ${url}`,
   unknownLang: (from: string, value: string, langs: string) => `${from} kennt nur ${langs}, nicht ${value}.`,
   invalidUrl: (arg: string) => `${arg} ist keine gültige Adresse.`,
-  oneFormat: '--json und --html gehen nur einzeln.',
+  oneFormat: '--json, --html und --pdf gehen nur einzeln.',
+  pdfToTerminal: 'Das PDF gehört in eine Datei, nicht ins Terminal: spurlos <url> -o bericht.pdf',
+  written: (file: string) => `Bericht in ${file} geschrieben.`,
+  cannotWrite: (file: string, reason: string) => `${file} ließ sich nicht schreiben: ${reason}`,
   mcpOnly: (flags: string) => `spurlos mcp nimmt nur --lang und --user-agent, nicht ${flags}.`,
   urlMissing: 'url fehlt: die Adresse der Seite als Text, etwa firma.de.',
   unknownFormat: (value: string) => `format kennt nur text und json, nicht ${value}.`,
   checkedAt: (date: string) => `geprüft am ${date}`,
-  failed: (url: string, reason: string) => `${url} ließ sich nicht prüfen: ${reason === NO_RESPONSE ? 'keine Antwort' : reason}`,
+  failed: (url: string, reason: string) =>
+    `${url} ließ sich nicht prüfen: ${
+      reason === NO_RESPONSE ? 'keine Antwort'
+      : reason === AUTH_REQUIRED ? 'Die Seite verlangt eine Anmeldung. --auth oder SPURLOS_AUTH gilt nur für genau die angegebene Adresse (Schema, Host, Port).'
+      : reason === AUTH_REJECTED ? 'Die Anmeldung wurde abgelehnt.'
+      : reason
+    }`,
+  authFormat: '--auth und SPURLOS_AUTH brauchen benutzer:passwort.',
+  authOverHttp: 'Die Adresse ist http://, das Passwort geht unverschlüsselt an den Server.',
   title: {
     'third-party': 'Fremde Server',
     cookies: 'Cookies und Speicher',

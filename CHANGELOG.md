@@ -3,6 +3,9 @@
 ## Unveröffentlicht
 
 - `--html`: der Bericht als eigenständige HTML-Seite mit Logo, ohne JavaScript und ohne Nachladen, zum Weiterschicken.
+- `--pdf`: derselbe Bericht als PDF, gedruckt vom vorhandenen Chromium, ohne neue Abhängigkeit. Beim Drucken ist JavaScript aus und jede Anfrage gesperrt.
+- `-o`, `--output <datei>`: der Bericht in eine Datei, das Format nach der Endung (`-o bericht.pdf`).
+- `--auth <benutzer:passwort>` oder `SPURLOS_AUTH`: Seiten hinter HTTP Basic Auth prüfen, etwa vor dem Livegang. Das Passwort geht nur an die geprüfte Adresse, nie an fremde Server und nicht mit der Prüfung über http. Eine fehlende oder abgelehnte Anmeldung endet mit Exit-Code 2 statt mit einem Bericht über die Fehlerseite.
 - Die Hilfe zeigt das Logo, im Terminal mit farbigen Ampelpunkten.
 - `spurlos mcp`: ein MCP-Server über stdio mit dem Werkzeug `scan`, damit KI-Assistenten Seiten selbst prüfen können. Ohne neue Abhängigkeit.
 - Ohne `--lang` richtet sich die Sprache nach `SPURLOS_LANG`, dann nach der Sprache des Systems (`LC_ALL`, `LC_MESSAGES`, `LANG`), sonst Deutsch.

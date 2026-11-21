@@ -49,11 +49,14 @@ npx spurlos <url>
 | `--lang de\|en` | Sprache des Berichts. Ohne Angabe gilt `SPURLOS_LANG`, dann die Sprache des Systems (`LC_ALL`, `LC_MESSAGES`, `LANG`), sonst `de` |
 | `--verbose`, `-v` | Details auch zu den grünen Prüfungen |
 | `--json` | vollständiges Ergebnis als JSON |
-| `--html` | Bericht als eigenständige HTML-Seite, etwa zum Weiterschicken: `spurlos firma.de --html > bericht.html` |
+| `--html` | Bericht als eigenständige HTML-Seite, etwa zum Weiterschicken |
+| `--pdf` | Bericht als PDF |
+| `-o`, `--output <datei>` | Bericht in eine Datei statt auf die Ausgabe. Ohne `--json`, `--html` oder `--pdf` entscheidet die Endung: `spurlos firma.de -o bericht.pdf` (`.pdf`, `.html`, `.json`, sonst Text) |
+| `--auth <benutzer:passwort>` | Anmeldung per HTTP Basic Auth, etwa für eine Staging-Seite. Besser über `SPURLOS_AUTH`, siehe [Seiten hinter einer Anmeldung](#seiten-hinter-einer-anmeldung) |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
 | `--help`, `-h` | Hilfe |
 
-Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Im Terminal ist der Bericht farbig. Leitest du die Ausgabe in eine Datei oder eine Pipe um oder setzt `NO_COLOR`, bleibt es reiner Text.
+Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Im Terminal ist der Bericht farbig. Mit `-o`, in einer Pipe oder mit `NO_COLOR` bleibt es reiner Text. `--html` und `--pdf` gehen auch über die Ausgabe (`--pdf > bericht.pdf`), ein PDF schreibt spurlos aber nicht ins Terminal. Mit Docker landet eine Datei von `-o` im Container; dort leitest du besser um: `docker run --rm ghcr.io/mmohrx/spurlos firma.de --pdf > bericht.pdf`.
 
 ## Ampel
 
@@ -93,11 +96,11 @@ spurlos/0.2.0 (+https://github.com/mmohrx/spurlos)
 
 Weil spurlos fremde Seiten öffnet, läuft Chromium in seiner eigenen Sandbox, wo das System eine erlaubt (macOS, Windows, Linux mit User-Namespaces). Fehlt sie, meldet spurlos das auf stderr. Im Docker-Image läuft Chromium ohne Sandbox, dort ist der Container als Benutzer `node` die Grenze; prüfe unbekannte Seiten unter Linux am besten so. Downloads einer Seite nimmt spurlos nicht an.
 
-Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt. Er lädt nichts nach und enthält kein JavaScript, lässt sich also auch offline öffnen oder per Mail verschicken.
+Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt. Er lädt nichts nach und enthält kein JavaScript, lässt sich also auch offline öffnen oder per Mail verschicken. Das PDF ist derselbe Bericht, gedruckt vom Chromium, das spurlos ohnehin nutzt, im Format A4 und immer hell. Beim Drucken ist JavaScript aus und jede Anfrage gesperrt.
 
 ## Für KI-Assistenten (MCP)
 
-`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`) und `format` (`text` oder `json`). Er läuft auf deinem Rechner, wie die CLI.
+`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`) und `format` (`text` oder `json`). Er läuft auf deinem Rechner, wie die CLI: Der Assistent startet ihn selbst und spricht über stdin und stdout mit ihm. Einen offenen Port gibt es nicht, deshalb braucht er auch kein Token.
 
 In Claude Code:
 
@@ -113,7 +116,19 @@ In anderen Clients, etwa Claude Desktop, unter `mcpServers`:
 
 Mit Docker statt Node: `"command": "docker", "args": ["run", "-i", "--rm", "ghcr.io/mmohrx/spurlos", "mcp"]`.
 
-Die Sprache richtet sich wie bei der CLI nach `--lang`, `SPURLOS_LANG` oder dem System, `--user-agent` gilt für alle Aufrufe. Höchstens zwei Prüfungen laufen gleichzeitig, weitere warten. Jeder Bericht trägt den Hinweis, dass er keine Rechtsberatung ist.
+Die Sprache richtet sich wie bei der CLI nach `--lang`, `SPURLOS_LANG` oder dem System, `--user-agent` gilt für alle Aufrufe. `--auth` gibt es dort nicht, denn die Adressen wählt der Assistent. Höchstens zwei Prüfungen laufen gleichzeitig, weitere warten. Jeder Bericht trägt den Hinweis, dass er keine Rechtsberatung ist.
+
+## Seiten hinter einer Anmeldung
+
+Interne Seiten und Staging-Seiten vor dem Livegang stecken oft hinter HTTP Basic Auth. Die Zugangsdaten gibst du am besten über die Umgebung mit, dann stehen sie nicht in der Shell-Historie und nicht in der Prozessliste:
+
+```
+SPURLOS_AUTH='team:geheim' npx spurlos https://staging.firma.de
+```
+
+`--auth team:geheim` geht auch und hat Vorrang. Das Passwort geht nur an genau die angegebene Adresse (Schema, Host, Port). Fremde Server, die die Seite lädt, bekommen es nie, auch wenn sie nach einer Anmeldung fragen, und Impressum oder Datenschutz nur, wenn sie unter derselben Adresse liegen. Leitet `firma.de` auf `www.firma.de` weiter, gib gleich `www.firma.de` an. Die Prüfung, ob http auf https weiterleitet, läuft ohne Anmeldung. Ist die Adresse selbst `http://`, geht das Passwort unverschlüsselt; spurlos weist auf stderr darauf hin.
+
+Verlangt die Seite eine Anmeldung und es gibt keine oder die falsche, prüft spurlos nicht die Fehlerseite, sondern endet mit Exit-Code `2` und sagt, woran es lag.
 
 ## In der CI
 
@@ -121,7 +136,7 @@ Die Sprache richtet sich wie bei der CLI nach `--lang`, `SPURLOS_LANG` oder dem 
 npx spurlos https://staging.firma.de || echo "neue Spuren"
 ```
 
-Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn die Seite sich nicht prüfen ließ oder der Aufruf falsch war (unbekannte Option, ungültige URL, unbekannte Sprache, `--json` zusammen mit `--html`).
+Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn die Seite sich nicht prüfen ließ oder der Aufruf falsch war (unbekannte Option, ungültige URL, unbekannte Sprache, mehr als eines von `--json`, `--html`, `--pdf`) oder sich die Datei von `-o` nicht schreiben ließ. Auch eine fehlende oder abgelehnte Anmeldung endet mit `2`.
 
 Mit `--json` kommt das vollständige Ergebnis als JSON: `scan` enthält die Rohdaten (alle Anfragen, Cookies, Speicher, Header, Zertifikat, Links, Formulare), `results` je Prüfung ein Objekt mit `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) und den Befunden, `note` den Hinweis auf die fehlende Rechtsberatung. Die roten Prüfungen etwa:
 

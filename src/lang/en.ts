@@ -1,9 +1,10 @@
+import { AUTH_REJECTED, AUTH_REQUIRED } from '../scan.ts'
 import type { Messages } from './de.ts'
 import { plural } from './plural.ts'
 
 
 const en: Messages = {
-  usage: langs => `spurlos <url> [--lang ${langs}] [--verbose] [--json | --html] [--user-agent <string>]
+  usage: langs => `spurlos <url> [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <file>] [--auth <user:password>] [--user-agent <string>]
 spurlos mcp [--lang ${langs}] [--user-agent <string>]
 
 Opens the site like a new visitor who clicks nothing, and shows which
@@ -14,6 +15,12 @@ third-party servers it contacts and which cookies it sets.
   --verbose     details for the green checks too
   --json        the result as JSON instead of text
   --html        the report as an HTML page, e.g.: spurlos <url> --html > report.html
+  --pdf         the report as a PDF, e.g.: spurlos <url> --pdf > report.pdf
+  -o, --output  into a file instead of the output, the format by its
+                extension (.pdf, .html, .json, else text): -o report.pdf
+  --auth        login by HTTP basic auth, only to the address checked;
+                better through SPURLOS_AUTH, then the password stays out of
+                the shell history
   --user-agent  your own user agent for every request
   --help        this help
 
@@ -25,12 +32,22 @@ Exit code: 0 without a red finding, 1 with a red finding, 2 on an error.`,
   openedAs: url => `opened as ${url}`,
   unknownLang: (from, value, langs) => `${from} only knows ${langs}, not ${value}.`,
   invalidUrl: arg => `${arg} is not a valid address.`,
-  oneFormat: '--json and --html only go one at a time.',
+  oneFormat: '--json, --html and --pdf only go one at a time.',
+  pdfToTerminal: 'The PDF belongs in a file, not in the terminal: spurlos <url> -o report.pdf',
+  written: file => `Report written to ${file}.`,
+  cannotWrite: (file, reason) => `${file} could not be written: ${reason}`,
   mcpOnly: flags => `spurlos mcp only takes --lang and --user-agent, not ${flags}.`,
   urlMissing: 'url is missing: the address of the site as a string, e.g. example.com.',
   unknownFormat: value => `format only knows text and json, not ${value}.`,
   checkedAt: date => `checked on ${date}`,
-  failed: (url, reason) => `${url} could not be checked: ${reason}`,
+  failed: (url, reason) =>
+    `${url} could not be checked: ${
+      reason === AUTH_REQUIRED ? 'The page asks for a login. --auth or SPURLOS_AUTH only applies to exactly the address given (scheme, host, port).'
+      : reason === AUTH_REJECTED ? 'The login was rejected.'
+      : reason
+    }`,
+  authFormat: '--auth and SPURLOS_AUTH take user:password.',
+  authOverHttp: 'The address is http://, the password goes to the server unencrypted.',
   title: {
     'third-party': 'Third-party servers',
     cookies: 'Cookies and storage',

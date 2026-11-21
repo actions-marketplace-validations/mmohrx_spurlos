@@ -1,8 +1,11 @@
 #!/usr/bin/env node
+import { writeFile } from 'node:fs/promises'
+import { extname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { runChecks } from './checks.ts'
 import { LANGS, MESSAGES, pickLang } from './lang/index.ts'
 import { serve } from './mcp.ts'
+import { pdf } from './pdf.ts'
 import { banner, clean, html, json, text } from './report.ts'
 import { scan, toUrl } from './scan.ts'
 
@@ -12,9 +15,12 @@ const color = process.stdout.isTTY && process.stdout.hasColors()
 const OPTIONS = {
   json: { type: 'boolean' },
   html: { type: 'boolean' },
+  pdf: { type: 'boolean' },
+  output: { type: 'string', short: 'o' },
   verbose: { type: 'boolean', short: 'v' },
   lang: { type: 'string' },
   'user-agent': { type: 'string' },
+  auth: { type: 'string' },
   help: { type: 'boolean', short: 'h' },
 } as const
 
@@ -51,7 +57,7 @@ else await check(arg)
 
 async function mcp() {
   // the format is the client's to choose, per call
-  const ignored = (['json', 'html', 'verbose'] as const).filter(f => values[f]).map(f => `--${f}`)
+  const ignored = (['json', 'html', 'pdf', 'output', 'auth', 'verbose'] as const).filter(f => values[f]).map(f => `--${f}`)
   if (ignored.length) {
     console.error(`spurlos: ${say.mcpOnly(ignored.join(', '))}`)
     process.exit(2)
@@ -61,8 +67,17 @@ async function mcp() {
 }
 
 async function check(arg: string) {
-  if (values.json && values.html) {
+  if ([values.json, values.html, values.pdf].filter(Boolean).length > 1) {
     console.error(`spurlos: ${say.oneFormat}`)
+    process.exit(2)
+  }
+  // the format: the flag, else the file's extension with -o, else text
+  const file = values.output
+  const ext = file ? extname(file).toLowerCase() : ''
+  const format = values.json ? 'json' : values.html ? 'html' : values.pdf ? 'pdf' : ext === '.json' ? 'json' : ext === '.html' || ext === '.htm' ? 'html' : ext === '.pdf' ? 'pdf' : 'text'
+  // said before the scan, not after: binary in a terminal garbles it
+  if (format === 'pdf' && !file && process.stdout.isTTY) {
+    console.error(`spurlos: ${say.pdfToTerminal}`)
     process.exit(2)
   }
 
@@ -72,16 +87,40 @@ async function check(arg: string) {
     process.exit(2)
   }
 
+  // user:password, split at the first colon: a password may hold one, a user name may not
+  const login = values.auth ?? (process.env.SPURLOS_AUTH || undefined)
+  const colon = login?.indexOf(':') ?? -1
+  if (login !== undefined && colon < 1) {
+    console.error(`spurlos: ${say.authFormat}`)
+    process.exit(2)
+  }
+  const auth = login ? { username: login.slice(0, colon), password: login.slice(colon + 1) } : undefined
+  if (auth && url.startsWith('http:')) console.error(`spurlos: ${say.authOverHttp}`)
+
   try {
     const ua = values['user-agent']
-    const s = await scan(url, ua ? { userAgent: ua } : {})
+    const s = await scan(url, { ...(ua ? { userAgent: ua } : {}), ...(auth ? { auth } : {}) })
     const results = runChecks(s)
     // on stderr, so it neither ends up in --json nor gets lost; the Docker image sets SPURLOS_NO_SANDBOX and stays quiet
     if (!s.sandbox && process.env.SPURLOS_NO_SANDBOX !== '1') console.error(`spurlos: ${say.noSandbox}`)
-    const width = Math.min(process.stdout.columns || 80, 100)
-    console.log(
-      values.json ? json(s, results, lang) : values.html ? html(s, results, lang) : text(s, results, lang, { color, verbose: values.verbose ?? false, width }),
-    )
+    // into a file plain text at the usual width, as when redirected
+    const width = file ? 80 : Math.min(process.stdout.columns || 80, 100)
+    const report =
+      format === 'pdf' ? await pdf(html(s, results, lang))
+      : format === 'json' ? json(s, results, lang)
+      : format === 'html' ? html(s, results, lang)
+      : text(s, results, lang, { color: color && !file, verbose: values.verbose ?? false, width })
+    if (file) {
+      try {
+        await writeFile(file, typeof report === 'string' ? report + '\n' : report)
+      } catch (e) {
+        console.error(clean(`spurlos: ${say.cannotWrite(file, e instanceof Error ? e.message : String(e))}`))
+        process.exitCode = 2
+        return
+      }
+      console.error(clean(`spurlos: ${say.written(file)}`))
+    } else if (typeof report === 'string') console.log(report)
+    else process.stdout.write(report)
     // exitCode, not exit(): on a pipe stdout is written asynchronously, and exit() would cut a long report short
     process.exitCode = results.some(r => r.level === 'red') ? 1 : 0
   } catch (e) {

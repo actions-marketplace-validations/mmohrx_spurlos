@@ -234,6 +234,7 @@ li::before { content: "●"; position: absolute; left: -18px }
 .note { margin: 0; padding: 4px 14px 10px 40px; color: var(--dim); font-size: 14px }
 .warn { color: var(--yellow) }
 footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--dim); font-size: 13px }
+@media print { main { max-width: none; padding: 0 } .check { break-inside: avoid } summary.head::after, details[open] > summary.head::after { content: none } }
 `
 
 /** the logo from assets/, made by scripts/logo.mjs; inline, so the report loads nothing. Package and image ship it. */

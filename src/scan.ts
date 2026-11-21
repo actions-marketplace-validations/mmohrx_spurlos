@@ -68,6 +68,9 @@ export function toUrl(arg: string): string | undefined {
 
 /** what a Visit's error says when the server sent nothing at all; the report translates it */
 export const NO_RESPONSE = 'no response'
+/** why a scan stops at a 401: the page wants a login, or turned the one given down; the report translates both */
+export const AUTH_REQUIRED = 'login required'
+export const AUTH_REJECTED = 'login rejected'
 
 /** Where a URL ended up when opened on its own: status and final URL, or why it could not be opened. */
 export type Visit = { url: string; status: number; finalUrl: string } | { url: string; error: string }
@@ -111,7 +114,16 @@ export type ScanOptions = {
   fetch?: typeof fetch
   /** replaces the user agent of every request spurlos makes */
   userAgent?: string
+  /** HTTP basic auth, sent only to the origin of the URL checked, and not with the http:// probe of an https page */
+  auth?: { username: string; password: string }
 }
+
+/**
+ * Basic auth for the browser, bound to the origin of the URL checked: a third-party server that asks for a login
+ * gets nothing, and a page on another origin neither. Playwright then sends it to that origin only when asked (401).
+ */
+const credentials = (url: string, options: ScanOptions) =>
+  options.auth ? { httpCredentials: { ...options.auth, origin: new URL(url).origin } } : {}
 
 /**
  * Asks the server directly, not the browser: Chromium upgrades http:// to https:// on its own,
@@ -134,7 +146,7 @@ async function probeHttp(url: string, f: typeof fetch, userAgent: string): Promi
  * there Chromium runs without, and the Scan says so. SPURLOS_NO_SANDBOX=1 skips the attempt where the container
  * itself is the boundary.
  */
-async function launch(): Promise<{ browser: Browser; sandbox: boolean }> {
+export async function launch(): Promise<{ browser: Browser; sandbox: boolean }> {
   if (process.env.SPURLOS_NO_SANDBOX !== '1') {
     try {
       return { browser: await chromium.launch({ chromiumSandbox: true }), sandbox: true }
@@ -151,7 +163,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
   try {
     const chrome = browser.version()
     const userAgent = options.userAgent ?? browserAgent(chrome)
-    const context = await browser.newContext({ locale: 'de-DE', userAgent, acceptDownloads: false })
+    const context = await browser.newContext({ locale: 'de-DE', userAgent, acceptDownloads: false, ...credentials(url, options) })
     await options.setup?.(context)
 
     const requests: Request[] = []
@@ -164,6 +176,9 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     if (!options.userAgent) await plainBrands(context, page, userAgent, chrome)
     const response = await page.goto(url, { waitUntil: 'load' })
     if (!response) throw new Error(NO_RESPONSE)
+    // the login page is not the site: say so instead of checking it
+    // rejected only where the login was sent: a redirect to another origin gets none
+    if (response.status() === 401) throw new Error(options.auth && new URL(page.url()).origin === new URL(url).origin ? AUTH_REJECTED : AUTH_REQUIRED)
     const settled = await page
       .waitForLoadState('networkidle', { timeout: options.settleMs ?? 10_000 })
       .then(() => true, () => false)
@@ -195,7 +210,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const headers = await response.allHeaders()
     const tls = await response.securityDetails()
     const finalUrl = page.url()
-    const visitor = await documentsOnly(browser, options)
+    const visitor = await documentsOnly(browser, url, options)
 
     const result: Scan = {
       url,
@@ -230,8 +245,8 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
 }
 
 /** A second, separate browser for opening single URLs: only the documents load, nothing of it counts towards the scan. */
-async function documentsOnly(browser: Browser, options: ScanOptions) {
-  const context = await browser.newContext({ userAgent: options.userAgent ?? BOT_AGENT, acceptDownloads: false })
+async function documentsOnly(browser: Browser, url: string, options: ScanOptions) {
+  const context = await browser.newContext({ userAgent: options.userAgent ?? BOT_AGENT, acceptDownloads: false, ...credentials(url, options) })
   await context.route('**/*', route => (route.request().resourceType() === 'document' ? route.continue() : route.abort()))
   // registered after the filter, so the tests' routes take precedence over it
   await options.setup?.(context)

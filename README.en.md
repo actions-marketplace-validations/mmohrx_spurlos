@@ -49,11 +49,14 @@ npx spurlos <url> --lang en
 | `--lang de\|en` | language of the report. Without it, `SPURLOS_LANG` applies, then the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`), else `de` |
 | `--verbose`, `-v` | details for the green checks too |
 | `--json` | the full result as JSON |
-| `--html` | the report as a self-contained HTML page, e.g. to pass on: `spurlos example.com --html > report.html` |
+| `--html` | the report as a self-contained HTML page, e.g. to pass on |
+| `--pdf` | the report as a PDF |
+| `-o`, `--output <file>` | the report into a file instead of the output. Without `--json`, `--html` or `--pdf` the extension decides: `spurlos example.com -o report.pdf` (`.pdf`, `.html`, `.json`, else text) |
+| `--auth <user:password>` | login by HTTP basic auth, e.g. for a staging site. Better through `SPURLOS_AUTH`, see [Sites behind a login](#sites-behind-a-login) |
 | `--user-agent <string>` | your own user agent for every request |
 | `--help`, `-h` | help |
 
-The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. In a terminal the report is colored; redirected to a file or a pipe, or with `NO_COLOR` set, it stays plain text.
+The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. In a terminal the report is colored; with `-o`, in a pipe or with `NO_COLOR` set, it stays plain text. `--html` and `--pdf` go to the output too (`--pdf > report.pdf`), but spurlos does not write a PDF into the terminal. With Docker a file of `-o` stays in the container; redirect instead: `docker run --rm ghcr.io/mmohrx/spurlos example.com --pdf > report.pdf`.
 
 ## Lights
 
@@ -93,11 +96,11 @@ spurlos/0.2.0 (+https://github.com/mmohrx/spurlos)
 
 Because spurlos opens pages it does not know, Chromium runs in its own sandbox wherever the system allows one (macOS, Windows, Linux with user namespaces). Without one, spurlos says so on stderr. In the Docker image Chromium runs without its sandbox, as the container, running as user `node`, is the boundary; on Linux, that is the best way to check unknown sites. spurlos accepts no downloads from a page.
 
-The HTML report holds every finding, with the green checks folded. It loads nothing and contains no JavaScript, so it opens offline and can be sent by mail.
+The HTML report holds every finding, with the green checks folded. It loads nothing and contains no JavaScript, so it opens offline and can be sent by mail. The PDF is the same report, printed by the Chromium spurlos uses anyway, on A4 and always light. While printing, JavaScript is off and every request is blocked.
 
 ## For AI assistants (MCP)
 
-`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`) and `format` (`text` or `json`). It runs on your machine, like the CLI.
+`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`) and `format` (`text` or `json`). It runs on your machine, like the CLI: the assistant starts it itself and talks to it over stdin and stdout. There is no open port, so it needs no token either.
 
 In Claude Code:
 
@@ -113,7 +116,19 @@ In other clients, e.g. Claude Desktop, under `mcpServers`:
 
 With Docker instead of Node: `"command": "docker", "args": ["run", "-i", "--rm", "ghcr.io/mmohrx/spurlos", "mcp"]`.
 
-As with the CLI, the language follows `--lang`, `SPURLOS_LANG` or the system, and `--user-agent` applies to every request. At most two checks run at a time, others wait. Every report carries the note that it is not legal advice.
+As with the CLI, the language follows `--lang`, `SPURLOS_LANG` or the system, and `--user-agent` applies to every request. There is no `--auth` there, as the assistant picks the addresses. At most two checks run at a time, others wait. Every report carries the note that it is not legal advice.
+
+## Sites behind a login
+
+Internal sites and staging sites before launch often sit behind HTTP basic auth. Pass the credentials through the environment, so they stay out of the shell history and the process list:
+
+```
+SPURLOS_AUTH='team:secret' npx spurlos https://staging.company.com
+```
+
+`--auth team:secret` works too and takes precedence. The password goes only to exactly the address given (scheme, host, port). Third-party servers the page loads never get it, even when they ask for a login, and Impressum or privacy pages only when they live at the same address. If `company.com` redirects to `www.company.com`, give `www.company.com` right away. The check whether http redirects to https runs without the login. If the address itself is `http://`, the password goes unencrypted; spurlos points that out on stderr.
+
+If the page asks for a login and there is none or the wrong one, spurlos does not check the error page but ends with exit code `2` and says why.
 
 ## In CI
 
@@ -121,7 +136,7 @@ As with the CLI, the language follows `--lang`, `SPURLOS_LANG` or the system, an
 npx spurlos https://staging.company.com --lang en || echo "new traces"
 ```
 
-Exit code `0` without a red finding, `1` with one, `2` if the page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, `--json` together with `--html`).
+Exit code `0` without a red finding, `1` with one, `2` if the page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, more than one of `--json`, `--html`, `--pdf`) or the file of `-o` could not be written. A missing or rejected login ends with `2` too.
 
 With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate, links, forms), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. The red checks, for example:
 
