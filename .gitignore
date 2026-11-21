@@ -1,3 +1,22 @@
 node_modules/
 dist/
+coverage/
 *.log
+*.tgz
+
+# Berichte aus Testläufen
+/bericht.*
+/report.*
+
+# Umgebung, Geheimnisse
+.env
+.env.*
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Editoren
+.idea/
+.vscode/
+*.swp
