@@ -110,6 +110,15 @@ describe('services', () => {
     expect(serviceOfHost('notgoogle.com')).toBeUndefined()
   })
 
+  test('services that share a prefix keep apart: Snowplow’s _sp_id., Sourcepoint’s _sp_su', () => {
+    expect(serviceOfCookie('_sp_id.5b99')?.name).toBe('Snowplow')
+    expect(serviceOfStorage('_sp_ses.27f6.expires')?.name).toBe('Snowplow')
+    expect(serviceOfCookie('_sp_su')?.name).toBe('Sourcepoint')
+    expect(serviceOfStorage('_sp_user_consent_4987')?.name).toBe('Sourcepoint')
+    expect(serviceOfHost('tt.omtrdc.net')?.name).toBe('Adobe Target')
+    expect(serviceOfHost('accounts.google.com')?.name).toBe('Google Sign-In')
+  })
+
   test('cookie names are prefixes', () => {
     expect(serviceOfCookie('_ga_ABC123')?.name).toBe('Google Analytics')
     expect(serviceOfCookie('_hjSessionUser_1')?.name).toBe('Hotjar')

@@ -110,3 +110,59 @@ proton.me
 signal.org
 duckduckgo.com
 tutanota.com
+
+# Auto und Mobilität
+volkswagen.de
+bmw.de
+mercedes-benz.de
+adac.de
+
+# Energie
+eon.de
+vattenfall.de
+
+# Jobs und Immobilien
+stepstone.de
+indeed.com
+xing.com
+immobilienscout24.de
+
+# Weitere Nachrichten
+stern.de
+focus.de
+welt.de
+n-tv.de
+kicker.de
+
+# Technik und Mode
+cyberport.de
+notebooksbilliger.de
+hm.com
+aboutyou.de
+lieferando.de
+
+# Gesundheit
+doctolib.de
+apotheken-umschau.de
+shop-apotheke.com
+
+# Software und Lernen
+notion.so
+slack.com
+atlassian.com
+duolingo.com
+
+# NGOs und Vereine
+wikimedia.de
+ccc.de
+campact.de
+greenpeace.de
+
+# Bundesländer
+bayern.de
+land.nrw
+
+# EU-Ausland
+elpais.com
+corriere.it
+nos.nl

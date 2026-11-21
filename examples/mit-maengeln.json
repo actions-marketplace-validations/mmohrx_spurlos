@@ -61,7 +61,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829823600.693632,
+        "expires": 1829824578.190374,
         "secure": false,
         "httpOnly": false
       }
@@ -171,7 +171,8 @@
               "uc_ui_version",
               "uc_user_interaction",
               "uc_user_country",
-              "ucData"
+              "ucData",
+              "ucString"
             ]
           },
           "requests": 1
@@ -252,7 +253,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829823600.693632,
+          "expires": 1829824578.190374,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,
