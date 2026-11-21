@@ -61,7 +61,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829824578.190374,
+        "expires": 1829826439.635857,
         "secure": false,
         "httpOnly": false
       }
@@ -225,6 +225,13 @@
               "youtube-nocookie.com",
               "ytimg.com",
               "googlevideo.com"
+            ],
+            "cookies": [
+              "VISITOR_INFO1_LIVE",
+              "VISITOR_PRIVACY_METADATA",
+              "YSC",
+              "__Secure-YNID",
+              "__Secure-ROLLOUT_TOKEN"
             ]
           },
           "requests": 1
@@ -253,7 +260,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829824578.190374,
+          "expires": 1829826439.635857,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,
