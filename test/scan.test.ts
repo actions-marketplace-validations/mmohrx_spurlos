@@ -109,6 +109,13 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(english).not.toMatch(/[äöüß„]/)
   })
 
+  test('a screenshot only when asked for', async () => {
+    expect((await scan(`${SITE}/`, { setup: offline, fetch: redirects })).screenshot).toBeUndefined()
+    const s = await scan(`${SITE}/`, { setup: offline, fetch: redirects, screenshot: true })
+    // a JPEG, in base64
+    expect(Buffer.from(s.screenshot ?? '', 'base64').subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]))
+  })
+
   test('the page sees a regular Chrome with spurlos added, the side requests an open bot', async () => {
     seen.length = 0
     fetched.length = 0

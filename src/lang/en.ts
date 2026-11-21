@@ -65,6 +65,8 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   compared: (file, fresh, gone) => `compared with ${file}: ${fresh} new, ${gone} gone`,
   isNew: 'new',
   gone: 'gone',
+  shotAlt: 'Screenshot of the page on the first visit',
+  shotCaption: 'This is how the page looked on the first visit, before any click.',
   title: {
     'third-party': 'Third-party servers',
     cookies: 'Cookies and storage',

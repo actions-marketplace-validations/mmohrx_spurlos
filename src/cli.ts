@@ -160,12 +160,14 @@ async function check(args: string[]) {
   const baseline = baselineFile ? await readBaseline(baselineFile) : undefined
 
   const ua = values['user-agent']
+  // the picture only goes into HTML and PDF
+  const screenshot = targets.some(t => t.format === 'html' || t.format === 'pdf')
   const reports: Report[] = []
   let failed = false
   // one after the other: each scan starts its own Chromium
   for (const url of urls) {
     try {
-      const s = await scan(url, { ...(ua ? { userAgent: ua } : {}), ...(auth ? { auth } : {}) })
+      const s = await scan(url, { ...(ua ? { userAgent: ua } : {}), ...(auth ? { auth } : {}), ...(screenshot ? { screenshot } : {}) })
       const results = runChecks(s)
       const before = baseline?.(s.url, s.finalUrl, urls.length === 1)
       reports.push({ scan: s, results, ...(before && baselineFile ? { compare: { file: baselineFile, comparison: compare(results, before), before } } : {}) })

@@ -116,7 +116,7 @@ spurlos/0.3.0 (+https://github.com/mmohrx/spurlos)
 
 Weil spurlos fremde Seiten öffnet, läuft Chromium in seiner eigenen Sandbox, wo das System eine erlaubt (macOS, Windows, Linux mit User-Namespaces). Fehlt sie, meldet spurlos das auf stderr. Im Docker-Image läuft Chromium ohne Sandbox, dort ist der Container als Benutzer `node` die Grenze; prüfe unbekannte Seiten unter Linux am besten so. Downloads einer Seite nimmt spurlos nicht an.
 
-Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt. Er lädt nichts nach und enthält kein JavaScript, lässt sich also auch offline öffnen oder per Mail verschicken. Mehrere Adressen stehen in einer Seite untereinander. Das PDF ist derselbe Bericht, gedruckt vom Chromium, das spurlos ohnehin nutzt, im Format A4 und immer hell, jede Adresse ab einer neuen Seite. Beim Drucken ist JavaScript aus und jede Anfrage gesperrt.
+Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt, und am Ende ein Bildschirmfoto der Seite, so wie ein Besucher sie zuerst sieht, samt Cookie-Banner. Er lädt nichts nach und enthält kein JavaScript, lässt sich also auch offline öffnen oder per Mail verschicken. Mehrere Adressen stehen in einer Seite untereinander. Das PDF ist derselbe Bericht, gedruckt vom Chromium, das spurlos ohnehin nutzt, im Format A4 und immer hell, jede Adresse ab einer neuen Seite. Das Bildschirmfoto macht spurlos nur für HTML und PDF; in `--json` steht es nicht. Beim Drucken ist JavaScript aus und jede Anfrage gesperrt.
 
 ## Für KI-Assistenten (MCP)
 

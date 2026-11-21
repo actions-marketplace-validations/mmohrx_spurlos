@@ -182,10 +182,11 @@ export const clean = (s: string) => s.replace(UNSAFE, '\ufffd')
 // what JSON.stringify leaves as it is: DEL, C1 and the bidi marks; C0 it escapes itself, and its own line breaks must stay
 const UNSAFE_IN_JSON = /[\u007f-\u009f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g
 
-/** what --json holds for one page */
+/** what --json holds for one page: the screenshot stays out, it is only for the eye */
 function data({ scan, results, compare }: Report, lang: Lang) {
+  const { screenshot: _, ...raw } = scan
   const diff = compare ? { compare: { baseline: compare.file, new: compare.comparison.fresh, gone: compare.comparison.gone } } : {}
-  return { scan, results, ...diff, note: MESSAGES[lang].disclaimer }
+  return { scan: raw, results, ...diff, note: MESSAGES[lang].disclaimer }
 }
 
 /**
@@ -305,6 +306,8 @@ summary.head::after { content: "▸"; margin-left: auto; color: var(--dim) } det
 .green > .head .mark, .green > .head .value, li.green::before { color: var(--green) }
 ul { margin: 0; padding: 0 14px 4px 40px; list-style: none }
 .new { margin-right: 6px; padding: 0 5px; border-radius: 4px; background: #0b6bcb; color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase }
+.shot { margin: 24px 0 0 } .shot img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px }
+.shot figcaption { margin-top: 6px; color: var(--dim); font-size: 13px }
 .report + .report { margin-top: 40px; padding-top: 28px; border-top: 2px solid var(--line) }
 li { position: relative; padding: 3px 0; overflow-wrap: anywhere }
 li::before { content: "●"; position: absolute; left: -18px }
@@ -312,7 +315,7 @@ li::before { content: "●"; position: absolute; left: -18px }
 .note { margin: 0; padding: 4px 14px 10px 40px; color: var(--dim); font-size: 14px }
 .warn { color: var(--yellow) }
 footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--dim); font-size: 13px }
-@media print { main { max-width: none; padding: 0 } .check { break-inside: avoid } .report + .report { break-before: page; border: 0 }
+@media print { main { max-width: none; padding: 0 } .check, .shot { break-inside: avoid } .report + .report { break-before: page; border: 0 }
   summary.head::after, details[open] > summary.head::after { content: none } }
 `
 
@@ -323,10 +326,13 @@ const logo = (scheme: 'light' | 'dark') =>
 /** now: when the report says it was checked; timeZone: the zone it says that in, the system's by default */
 export type HtmlOptions = { now?: number; timeZone?: string; compare?: Report['compare'] }
 
+/** what our own screenshot holds; anything else stays out of the page */
+const BASE64 = /^[A-Za-z0-9+/]+=*$/
+
 /**
  * The report as a self-contained HTML page: no scripts, no requests, so it can be mailed or opened offline.
  * Like the text, everything from the page passes clean() and is escaped; the page's own CSP forbids anything
- * but its inline style, in case something slipped through. All findings are in it:
+ * but its inline style and the screenshot inside it, in case something slipped through. All findings are in it:
  * red and yellow checks open, green ones folded. Addresses from the page are shown, not linked.
  */
 export function html(scan: Scan, results: Result[], lang: Lang, options: HtmlOptions = {}): string {
@@ -364,6 +370,9 @@ export function htmlReports(reports: Report[], lang: Lang, options: Omit<HtmlOpt
       ...(compare ? [t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)] : []),
       ...(compare ? goneLabels(t, compare, now).map(l => `${t.gone}: ${l}`) : []),
     ]
+    const shot = scan.screenshot && BASE64.test(scan.screenshot)
+      ? `<figure class="shot"><img src="data:image/jpeg;base64,${scan.screenshot}" alt="${escape(t.shotAlt)}"><figcaption>${escape(t.shotCaption)}</figcaption></figure>\n`
+      : ''
     return `<section class="report">
 <header>
 <div class="top">
@@ -375,14 +384,16 @@ ${first ? `<p class="brand">${logo('light')}${logo('dark')}${escape(VERSION)}</p
 <p class="summary">${counts.map(([l, n]) => `<span class="badge ${l}">${escape(t.summary[l](n))}</span>`).join(' ')}</p>
 </header>
 ${sorted.map(({ r, s }) => block(r, s)).join('\n')}
-${scan.settled ? '' : `<p class="warn">${escape(t.unsettled)}</p>\n`}</section>`
+${scan.settled ? '' : `<p class="warn">${escape(t.unsettled)}</p>\n`}${shot}</section>`
   }
 
+  // the screenshots are inline images: the CSP allows them, and nothing else, only where there is one
+  const images = reports.some(r => r.scan.screenshot) ? '; img-src data:' : ''
   return `<!doctype html>
 <html lang="${lang}">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'${images}">
 <meta name="referrer" content="no-referrer">
 <title>spurlos · ${escape(reports.map(r => r.scan.finalUrl).join(', '))}</title>
 <style>${CSS}</style>

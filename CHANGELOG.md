@@ -12,6 +12,7 @@
 - Cookie-Banner erkannt (Usercentrics, Cookiebot, OneTrust, Borlabs Cookie, Complianz und weitere), samt Hinweis, wenn Tracker trotzdem vorher laden. Cookies, in denen der Banner die Wahl speichert, sind grün.
 - Rot sind bei den Cookies nur noch fremde Domains und bekannte Tracker; bekannte Cookies etwa eines Chats oder Zahlungsanbieters sind gelb.
 - Tipps im Bericht: Schriften und Bibliotheken selbst ausliefern, Einbettungen erst nach einem Klick laden, Beispielwerte für fehlende Header und HSTS.
+- Bildschirmfoto der Seite beim ersten Aufruf im HTML- und PDF-Bericht.
 - `src/services.json` kennt rund 130 Dienste statt 25, mit neuen Kategorien (`analytics`, `consent`, `social`, `chat`, `payment`) und `paths` für Dienste auf der eigenen Seite.
 
 - README: Umgebungsvariablen auf einen Blick, Wartezeiten, keine Telemetrie, Basic Auth mit Docker.

@@ -107,6 +107,8 @@ export type Scan = {
   userAgent: string
   /** whether Chromium ran in its own sandbox; without it, an exploit in the page reaches the user running spurlos */
   sandbox: boolean
+  /** what a visitor saw first, as a JPEG in base64; only when asked for, and never part of --json */
+  screenshot?: string
 }
 
 export type ScanOptions = {
@@ -120,6 +122,8 @@ export type ScanOptions = {
   userAgent?: string
   /** HTTP basic auth, sent only to the origin of the URL checked, and not with the http:// probe of an https page */
   auth?: { username: string; password: string }
+  /** keep a picture of what a visitor sees first, for the HTML and PDF report */
+  screenshot?: boolean
 }
 
 /**
@@ -194,6 +198,8 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       secure: c.secure,
       httpOnly: c.httpOnly,
     }))
+    // what a visitor sees first, cookie banner included; a page that cannot be pictured still gets its report
+    const screenshot = options.screenshot ? await page.screenshot({ type: 'jpeg', quality: 70 }).then(b => b.toString('base64'), () => undefined) : undefined
     const { storage, links, forms, resources, metaCsp, metaReferrer, generator } = await page.evaluate(() => {
       const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
@@ -248,6 +254,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     if (metaCsp) result.metaCsp = metaCsp
     if (metaReferrer) result.metaReferrer = metaReferrer
     if (generator) result.generator = generator
+    if (screenshot) result.screenshot = screenshot
     // the http probe and the legal pages do not depend on each other: ask them all at once.
     // One page can be both Impressum and Datenschutz; open it once.
     const [http, ...legal] = await Promise.all([

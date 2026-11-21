@@ -78,6 +78,17 @@ test('new findings since the baseline are marked, gone ones listed', () => {
   })
 })
 
+test('the screenshot goes into the HTML report, not into the JSON', () => {
+  const shot = Buffer.from([0xff, 0xd8, 0xff, 0xe0]).toString('base64')
+  const s = page('https://shop.example/', { screenshot: shot })
+  const out = html(s, [third()], 'de')
+  expect(out).toContain(`<img src="data:image/jpeg;base64,${shot}"`)
+  expect(out).toContain(`content="default-src 'none'; style-src 'unsafe-inline'; img-src data:"`)
+  expect(JSON.parse(json(s, [third()], 'de')).scan.screenshot).toBeUndefined()
+  // anything but base64 stays out
+  expect(html(page('https://shop.example/', { screenshot: '"><script>' }), [third()], 'de')).not.toContain('<img')
+})
+
 test('several pages: one HTML page with a section each, a JSON list', () => {
   const reports = [{ scan: page('https://a.example/'), results: [third()] }, { scan: page('https://b.example/'), results: [third('x.example')] }]
   const out = htmlReports(reports, 'de')

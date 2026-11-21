@@ -68,6 +68,8 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   compared: (file: string, fresh: number, gone: number) => `verglichen mit ${file}: ${fresh} neu, ${gone} weg`,
   isNew: 'neu',
   gone: 'weg',
+  shotAlt: 'Bildschirmfoto der Seite beim ersten Aufruf',
+  shotCaption: 'So sah die Seite beim ersten Aufruf aus, bevor jemand etwas anklickte.',
   title: {
     'third-party': 'Fremde Server',
     cookies: 'Cookies und Speicher',

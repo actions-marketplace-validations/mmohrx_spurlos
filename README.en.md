@@ -116,7 +116,7 @@ spurlos/0.3.0 (+https://github.com/mmohrx/spurlos)
 
 Because spurlos opens pages it does not know, Chromium runs in its own sandbox wherever the system allows one (macOS, Windows, Linux with user namespaces). Without one, spurlos says so on stderr. In the Docker image Chromium runs without its sandbox, as the container, running as user `node`, is the boundary; on Linux, that is the best way to check unknown sites. spurlos accepts no downloads from a page.
 
-The HTML report holds every finding, with the green checks folded. It loads nothing and contains no JavaScript, so it opens offline and can be sent by mail. Several addresses go into one page, one below the other. The PDF is the same report, printed by the Chromium spurlos uses anyway, on A4 and always light, each address starting on a new page. While printing, JavaScript is off and every request is blocked.
+The HTML report holds every finding, with the green checks folded, and at the end a screenshot of the page as a visitor sees it first, cookie banner included. It loads nothing and contains no JavaScript, so it opens offline and can be sent by mail. Several addresses go into one page, one below the other. The PDF is the same report, printed by the Chromium spurlos uses anyway, on A4 and always light, each address starting on a new page. spurlos takes the screenshot only for HTML and PDF; it is not part of `--json`. While printing, JavaScript is off and every request is blocked.
 
 ## For AI assistants (MCP)
 

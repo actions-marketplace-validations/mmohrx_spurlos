@@ -18,7 +18,7 @@ const pages = [
 
 const colored: string[] = []
 for (const p of pages) {
-  const s = await scan(p.url, { setup: offline, fetch: p.fetch })
+  const s = await scan(p.url, { setup: offline, fetch: p.fetch, screenshot: true })
   const results = runChecks(s)
   // the default language keeps the bare name: mit-maengeln.txt, mit-maengeln.en.txt
   for (const lang of LANGS) {
