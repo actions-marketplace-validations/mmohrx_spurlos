@@ -84,6 +84,7 @@
   { "name": "Cookie Notice", "category": "consent", "hosts": [], "paths": ["/wp-content/plugins/cookie-notice/"], "cookies": ["cookie_notice_accepted"] },
   { "name": "GDPR Cookie Compliance", "category": "consent", "hosts": [], "paths": ["/wp-content/plugins/gdpr-cookie-compliance/"], "cookies": ["moove_gdpr_popup"] },
   { "name": "IAB TCF", "category": "consent", "hosts": [], "cookies": ["euconsent-v2", "eupubconsent-v2"] },
+  { "name": "Amazon Consent Signal", "category": "consent", "hosts": [], "cookies": ["amzn_consent"] },
 
   { "name": "YouTube", "category": "video", "hosts": ["youtube.com", "youtube-nocookie.com", "ytimg.com", "googlevideo.com"] },
   { "name": "Vimeo", "category": "video", "hosts": ["vimeo.com", "vimeocdn.com"] },
