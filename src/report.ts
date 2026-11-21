@@ -1,5 +1,5 @@
 import {
-  certLevel, cookieLevel, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
+  certLevel, cookieLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
   type Comparison, type Level, type Result,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
@@ -99,12 +99,12 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
 
     case 'legal':
       return {
-        value: t.legal(r.level === 'green'),
+        value: t.legal(r.level),
         items: r.pages.map(p => {
           if (!p.link) return item(key.legal(p.kind), legalLevel(p), `${t.legalName[p.kind]}: ${t.legalNoLink}`)
           const v = p.visit
-          const state = !v ? t.legalNotChecked : 'error' in v ? t.legalUnreachable(v.error === NO_RESPONSE ? t.noResponse : v.error) : v.status < 300 ? t.legalOk : t.legalStatus(v.status)
-          return item(key.legal(p.kind), legalLevel(p), `${t.legalName[p.kind]}: ${t.quote(p.link.text || p.link.href)} → ${p.link.href}`, state)
+          const state = !v ? t.legalNotChecked : 'error' in v ? (legalBlocked(v) ? t.legalTimeout : t.legalUnreachable(v.error === NO_RESPONSE ? t.noResponse : v.error)) : v.status < 300 ? t.legalOk : t.legalStatus(v.status)
+          return item(key.legal(p.kind), legalLevel(p), `${t.legalName[p.kind]}: ${t.quote(p.link.text || p.link.href)} → ${p.link.href}`, legalBlocked(v) ? state + t.legalBlocked : state)
         }),
         notes: [],
       }

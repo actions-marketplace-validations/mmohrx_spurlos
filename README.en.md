@@ -80,7 +80,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 |---|---|---|---|
 | Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address; and servers that seem to belong to the site (`--own`, certificate, name) | at least one request to another domain that belongs to no cookie banner, no captcha and not to the site |
 | Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a cookie of another domain that does not seem to belong to the site, or one of a known tracker |
-| Legal notice and privacy policy | both linked and reachable | – | a link is missing or the page answers with an error |
+| Legal notice and privacy policy | both linked and reachable | a page turns spurlos away (`401`, `403`, `429`) or does not answer before the timeout, often a bot check | a link is missing or the page answers with another error, such as `404` |
 | HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing or only an error answers on http (4xx, 5xx, often a bot check), certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
 | Security headers | all set | one or more missing; the CSP lets scripts through | – |
 | Embedded files | nothing to note | a script or stylesheet from a third-party server without `integrity`; an image, video or audio over http on an https page | a script, stylesheet or iframe over http on an https page |
@@ -125,7 +125,7 @@ The legal notice, the privacy policy and the http redirect are requested openly 
 spurlos/0.3.0 (+https://github.com/mmohrx/spurlos)
 ```
 
-Some bot protection services refuse these requests. If http:// answers with an error, spurlos reports it yellow, since whether the server redirects is then left open. spurlos does not try to get around the bot protection.
+Some bot protection services refuse these requests. If http:// answers with an error, spurlos reports it yellow, since whether the server redirects is then left open. The same goes for the legal notice and privacy policy when they turn spurlos away or keep it waiting. spurlos does not try to get around the bot protection.
 
 Because spurlos opens pages it does not know, Chromium runs in its own sandbox wherever the system allows one (macOS, Windows, Linux with user namespaces). Without one, spurlos says so on stderr. In the Docker image Chromium runs without its sandbox, as the container, running as user `node`, is the boundary; on Linux, that is the best way to check unknown sites. spurlos accepts no downloads from a page.
 

@@ -122,3 +122,20 @@ test('the same form twice is one line with its count', () => {
   expect(report).toContain('GET https://www.firma.de/suche – sendet verschlüsselt an die eigene Seite (2×)')
   expect(report).toContain('Formulare                  3')
 })
+
+test('a legal page that turns spurlos away says it could not be checked', () => {
+  const scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true } as Scan
+  const results = [
+    {
+      check: 'legal', level: 'yellow', pages: [
+        { kind: 'impressum', link: { text: 'Impressum', href: 'https://www.firma.de/impressum' }, visit: { url: 'https://www.firma.de/impressum', status: 403, finalUrl: 'https://www.firma.de/impressum' } },
+        { kind: 'datenschutz', link: { text: 'Datenschutz', href: 'https://www.firma.de/datenschutz' }, visit: { url: 'https://www.firma.de/datenschutz', error: 'page.goto: Timeout 15000ms exceeded.' } },
+      ],
+    },
+  ] as Result[]
+  const de = text(scan, results, 'de')
+  expect(de).toContain('beide verlinkt, nicht alles prüfbar')
+  expect(de).toContain('🟡 Impressum: „Impressum“ → https://www.firma.de/impressum – antwortet mit Status 403, oft wegen eines Bot-Schutzes')
+  expect(de).toContain('🟡 Datenschutzerklärung: „Datenschutz“ → https://www.firma.de/datenschutz – keine Antwort nach 15 Sekunden, oft wegen eines Bot-Schutzes')
+  expect(text(scan, results, 'en')).toContain('answers with status 403, often because of a bot check')
+})

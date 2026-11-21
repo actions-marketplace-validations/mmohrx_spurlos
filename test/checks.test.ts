@@ -3,7 +3,7 @@ import {
   compare, consentManagers, cookies, disclosure, findings, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
-import type { Scan } from '../src/scan.ts'
+import type { Scan, Visit } from '../src/scan.ts'
 
 const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], userAgent: 'test', sandbox: true }
 const req = (host: string) => ({ url: `https://${host}/x`, host, type: 'script' })
@@ -189,6 +189,15 @@ describe('legal', () => {
     expect(legal({ ...base, links: links.slice(0, 2), legal: [visit('https://www.firma.de/impressum')] }).level).toBe('red')
     const broken = { ...base, links, legal: [visit('https://www.firma.de/impressum'), visit('https://www.firma.de/en/privacy', 404)] }
     expect(legal(broken).level).toBe('red')
+  })
+
+  test('turned away or kept waiting, as by a bot check, is yellow; a missing page and other errors stay red', () => {
+    const impressum = visit('https://www.firma.de/impressum')
+    const privacy = (v: Visit) => legal({ ...base, links, legal: [impressum, v] }).level
+    for (const status of [401, 403, 429]) expect(privacy(visit('https://www.firma.de/en/privacy', status))).toBe('yellow')
+    expect(privacy({ url: 'https://www.firma.de/en/privacy', error: 'page.goto: Timeout 15000ms exceeded.' })).toBe('yellow')
+    for (const status of [404, 410, 500, 503]) expect(privacy(visit('https://www.firma.de/en/privacy', status))).toBe('red')
+    expect(privacy({ url: 'https://www.firma.de/en/privacy', error: 'net::ERR_NAME_NOT_RESOLVED' })).toBe('red')
   })
 })
 

@@ -184,7 +184,13 @@ export const cookieLevel = (c: CookieFinding): Level =>
 export const disclosureLevel = (d: Disclosure): Level => (d.version ? 'yellow' : 'green')
 /** what a framework keeps there to run is green; anything else an app stores wants a look */
 export const storageLevel = (e: StorageFinding): Level => (isNecessary(e.service) ? 'green' : 'yellow')
-export const legalLevel = (p: LegalPage): Level => (ok(p.visit) ? 'green' : 'red')
+/**
+ * A page that turns spurlos away (401, 403, 429) or keeps it waiting until the timeout, as bot checks do, may still
+ * open for visitors: yellow, as it could not be checked. A missing link, 404 and any other error are red.
+ */
+export const legalBlocked = (v: Visit | undefined): boolean =>
+  v !== undefined && ('status' in v ? [401, 403, 429].includes(v.status) : /\btimeout\b/i.test(v.error))
+export const legalLevel = (p: LegalPage): Level => (ok(p.visit) ? 'green' : legalBlocked(p.visit) ? 'yellow' : 'red')
 export const certLevel = (daysLeft: number): Level => (daysLeft < 7 ? 'red' : daysLeft < 14 ? 'yellow' : 'green')
 /** nothing on http is yellow: browsers mostly try https first, but old http:// links break; refused is yellow, as it is left open */
 export const httpLevel = (h: HttpRedirect): Level => (h === 'no-redirect' ? 'red' : h === 'redirects' ? 'green' : 'yellow')
@@ -237,7 +243,7 @@ export function legalLinks(links: Link[], pageUrl?: string): (Link & { kind: Leg
   return out
 }
 
-/** Impressum and Datenschutz each need a link on the page that opens without error. */
+/** Impressum and Datenschutz each need a link on the page that opens without error; turned away, they are left open. */
 export function legal(scan: Scan): Result {
   const found = legalLinks(scan.links, scan.finalUrl)
   const pages = (['impressum', 'datenschutz'] as const).map(kind => {
