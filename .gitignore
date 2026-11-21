@@ -20,3 +20,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# eigene Seiten für pnpm sites, nicht öffentlich
+/scripts/sites.local.txt

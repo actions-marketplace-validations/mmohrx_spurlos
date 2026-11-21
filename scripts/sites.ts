@@ -3,7 +3,7 @@
  * hat sich eine Ampel geändert, welche Befunde sind neu oder weg. Dazu, über alle Seiten, was spurlos nicht kennt
  * (Hosts, Cookies, Speicher), als Vorschläge für src/services.json.
  *
- *   pnpm sites                             alle Seiten aus sites.txt
+ *   pnpm sites                             alle Seiten aus sites.txt und sites.local.txt
  *   pnpm sites zeit.de n26.com             nur diese
  *   pnpm sites --jobs 4                    vier Seiten gleichzeitig (Standard 3)
  *
@@ -21,6 +21,8 @@ import { compare, findings, type Result } from '../src/checks.ts'
 const ROOT = process.env.SPURLOS_SITES_DIR ?? join(homedir(), '.cache', 'spurlos-sites')
 const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
 const LIST = fileURLToPath(new URL('./sites.txt', import.meta.url))
+// sites of one's own or of small businesses, kept out of the public repo (.gitignore)
+const LOCAL = fileURLToPath(new URL('./sites.local.txt', import.meta.url))
 const TIMEOUT = 180_000
 const LIGHT = { red: '🔴', yellow: '🟡', green: '🟢' } as const
 const ORDER = ['third-party', 'cookies', 'legal', 'https', 'headers', 'resources', 'forms', 'disclosure'] as const
@@ -31,7 +33,8 @@ const args = process.argv.slice(2)
 const jobsAt = args.indexOf('--jobs')
 const jobs = jobsAt >= 0 ? Number(args.splice(jobsAt, 2)[1]) || 3 : 3
 // a list in one argument too: "a.de b.de" or a.de,b.de
-const sites = args.length ? args.flatMap(a => a.split(/[\s,]+/)).filter(Boolean) : readFileSync(LIST, 'utf8').split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
+const listed = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8').split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean) : [])
+const sites = args.length ? args.flatMap(a => a.split(/[\s,]+/)).filter(Boolean) : [...new Set([...listed(LIST), ...listed(LOCAL)])]
 
 /** a file name for a site: ikea.com/de/de as ikea.com_de_de */
 const fileOf = (site: string) => site.replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/[^a-z0-9.-]+/gi, '_') + '.json'
