@@ -1,5 +1,5 @@
 spurlos 0.3.0  https://shop.example/
-7 in Ordnung
+8 in Ordnung
 
 🟢 Fremde Server              keine
   → Beim Aufruf ging keine Anfrage an einen anderen Server.
@@ -14,6 +14,7 @@ spurlos 0.3.0  https://shop.example/
   └─ 🟢 http:// leitet auf https:// weiter.
 
 🟢 Sicherheits-Header         alle gesetzt
+🟢 Eingebundene Dateien       in Ordnung
 
 🟢 Formulare                  1
   └─ 🟢 POST https://shop.example/kontakt – sendet verschlüsselt an die eigene Seite

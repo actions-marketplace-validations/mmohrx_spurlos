@@ -57,6 +57,8 @@ export type Cookie = { name: string; domain: string; expires: number; secure: bo
 export type StorageEntry = { area: 'localStorage' | 'sessionStorage'; key: string }
 export type Link = { text: string; href: string }
 export type Form = { action: string; method: string }
+/** a file the page embeds by its markup; tag: script, stylesheet, iframe, img, video, audio or source */
+export type Resource = { tag: string; url: string; integrity: boolean }
 /** What a user typed, as a URL to open: https:// unless they wrote http:// or https://; undefined if it is none. */
 export function toUrl(arg: string): string | undefined {
   try {
@@ -93,6 +95,8 @@ export type Scan = {
   /** the links that look like Impressum or Datenschutz, each opened on its own */
   legal: Visit[]
   forms: Form[]
+  /** scripts, stylesheets, frames, images and media the markup embeds, with their absolute address */
+  resources: Resource[]
   /** a Content-Security-Policy set in a <meta http-equiv> tag, the only way to one on hosts without own headers */
   metaCsp?: string
   /** a referrer policy set in <meta name="referrer"> */
@@ -190,7 +194,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       secure: c.secure,
       httpOnly: c.httpOnly,
     }))
-    const { storage, links, forms, metaCsp, metaReferrer, generator } = await page.evaluate(() => {
+    const { storage, links, forms, resources, metaCsp, metaReferrer, generator } = await page.evaluate(() => {
       const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
         const s = window[area]
@@ -201,10 +205,23 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
         href: (a as HTMLAnchorElement).href,
       }))
       const forms = [...document.forms].map(f => ({ action: f.action, method: (f.getAttribute('method') ?? 'get').toLowerCase() }))
+      // the address as the browser resolved it, also where it blocked the file (a script over http on an https page)
+      const resources: Resource[] = []
+      const embed = (tag: string, el: Element, url: string) => {
+        // integrity="" protects nothing
+        if (/^https?:/.test(url)) resources.push({ tag, url, integrity: (el.getAttribute('integrity') ?? '').trim() !== '' })
+      }
+      for (const el of document.querySelectorAll('script[src]')) embed('script', el, (el as HTMLScriptElement).src)
+      for (const el of document.querySelectorAll('link[href]')) {
+        if (/(^|\s)stylesheet(\s|$)/i.test(el.getAttribute('rel') ?? '')) embed('stylesheet', el, (el as HTMLLinkElement).href)
+      }
+      for (const tag of ['iframe', 'img', 'video', 'audio', 'source'] as const) {
+        for (const el of document.querySelectorAll(`${tag}[src]`)) embed(tag, el, (el as HTMLImageElement).src)
+      }
       const meta = [...document.querySelectorAll('meta[http-equiv]')].find(m => m.getAttribute('http-equiv')?.toLowerCase() === 'content-security-policy')
       const referrer = document.querySelector('meta[name="referrer" i]')?.getAttribute('content') ?? null
       const generator = document.querySelector('meta[name="generator" i]')?.getAttribute('content') ?? null
-      return { storage, links, forms, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator }
+      return { storage, links, forms, resources, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator }
     })
 
     const headers = await response.allHeaders()
@@ -223,6 +240,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       links,
       legal: [],
       forms,
+      resources,
       userAgent,
       sandbox,
     }

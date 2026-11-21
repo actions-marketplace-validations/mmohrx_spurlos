@@ -31,7 +31,7 @@ test('what the page says cannot add markup to the HTML report', () => {
   const scan = { url: 'https://shop.example/', finalUrl: 'https://shop.example/"><script>alert(1)</script>', settled: false } as Scan
   const results: Result[] = [
     { check: 'disclosure', level: 'yellow', findings: [{ source: 'meta', name: 'generator', value: `<img src=x onerror=alert(1)> ${evil}`, version: true }] },
-    { check: 'headers', level: 'green', missing: [], checked: 5 },
+    { check: 'headers', level: 'green', missing: [], checked: 5, weak: [] },
   ] as Result[]
   const page = html(scan, results, 'de', { now: Date.UTC(2026, 10, 21, 12), timeZone: 'UTC' })
   expect(page).not.toMatch(/<script|<img/)

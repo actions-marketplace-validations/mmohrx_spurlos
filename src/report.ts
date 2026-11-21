@@ -1,5 +1,5 @@
 import {
-  certLevel, cookieLevel, SEVERITY, disclosureLevel, formLevel, httpLevel, key, legalLevel, numbered, storageLevel,
+  certLevel, cookieLevel, SEVERITY, disclosureLevel, formLevel, httpLevel, key, legalLevel, numbered, resourceLevel, storageLevel,
   type Comparison, type Level, type Result,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
@@ -118,8 +118,22 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
 
     case 'headers': {
       const examples: Record<string, string | undefined> = t.headerExample
-      if (!r.missing.length) return { value: t.headersOk, items: [], notes: [] }
-      return { value: t.headersMissing(r.missing.length, r.checked), items: r.missing.map(m => item(key.header(m), 'yellow', t.headerMissing(m), examples[m])), notes: [] }
+      const items = [
+        ...r.missing.map(m => item(key.header(m), 'yellow', t.headerMissing(m), examples[m])),
+        ...r.weak.map(w => item(key.csp(w), 'yellow', t.cspWeak(w))),
+      ]
+      if (!items.length) return { value: t.headersOk, items: [], notes: [] }
+      return { value: r.missing.length ? t.headersMissing(r.missing.length, r.checked) : t.cspWeakValue, items, notes: r.weak.length ? [t.cspWeakNote] : [] }
+    }
+
+    case 'resources': {
+      if (!r.findings.length) return { value: t.resourcesNone, items: [], notes: [] }
+      const has = (p: string) => r.findings.some(f => f.problem === p)
+      return {
+        value: `${r.findings.length}`,
+        items: r.findings.map(f => item(key.resource(f), resourceLevel(f), `${f.tag} ${f.url}`, t.resource[f.problem])),
+        notes: [...(has('insecure') ? [t.resourcesInsecure] : []), ...(has('no-integrity') ? [t.resourcesIntegrity] : [])],
+      }
     }
 
     case 'disclosure': {

@@ -7,6 +7,8 @@
 - Mehrere Adressen in einem Lauf: `spurlos a.de b.de/kontakt`, je ein Bericht; in `--json` dann eine Liste, im HTML und PDF eine Seite mit allen.
 - `-o` mehrmals: ein Lauf schreibt mehrere Formate, etwa `-o bericht.json -o bericht.html`; das Format nach der Endung, ohne `--json`, `--html` oder `--pdf`.
 - Eine Anmeldung (`--auth`, `SPURLOS_AUTH`) gilt bei mehreren Adressen nur, wenn sie dieselbe Adresse (Schema, Host, Port) teilen.
+- Neue Prüfung „Eingebundene Dateien“ (`resources`): Skripte, Stylesheets und Frames über http auf einer https-Seite rot, Bilder und Medien gelb; fremde Skripte und Stylesheets ohne `integrity` gelb.
+- Sicherheits-Header: eine CSP, die Skripte durchlässt (`'unsafe-inline'` ohne Nonce oder Hash, `'unsafe-eval'`, `*`, `https:`, `http:`, `data:`, oder gar keine Regel für Skripte), ist gelb.
 - Cookie-Banner erkannt (Usercentrics, Cookiebot, OneTrust, Borlabs Cookie, Complianz und weitere), samt Hinweis, wenn Tracker trotzdem vorher laden. Cookies, in denen der Banner die Wahl speichert, sind grün.
 - Rot sind bei den Cookies nur noch fremde Domains und bekannte Tracker; bekannte Cookies etwa eines Chats oder Zahlungsanbieters sind gelb.
 - Tipps im Bericht: Schriften und Bibliotheken selbst ausliefern, Einbettungen erst nach einem Klick laden, Beispielwerte für fehlende Header und HSTS.

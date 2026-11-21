@@ -20,6 +20,7 @@ describe('scan', { timeout: 30_000 }, () => {
       legal: 'green',
       https: 'green',
       headers: 'green',
+      resources: 'green',
       forms: 'green',
       disclosure: 'green',
     })
@@ -62,6 +63,14 @@ describe('scan', { timeout: 30_000 }, () => {
 
     expect(pick(results, 'https')).toMatchObject({ level: 'red', hsts: false, http: 'no-redirect' })
     expect(pick(results, 'headers').missing).toHaveLength(5)
+    // the script over http is blocked, but still in the markup; the third-party ones lack integrity
+    const res = pick(results, 'resources')
+    expect(res.level).toBe('red')
+    expect(res.findings.map(f => `${f.problem} ${f.url}`)).toEqual(
+      expect.arrayContaining(['insecure http://shop.example/alt.js', 'no-integrity https://www.googletagmanager.com/gtag/js?id=G-TEST', 'no-integrity https://fonts.googleapis.com/css2?family=Inter',
+        // integrity="" protects nothing
+        'no-integrity https://cdn.jsdelivr.net/npm/slider.js']),
+    )
     expect(pick(results, 'third-party').consent).toEqual(['Usercentrics'])
     expect(pick(results, 'forms').forms.map(f => f.problem)).toEqual(['unencrypted', 'third-party'])
     expect(pick(results, 'disclosure').findings.map(d => `${d.name}: ${d.value}`)).toEqual([

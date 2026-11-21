@@ -20,7 +20,8 @@ const TOOL = {
   description:
     'Opens a website in a fresh browser like a first-time visitor who clicks nothing, and reports what happens before any consent: ' +
     'requests to third-party servers, which cookie banner loads, cookies and browser storage, whether Impressum and privacy policy are ' +
-    'linked and reachable, HTTPS and certificate, security headers, where forms send to, and software versions the site discloses. ' +
+    'linked and reachable, HTTPS and certificate, security headers and how tight the CSP is, files embedded over http or without ' +
+    'integrity, where forms send to, and software versions the site discloses. ' +
     'Each check gets a traffic light (red, yellow, green). Passive only: it loads the page, opens the legal pages via their links ' +
     'and asks http:// once. It is a technical pre-check, not legal advice: say so when passing the result on. Takes 5 to 30 seconds.',
   inputSchema: {

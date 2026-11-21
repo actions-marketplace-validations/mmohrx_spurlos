@@ -1,8 +1,9 @@
 spurlos 0.3.0  https://shop.example/tracked.html
-5 Mängel · 2 Hinweise
+6 Mängel · 2 Hinweise
 
-🔴 Fremde Server              5
+🔴 Fremde Server              6
   ├─ 🔴 app.usercentrics.eu – Usercentrics (1 Anfrage)
+  ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 Anfrage)
   ├─ 🔴 cdn.unbekannt.example – 1 Anfrage
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 Anfrage)
@@ -14,6 +15,8 @@ spurlos 0.3.0  https://shop.example/tracked.html
        wählt.
      → Schriften lassen sich vom eigenen Server ausliefern, dann geht dafür
        keine Anfrage nach außen.
+     → Bibliotheken von einem CDN lassen sich ebenso vom eigenen Server
+       ausliefern.
      → Videos, Karten, Chats und Beiträge aus sozialen Netzwerken lassen sich so
        einbinden, dass sie erst nach einem Klick laden.
      → Tracker lassen sich so einbinden, dass sie erst laden, wenn jemand im
@@ -34,6 +37,19 @@ spurlos 0.3.0  https://shop.example/tracked.html
 🔴 HTTPS                      mit Mängeln
   ├─ 🔴 http:// liefert die Seite ohne Weiterleitung auf https:// aus.
   └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen. – etwa Strict-Transport-Security: max-age=31536000
+
+🔴 Eingebundene Dateien       5
+  ├─ 🟡 script https://www.googletagmanager.com/gtag/js?id=G-TEST – von einem fremden Server, ohne integrity
+  ├─ 🟡 script https://app.usercentrics.eu/browser-ui/latest/loader.js – von einem fremden Server, ohne integrity
+  ├─ 🔴 script http://shop.example/alt.js – über http auf einer https-Seite
+  ├─ 🟡 script https://cdn.jsdelivr.net/npm/slider.js – von einem fremden Server, ohne integrity
+  └─ 🟡 stylesheet https://fonts.googleapis.com/css2?family=Inter – von einem fremden Server, ohne integrity
+     → Skripte, Stylesheets und Frames über http blockiert der Browser auf einer
+       https-Seite, Bilder und Videos lädt er über https oder gar nicht.
+     → Ohne integrity-Attribut kann der fremde Server die Datei jederzeit
+       austauschen, und die Seite führt aus, was er liefert. Bei Dateien, die
+       der Anbieter laufend ändert, etwa einem Tag Manager, geht das nicht; dann
+       hilft nur, sie selbst auszuliefern.
 
 🔴 Formulare                  2
   ├─ 🔴 POST http://shop.example/newsletter – sendet unverschlüsselt über http

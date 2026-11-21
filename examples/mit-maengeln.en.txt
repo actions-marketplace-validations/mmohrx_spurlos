@@ -1,8 +1,9 @@
 spurlos 0.3.0  https://shop.example/tracked.html
-5 problems · 2 notes
+6 problems · 2 notes
 
-🔴 Third-party servers              5
+🔴 Third-party servers              6
   ├─ 🔴 app.usercentrics.eu – Usercentrics (1 request)
+  ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 request)
   ├─ 🔴 cdn.unbekannt.example – 1 request
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 request)
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 request)
@@ -14,6 +15,7 @@ spurlos 0.3.0  https://shop.example/tracked.html
        banner.
      → Fonts can be served from the own server, then no request goes out for
        them.
+     → Libraries from a CDN can be served from the own server as well.
      → Videos, maps, chats and social media posts can be embedded so that they
        only load after a click.
      → Trackers can be embedded so that they only load once someone agrees in
@@ -34,6 +36,19 @@ spurlos 0.3.0  https://shop.example/tracked.html
 🔴 HTTPS                            with problems
   ├─ 🔴 http:// serves the page without redirecting to https://.
   └─ 🟡 No HSTS header (Strict-Transport-Security): browsers do not remember to use https only. – e.g. Strict-Transport-Security: max-age=31536000
+
+🔴 Embedded files                   5
+  ├─ 🟡 script https://www.googletagmanager.com/gtag/js?id=G-TEST – from a third-party server, without integrity
+  ├─ 🟡 script https://app.usercentrics.eu/browser-ui/latest/loader.js – from a third-party server, without integrity
+  ├─ 🔴 script http://shop.example/alt.js – over http on an https page
+  ├─ 🟡 script https://cdn.jsdelivr.net/npm/slider.js – from a third-party server, without integrity
+  └─ 🟡 stylesheet https://fonts.googleapis.com/css2?family=Inter – from a third-party server, without integrity
+     → On an https page the browser blocks scripts, stylesheets and frames over
+       http, and loads images and videos over https or not at all.
+     → Without an integrity attribute the third-party server can swap the file
+       at any time, and the page runs whatever it sends. For files the provider
+       keeps changing, such as a tag manager, that is not possible; then the
+       only way is to serve them yourself.
 
 🔴 Forms                            2
   ├─ 🔴 POST http://shop.example/newsletter – sends unencrypted over http

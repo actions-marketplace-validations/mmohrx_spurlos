@@ -1,5 +1,5 @@
 spurlos 0.3.0  https://shop.example/
-7 fine
+8 fine
 
 🟢 Third-party servers              none
   → Opening the page sent no request to another server.
@@ -14,6 +14,7 @@ spurlos 0.3.0  https://shop.example/
   └─ 🟢 http:// redirects to https://.
 
 🟢 Security headers                 all set
+🟢 Embedded files                   fine
 
 🟢 Forms                            1
   └─ 🟢 POST https://shop.example/kontakt – sends encrypted to the site itself

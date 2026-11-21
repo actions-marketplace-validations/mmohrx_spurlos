@@ -30,9 +30,19 @@
         "type": "script"
       },
       {
+        "url": "https://cdn.jsdelivr.net/npm/slider.js",
+        "host": "cdn.jsdelivr.net",
+        "type": "script"
+      },
+      {
         "url": "https://cdn.unbekannt.example/bild.png",
         "host": "cdn.unbekannt.example",
         "type": "image"
+      },
+      {
+        "url": "http://shop.example/alt.js",
+        "host": "shop.example",
+        "type": "script"
       },
       {
         "url": "https://www.youtube.com/embed/abc",
@@ -51,7 +61,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829818382.954792,
+        "expires": 1829818397.539613,
         "secure": false,
         "httpOnly": false
       }
@@ -63,7 +73,7 @@
       }
     ],
     "headers": {
-      "content-length": "832",
+      "content-length": "963",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -89,6 +99,48 @@
       {
         "action": "https://formspree.io/f/abc",
         "method": "post"
+      }
+    ],
+    "resources": [
+      {
+        "tag": "script",
+        "url": "https://www.googletagmanager.com/gtag/js?id=G-TEST",
+        "integrity": false
+      },
+      {
+        "tag": "script",
+        "url": "https://shop.example/tracker.js",
+        "integrity": false
+      },
+      {
+        "tag": "script",
+        "url": "https://app.usercentrics.eu/browser-ui/latest/loader.js",
+        "integrity": false
+      },
+      {
+        "tag": "script",
+        "url": "http://shop.example/alt.js",
+        "integrity": false
+      },
+      {
+        "tag": "script",
+        "url": "https://cdn.jsdelivr.net/npm/slider.js",
+        "integrity": false
+      },
+      {
+        "tag": "stylesheet",
+        "url": "https://fonts.googleapis.com/css2?family=Inter",
+        "integrity": false
+      },
+      {
+        "tag": "iframe",
+        "url": "https://www.youtube.com/embed/abc",
+        "integrity": false
+      },
+      {
+        "tag": "img",
+        "url": "https://cdn.unbekannt.example/bild.png",
+        "integrity": false
       }
     ],
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.3.0",
@@ -119,6 +171,17 @@
               "uc_ui_version",
               "uc_user_interaction",
               "ucData"
+            ]
+          },
+          "requests": 1
+        },
+        {
+          "host": "cdn.jsdelivr.net",
+          "service": {
+            "name": "jsDelivr",
+            "category": "cdn",
+            "hosts": [
+              "cdn.jsdelivr.net"
             ]
           },
           "requests": 1
@@ -187,7 +250,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829818382.954792,
+          "expires": 1829818397.539613,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,
@@ -254,7 +317,44 @@
         "Referrer-Policy",
         "Permissions-Policy"
       ],
-      "checked": 5
+      "checked": 5,
+      "weak": []
+    },
+    {
+      "check": "resources",
+      "level": "red",
+      "findings": [
+        {
+          "tag": "script",
+          "url": "https://www.googletagmanager.com/gtag/js?id=G-TEST",
+          "integrity": false,
+          "problem": "no-integrity"
+        },
+        {
+          "tag": "script",
+          "url": "https://app.usercentrics.eu/browser-ui/latest/loader.js",
+          "integrity": false,
+          "problem": "no-integrity"
+        },
+        {
+          "tag": "script",
+          "url": "http://shop.example/alt.js",
+          "integrity": false,
+          "problem": "insecure"
+        },
+        {
+          "tag": "script",
+          "url": "https://cdn.jsdelivr.net/npm/slider.js",
+          "integrity": false,
+          "problem": "no-integrity"
+        },
+        {
+          "tag": "stylesheet",
+          "url": "https://fonts.googleapis.com/css2?family=Inter",
+          "integrity": false,
+          "problem": "no-integrity"
+        }
+      ]
     },
     {
       "check": "forms",

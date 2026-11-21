@@ -14,7 +14,8 @@
 - which **cookie banner** loads, such as Usercentrics, Cookiebot or Borlabs, and whether trackers load before it anyway.
 - whether the **legal notice (Impressum) and privacy policy** are linked and open.
 - whether **HTTPS** is set up properly: certificate, redirect from http, HSTS.
-- which **security headers** are missing.
+- which **security headers** are missing, and whether the Content-Security-Policy lets scripts through after all.
+- whether **embedded files** come over unencrypted http, and whether third-party scripts and stylesheets are embedded without `integrity`.
 - where **forms** send their data: encrypted to the site itself, to a third-party server, or unencrypted.
 - whether headers or the page **reveal the software behind it, version included**, e.g. `X-Powered-By: PHP/8.1.2` or `WordPress 6.2`.
 
@@ -80,11 +81,14 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 | Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a third-party cookie or one of a known tracker |
 | Legal notice and privacy policy | both linked and reachable | – | a link is missing or the page answers with an error |
 | HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing answers on http, certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
-| Security headers | all set | one or more missing | – |
+| Security headers | all set | one or more missing; the CSP lets scripts through | – |
+| Embedded files | nothing to note | a script or stylesheet from a third-party server without `integrity`; an image, video or audio over http on an https page | a script, stylesheet or iframe over http on an https page |
 | Forms | none, or all send encrypted to the site itself | one sends to a third-party server | one sends unencrypted over http |
 | Software details | nothing, or only the software's name | a version number in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` or `<meta name="generator">` | – |
 
-The headers checked are `Content-Security-Policy`, `X-Frame-Options` (or `frame-ancestors` in the CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` and `Permissions-Policy`. CSP and Referrer-Policy also count as a `<meta>` tag, for hosts like GitHub Pages where headers cannot be set. spurlos recognizes the legal notice and privacy policy by link text or address, in German and English. A link like “Impressum & Datenschutz” counts for both.
+The headers checked are `Content-Security-Policy`, `X-Frame-Options` (or `frame-ancestors` in the CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` and `Permissions-Policy`. CSP and Referrer-Policy also count as a `<meta>` tag, for hosts like GitHub Pages where headers cannot be set. A CSP lets scripts through if, for scripts (`script-src`, else `default-src`), it allows `'unsafe-inline'` without a nonce or hash, `'unsafe-eval'` or a source like `*`, `https:`, `http:` or `data:` (the latter not with `'strict-dynamic'`), or if it does not restrict scripts at all. With both a header and a `<meta>` tag, it is enough for one of the two policies to be tight. spurlos recognizes the legal notice and privacy policy by link text or address, in German and English. A link like “Impressum & Datenschutz” counts for both.
+
+For embedded files, what counts is what the HTML says: `<script src>`, stylesheets, `<iframe>`, `<img>`, `<video>`, `<audio>` and `<source>`. Over http on an https page the browser blocks scripts, stylesheets and frames; images and media it loads over https or not at all. Without `integrity`, a third-party server can swap a script at any time.
 
 Every finding in the report has its own light, and the check gets the worst of them. That way you see which entry makes a check yellow or red.
 
@@ -154,7 +158,7 @@ npx spurlos https://staging.company.com --lang en || echo "new traces"
 
 Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, more than one of `--json`, `--html`, `--pdf`, one of them with several `-o`, a baseline that cannot be read, a login for addresses on different servers) or a file of `-o` could not be written. A missing or rejected login ends with `2` too. With several addresses the worst case counts; spurlos still writes the reports of the pages it could check.
 
-With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate, links, forms), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. With several addresses it is a list of such objects. The red checks, for example:
+With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate, links, forms, embedded files), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `resources`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. With several addresses it is a list of such objects. The red checks, for example:
 
 ```
 npx spurlos https://staging.company.com --json | jq -r '.results[] | select(.level == "red") | .check'

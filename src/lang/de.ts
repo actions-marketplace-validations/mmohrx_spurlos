@@ -1,4 +1,4 @@
-import type { FormFinding, HttpRedirect, LegalKind, Level, Result } from '../checks.ts'
+import type { FormFinding, HttpRedirect, LegalKind, Level, ResourceFinding, Result } from '../checks.ts'
 import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE } from '../scan.ts'
 import { plural } from './plural.ts'
 
@@ -76,6 +76,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
     headers: 'Sicherheits-Header',
     forms: 'Formulare',
     disclosure: 'Verratene Details',
+    resources: 'Eingebundene Dateien',
   } satisfies Record<Result['check'], string>,
   summary: {
     red: (n: number) => plural(n, 'Mangel', 'Mängel'),
@@ -151,6 +152,18 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
     'Referrer-Policy': 'etwa strict-origin-when-cross-origin',
     'Permissions-Policy': 'etwa camera=(), microphone=(), geolocation=()',
   } satisfies Record<string, string>,
+  cspWeakValue: 'CSP mit Lücken',
+  cspWeak: (w: string) => (w === 'no-script-src' ? 'Content-Security-Policy regelt keine Skripte (weder script-src noch default-src)' : `Content-Security-Policy erlaubt ${w}`),
+  cspWeakNote: "Mit 'unsafe-inline', 'unsafe-eval' oder Quellen wie * und https: hält die CSP eingeschleuste Skripte kaum auf. Nonces oder Hashes lassen nur die eigenen Skripte zu.",
+
+  resourcesNone: 'in Ordnung',
+  resource: {
+    insecure: 'über http auf einer https-Seite',
+    'no-integrity': 'von einem fremden Server, ohne integrity',
+  } satisfies Record<ResourceFinding['problem'], string>,
+  resourcesInsecure: 'Skripte, Stylesheets und Frames über http blockiert der Browser auf einer https-Seite, Bilder und Videos lädt er über https oder gar nicht.',
+  resourcesIntegrity:
+    'Ohne integrity-Attribut kann der fremde Server die Datei jederzeit austauschen, und die Seite führt aus, was er liefert. Bei Dateien, die der Anbieter laufend ändert, etwa einem Tag Manager, geht das nicht; dann hilft nur, sie selbst auszuliefern.',
 
   formsNone: 'keine auf der Seite',
   form: {

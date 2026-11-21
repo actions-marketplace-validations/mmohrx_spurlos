@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import {
-  compare, consentManagers, cookies, disclosure, findings, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfStorage, serviceOfHost,
-  thirdParty, type Result,
+  compare, consentManagers, cookies, disclosure, findings, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import type { Scan } from '../src/scan.ts'
 
-const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], userAgent: 'test', sandbox: true }
+const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], userAgent: 'test', sandbox: true }
 const req = (host: string) => ({ url: `https://${host}/x`, host, type: 'script' })
 
 describe('thirdParty', () => {
@@ -195,7 +195,7 @@ describe('headers', () => {
       'referrer-policy': 'strict-origin-when-cross-origin',
       'permissions-policy': 'camera=()',
     }
-    expect(headers({ ...base, headers: h })).toEqual({ check: 'headers', level: 'green', missing: [], checked: 5 })
+    expect(headers({ ...base, headers: h })).toEqual({ check: 'headers', level: 'green', missing: [], checked: 5, weak: [] })
   })
 
   test('a CSP or referrer policy in a meta tag counts, frame-ancestors there does not', () => {
@@ -213,6 +213,64 @@ describe('headers', () => {
       level: 'yellow',
       missing: ['Content-Security-Policy', 'X-Content-Type-Options', 'Referrer-Policy', 'Permissions-Policy'],
     })
+  })
+})
+
+describe('csp', () => {
+  test('a policy that keeps scripts to known sources is fine', () => {
+    expect(weakCsp(["default-src 'self'"])).toEqual([])
+    expect(weakCsp(["script-src 'self' https://cdn.firma.de; style-src 'unsafe-inline'"])).toEqual([])
+    // with a nonce or hash browsers ignore 'unsafe-inline', with 'strict-dynamic' also wide sources
+    expect(weakCsp(["script-src 'nonce-abc' 'unsafe-inline' 'strict-dynamic' https:"])).toEqual([])
+    expect(weakCsp(["script-src 'sha256-abc=' 'unsafe-inline'"])).toEqual([])
+  })
+
+  test("'unsafe-inline', 'unsafe-eval' and wide sources let scripts through", () => {
+    expect(weakCsp(["default-src 'self' 'unsafe-inline' 'unsafe-eval'"])).toEqual(["'unsafe-inline'", "'unsafe-eval'"])
+    expect(weakCsp(["script-src * data:; default-src 'self'"])).toEqual(['*', 'data:'])
+    // script-src wins over default-src
+    expect(weakCsp(["default-src 'self'; script-src https:"])).toEqual(['https:'])
+  })
+
+  test('a policy without script-src or default-src restricts no scripts', () => {
+    expect(weakCsp(["frame-ancestors 'none'"])).toEqual(['no-script-src'])
+  })
+
+  test('header and meta tag both apply: one strong policy is enough', () => {
+    expect(weakCsp(["frame-ancestors 'none'", "default-src 'self'"])).toEqual([])
+    // a header sent twice arrives joined by a comma: two policies, not one
+    expect(weakCsp(["default-src 'self', script-src *"])).toEqual([])
+  })
+
+  test('of a directive given twice, the first counts', () => {
+    expect(weakCsp(["script-src 'self'; script-src *"])).toEqual([])
+    expect(weakCsp(["script-src *; script-src 'self'"])).toEqual(['*'])
+  })
+
+  test('a weak CSP makes the headers check yellow', () => {
+    const h = { 'content-security-policy': "default-src * 'unsafe-inline'", 'x-frame-options': 'DENY', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer', 'permissions-policy': 'camera=()' }
+    expect(headers({ ...base, headers: h })).toMatchObject({ level: 'yellow', missing: [], weak: ["'unsafe-inline'", '*'] })
+  })
+})
+
+describe('resources', () => {
+  const res = (tag: string, url: string, integrity = false) => ({ tag, url, integrity })
+
+  test('own files and third-party files with integrity are fine', () => {
+    const r = resources({ ...base, resources: [res('script', 'https://www.firma.de/app.js'), res('script', 'https://cdn.jsdelivr.net/x.js', true), res('img', 'https://cdn.anders.de/a.png')] })
+    expect(r).toMatchObject({ level: 'green', findings: [] })
+  })
+
+  test('a script or stylesheet of another site without integrity is yellow', () => {
+    const r = resources({ ...base, resources: [res('script', 'https://cdn.jsdelivr.net/x.js'), res('stylesheet', 'https://fonts.googleapis.com/css'), res('script', 'https://cdn.jsdelivr.net/x.js')] })
+    expect(r).toMatchObject({ level: 'yellow', findings: [{ problem: 'no-integrity', tag: 'script' }, { problem: 'no-integrity', tag: 'stylesheet' }] })
+  })
+
+  test('over http on an https page: scripts, stylesheets and frames red, images yellow', () => {
+    expect(resources({ ...base, resources: [res('img', 'http://www.firma.de/a.png')] })).toMatchObject({ level: 'yellow', findings: [{ problem: 'insecure' }] })
+    expect(resources({ ...base, resources: [res('script', 'http://www.firma.de/a.js', true)] })).toMatchObject({ level: 'red', findings: [{ problem: 'insecure' }] })
+    // on an http page nothing is mixed
+    expect(resources({ ...base, finalUrl: 'http://www.firma.de/', resources: [res('script', 'http://www.firma.de/a.js')] }).level).toBe('green')
   })
 })
 

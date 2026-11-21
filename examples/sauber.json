@@ -54,6 +54,13 @@
         "method": "post"
       }
     ],
+    "resources": [
+      {
+        "tag": "stylesheet",
+        "url": "https://shop.example/style.css",
+        "integrity": false
+      }
+    ],
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.3.0",
     "sandbox": true,
     "metaCsp": "default-src 'self'",
@@ -118,7 +125,13 @@
       "check": "headers",
       "level": "green",
       "missing": [],
-      "checked": 5
+      "checked": 5,
+      "weak": []
+    },
+    {
+      "check": "resources",
+      "level": "green",
+      "findings": []
     },
     {
       "check": "forms",

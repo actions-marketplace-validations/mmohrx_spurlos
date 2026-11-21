@@ -73,6 +73,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
     headers: 'Security headers',
     forms: 'Forms',
     disclosure: 'Software details',
+    resources: 'Embedded files',
   },
   summary: {
     red: n => plural(n, 'problem', 'problems'),
@@ -148,6 +149,18 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
     'Referrer-Policy': 'e.g. strict-origin-when-cross-origin',
     'Permissions-Policy': 'e.g. camera=(), microphone=(), geolocation=()',
   },
+  cspWeakValue: 'CSP with gaps',
+  cspWeak: w => (w === 'no-script-src' ? 'Content-Security-Policy restricts no scripts (neither script-src nor default-src)' : `Content-Security-Policy allows ${w}`),
+  cspWeakNote: "With 'unsafe-inline', 'unsafe-eval' or sources like * and https: the CSP hardly stops injected scripts. Nonces or hashes allow only the site's own scripts.",
+
+  resourcesNone: 'fine',
+  resource: {
+    insecure: 'over http on an https page',
+    'no-integrity': 'from a third-party server, without integrity',
+  },
+  resourcesInsecure: 'On an https page the browser blocks scripts, stylesheets and frames over http, and loads images and videos over https or not at all.',
+  resourcesIntegrity:
+    'Without an integrity attribute the third-party server can swap the file at any time, and the page runs whatever it sends. For files the provider keeps changing, such as a tag manager, that is not possible; then the only way is to serve them yourself.',
 
   formsNone: 'none on the page',
   form: {

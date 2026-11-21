@@ -1,6 +1,6 @@
 import { getDomain } from 'tldts'
 import knownServices from './services.json' with { type: 'json' }
-import type { Cookie, Form, Link, Scan, Visit } from './scan.ts'
+import type { Cookie, Form, Link, Resource, Scan, Visit } from './scan.ts'
 
 export type Level = 'green' | 'yellow' | 'red'
 /**
@@ -20,15 +20,18 @@ export type LegalPage = { kind: LegalKind; link?: Link; visit?: Visit }
 /** redirects: http sends on to https · no-redirect: the page answers over plain http · unreachable: nothing answers on http */
 export type HttpRedirect = 'redirects' | 'no-redirect' | 'unreachable'
 export type FormFinding = Form & { problem?: 'unencrypted' | 'third-party' }
+/** insecure: loaded over http on an https page · no-integrity: a script or stylesheet of another site without integrity="…" */
+export type ResourceFinding = Resource & { problem: 'insecure' | 'no-integrity' }
 
 export type Result =
   | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[] }
   | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
   | { check: 'https'; level: Level; https: boolean; certDaysLeft?: number; http?: HttpRedirect; hsts: boolean }
-  | { check: 'headers'; level: Level; missing: string[]; checked: number }
+  | { check: 'headers'; level: Level; missing: string[]; checked: number; weak: string[] }
   | { check: 'forms'; level: Level; forms: FormFinding[] }
   | { check: 'disclosure'; level: Level; findings: Disclosure[] }
+  | { check: 'resources'; level: Level; findings: ResourceFinding[] }
 
 /** worst first */
 export const SEVERITY: Level[] = ['red', 'yellow', 'green']
@@ -123,6 +126,9 @@ export const certLevel = (daysLeft: number): Level => (daysLeft < 7 ? 'red' : da
 /** nothing on http is yellow: browsers mostly try https first, but old http:// links break */
 export const httpLevel = (h: HttpRedirect): Level => (h === 'no-redirect' ? 'red' : h === 'unreachable' ? 'yellow' : 'green')
 export const formLevel = (f: FormFinding): Level => (f.problem === 'unencrypted' ? 'red' : f.problem ? 'yellow' : 'green')
+/** over http the browser blocks scripts, stylesheets and frames, and upgrades or drops images and media: red, yellow */
+export const resourceLevel = (r: ResourceFinding): Level =>
+  r.problem === 'insecure' && ['script', 'stylesheet', 'iframe'].includes(r.tag) ? 'red' : 'yellow'
 
 /**
  * Cookies and storage present before any click. A third-party cookie or a known tracker's is red; known session,
@@ -203,7 +209,39 @@ export function https(scan: Scan, now = Date.now()): Result {
   return r
 }
 
-/** Hardening headers of the page; each one missing is yellow. HSTS is part of the https check. */
+const STRONG_SOURCE = /^'(nonce|sha256|sha384|sha512)-/
+
+/**
+ * What lets scripts through a Content-Security-Policy anyway: 'unsafe-inline' without a nonce or hash (with one,
+ * browsers ignore it), 'unsafe-eval', and sources that allow any server (*, https:, http:, data:), which
+ * 'strict-dynamic' switches off. A policy with neither script-src nor default-src restricts no scripts at all
+ * (no-script-src). Every policy applies, header and meta tag alike, and a header sent twice arrives joined by a
+ * comma: one policy without a weakness is enough.
+ */
+export function weakCsp(policies: string[]): string[] {
+  let first: string[] | undefined
+  for (const policy of policies.flatMap(p => p.split(','))) {
+    const directives = new Map<string, string[]>()
+    for (const d of policy.split(';')) {
+      const [name, ...sources] = d.trim().toLowerCase().split(/\s+/)
+      // of a directive given twice, browsers use the first
+      if (name && !directives.has(name)) directives.set(name, sources)
+    }
+    const sources = directives.get('script-src') ?? directives.get('default-src')
+    if (!sources) continue
+    const strictDynamic = sources.includes("'strict-dynamic'")
+    const weak = [
+      ...(sources.includes("'unsafe-inline'") && !sources.some(s => STRONG_SOURCE.test(s)) ? ["'unsafe-inline'"] : []),
+      ...(sources.includes("'unsafe-eval'") ? ["'unsafe-eval'"] : []),
+      ...(strictDynamic ? [] : ['*', 'https:', 'http:', 'data:'].filter(s => sources.includes(s))),
+    ]
+    if (!weak.length) return []
+    first ??= weak
+  }
+  return first ?? ['no-script-src']
+}
+
+/** Hardening headers of the page; each one missing is yellow, a CSP that lets any script through too. HSTS is part of the https check. */
 export function headers(scan: Scan): Result {
   const h = scan.headers
   const csp = h['content-security-policy'] ?? ''
@@ -217,7 +255,9 @@ export function headers(scan: Scan): Result {
     !h['permissions-policy'] && 'Permissions-Policy',
   ]
   const missing = checked.filter((m): m is string => typeof m === 'string')
-  return { check: 'headers', level: missing.length ? 'yellow' : 'green', missing, checked: checked.length }
+  const policies = [csp, scan.metaCsp ?? ''].filter(p => p)
+  const weak = policies.length ? weakCsp(policies) : []
+  return { check: 'headers', level: missing.length || weak.length ? 'yellow' : 'green', missing, checked: checked.length, weak }
 }
 
 /** A form that sends over plain http is red; one that sends to another site yellow, as the entries go to someone else. */
@@ -248,8 +288,30 @@ export function disclosure(scan: Scan): Result {
   return { check: 'disclosure', level: worst(findings.map(disclosureLevel)), findings }
 }
 
+/**
+ * Files the page embeds: over http on an https page, or a script or stylesheet of another site without
+ * integrity="…", so that site may change it at will and the page runs whatever it sends.
+ */
+export function resources(scan: Scan): Result {
+  const own = ownSites(scan)
+  const https = isHttps(scan)
+  const seen = new Set<string>()
+  const findings: ResourceFinding[] = []
+  for (const r of scan.resources) {
+    const u = new URL(r.url)
+    const problem =
+      https && u.protocol === 'http:' ? 'insecure'
+      : (r.tag === 'script' || r.tag === 'stylesheet') && !r.integrity && !own.has(site(u.hostname)) ? 'no-integrity'
+      : undefined
+    if (!problem || seen.has(`${problem} ${r.url}`)) continue
+    seen.add(`${problem} ${r.url}`)
+    findings.push({ ...r, problem })
+  }
+  return { check: 'resources', level: worst(findings.map(resourceLevel)), findings }
+}
+
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan), legal(scan), https(scan, now), headers(scan), forms(scan), disclosure(scan)]
+  return [thirdParty(scan), cookies(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan)]
 }
 
 /**
@@ -263,8 +325,10 @@ export const key = {
   legal: (kind: LegalKind) => `legal ${kind}`,
   https: (what: 'https' | 'cert' | 'http' | 'hsts') => `https ${what}`,
   header: (name: string) => `header ${name}`,
+  csp: (weakness: string) => `csp ${weakness}`,
   form: (f: { method: string; action: string }) => `form ${f.method} ${f.action}`,
   disclosure: (d: { name: string }) => `disclosure ${d.name}`,
+  resource: (r: { problem: string; url: string }) => `resource ${r.problem} ${r.url}`,
 }
 
 export type Finding = { key: string; level: Level }
@@ -308,7 +372,9 @@ function unnumbered(r: Result): Finding[] {
         ...(r.https && !r.hsts ? [{ key: key.https('hsts'), level: 'yellow' as const }] : []),
       ]
     case 'headers':
-      return list(r.missing).map(h => ({ key: key.header(h), level: 'yellow' as const }))
+      return [...list(r.missing).map(h => ({ key: key.header(h), level: 'yellow' as const })), ...list(r.weak).map(w => ({ key: key.csp(w), level: 'yellow' as const }))]
+    case 'resources':
+      return list(r.findings).map(f => ({ key: key.resource(f), level: resourceLevel(f) }))
     case 'forms':
       return list(r.forms).map(f => ({ key: key.form(f), level: formLevel(f) }))
     case 'disclosure':
