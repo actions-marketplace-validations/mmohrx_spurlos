@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- Doku: Das README gibt den Überblick, die Einzelheiten zur Ampel, zur CI und dazu, wie spurlos aufruft, stehen in `docs/`.
 - `--baseline <datei>`: mit einer früheren Ausgabe von `--json` vergleichen. Der Bericht markiert neue Befunde mit `[neu]` und listet, was weggefallen ist; Exit-Code 1 nur noch bei neuen roten Befunden. In `--json` unter `compare`.
 - GitHub Action (`uses: mmohrx/spurlos@…`): prüft, schreibt den Bericht in die Zusammenfassung des Laufs und legt JSON, HTML und Text ab, auf Wunsch gegen eine Baseline.
 - Mehrere Adressen in einem Lauf: `spurlos a.de b.de/kontakt`, je ein Bericht; in `--json` dann eine Liste, im HTML und PDF eine Seite mit allen.

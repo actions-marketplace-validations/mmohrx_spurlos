@@ -25,7 +25,7 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 
 ## Doku
 
-- Ändert sich, was Nutzer sehen oder worauf sie sich verlassen (Optionen, Exit-Codes, Umgebungsvariablen, Ampel-Regeln und Schwellen, geprüfte Header, Felder in `--json`, das MCP-Werkzeug), im selben Commit `README.md` und `README.en.md` anpassen, dazu die Hilfe in `src/lang/`. Beide READMEs sagen dasselbe.
+- Ändert sich, was Nutzer sehen oder worauf sie sich verlassen (Optionen, Exit-Codes, Umgebungsvariablen, Ampel-Regeln und Schwellen, geprüfte Header, Felder in `--json`, das MCP-Werkzeug), im selben Commit die Doku anpassen, dazu die Hilfe in `src/lang/`. Das README hat den Überblick (Optionen, Umgebungsvariablen, Ampel-Tabelle, MCP), die Einzelheiten stehen in `docs/de/` und `docs/en/`, je Sprache dieselben Dateien: Ampel-Regeln, Schwellen, geprüfte Header und eigene Server in `checks.md`, Exit-Codes, `--json`, `--baseline` und die Action in `ci.md`, Browserkennung, Bot-Schutz und Anmeldung in `how-it-works.md`. Das englische README ist `README.en.md`. Beide Sprachen sagen dasselbe.
 - Ändert sich, wie man beiträgt (Dienste, Sprachen, Tests), auch `CONTRIBUTING.md`.
 - Vor dem Commit die Doku gegen den geänderten Code lesen, nicht aus dem Gedächtnis: Namen, Werte und Listen müssen genau stimmen.
 

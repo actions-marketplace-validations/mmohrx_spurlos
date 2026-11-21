@@ -31,6 +31,8 @@ Die vollständigen Berichte beider Seiten, als Text auf Deutsch und Englisch und
 
 spurlos nutzt einen echten Browser (Chromium über Playwright). Es findet also auch Anfragen und Cookies, die erst per JavaScript entstehen. Impressum, Datenschutzerklärung und die http-Adresse ruft es getrennt davon auf; diese Aufrufe zählen nicht zu den Anfragen und Cookies der Seite. Ob http auf https weiterleitet, fragt es direkt beim Server und nicht über den Browser nach, denn Chromium wechselt von sich aus auf https.
 
+Mit welcher Browserkennung spurlos die Seite aufruft und wie es mit Bot-Schutz und Anmeldungen umgeht, steht in [docs/de/how-it-works.md](docs/de/how-it-works.md).
+
 ## Installation
 
 Mit Docker, ohne Node:
@@ -55,10 +57,10 @@ npx spurlos <url>
 | `--html` | Bericht als eigenständige HTML-Seite, etwa zum Weiterschicken |
 | `--pdf` | Bericht als PDF |
 | `-o`, `--output <datei>` | Bericht in eine Datei statt auf die Ausgabe. Ohne `--json`, `--html` oder `--pdf` entscheidet die Endung: `spurlos firma.de -o bericht.pdf` (`.pdf`, `.html`, `.json`, sonst Text). Mehrmals angegeben, schreibt ein Lauf mehrere Formate: `-o bericht.json -o bericht.html`; dann entscheidet bei jeder Datei die Endung, `--json`, `--html` und `--pdf` gehen damit nicht |
-| `--baseline <datei>` | mit einer früheren Ausgabe von `--json` vergleichen, siehe [In der CI](#in-der-ci) |
-| `--auth <benutzer:passwort>` | Anmeldung per HTTP Basic Auth, etwa für eine Staging-Seite. Besser über `SPURLOS_AUTH`, siehe [Seiten hinter einer Anmeldung](#seiten-hinter-einer-anmeldung) |
+| `--baseline <datei>` | mit einer früheren Ausgabe von `--json` vergleichen, siehe [In der CI](docs/de/ci.md) |
+| `--auth <benutzer:passwort>` | Anmeldung per HTTP Basic Auth, etwa für eine Staging-Seite. Besser über `SPURLOS_AUTH`, siehe [Seiten hinter einer Anmeldung](docs/de/how-it-works.md#seiten-hinter-einer-anmeldung) |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
-| `--own <host>` | Server, die zur Seite gehören, obwohl sie auf einer anderen Domain liegen, etwa ihr CDN: `--own cdn-firma.net`, samt Subdomains; mehrmals oder mit Komma. Siehe [Eigene Server auf anderen Domains](#eigene-server-auf-anderen-domains) |
+| `--own <host>` | Server, die zur Seite gehören, obwohl sie auf einer anderen Domain liegen, etwa ihr CDN: `--own cdn-firma.net`, samt Subdomains; mehrmals oder mit Komma. Siehe [Eigene Server auf anderen Domains](docs/de/checks.md#eigene-server-auf-anderen-domains) |
 | `--help`, `-h` | Hilfe |
 
 Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Wo es einen gängigen Weg gibt, nennt der Bericht ihn gleich mit, etwa Schriften selbst auszuliefern oder einen Beispielwert für einen fehlenden Header. Das sind technische Hinweise, keine Rechtsberatung. Im Terminal ist der Bericht farbig. Mit `-o`, in einer Pipe oder mit `NO_COLOR` bleibt es reiner Text. `--html` und `--pdf` gehen auch über die Ausgabe (`--pdf > bericht.pdf`), ein PDF schreibt spurlos aber nicht ins Terminal. Mit Docker landet eine Datei von `-o` im Container; dort leitest du besser um: `docker run --rm ghcr.io/mmohrx/spurlos firma.de --pdf > bericht.pdf`.
@@ -66,7 +68,7 @@ Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und ge
 | Umgebungsvariable | |
 |---|---|
 | `SPURLOS_LANG` | Sprache des Berichts, wenn `--lang` fehlt |
-| `SPURLOS_AUTH` | Anmeldung als `benutzer:passwort`, wenn `--auth` fehlt, siehe [Seiten hinter einer Anmeldung](#seiten-hinter-einer-anmeldung) |
+| `SPURLOS_AUTH` | Anmeldung als `benutzer:passwort`, wenn `--auth` fehlt, siehe [Seiten hinter einer Anmeldung](docs/de/how-it-works.md#seiten-hinter-einer-anmeldung) |
 | `SPURLOS_NO_SANDBOX` | `1` startet Chromium gleich ohne Sandbox und ohne Hinweis darauf; das Docker-Image setzt das, dort ist der Container die Grenze |
 | `NO_COLOR` | keine Farben, auch im Terminal |
 
@@ -87,53 +89,7 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 | Formulare | keine oder alle senden verschlüsselt an die eigene Seite | eines sendet an einen fremden Server | eines sendet unverschlüsselt über http |
 | Verratene Details | nichts, oder nur der Name der Software | eine Versionsnummer in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` oder `<meta name="generator">` | – |
 
-Geprüft werden bei den Headern `Content-Security-Policy`, `X-Frame-Options` (oder `frame-ancestors` in der CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` und `Permissions-Policy`. CSP und Referrer-Policy zählen auch als `<meta>`-Tag, für Hoster wie GitHub Pages, bei denen sich keine Header setzen lassen. Eine CSP lässt Skripte durch, wenn sie für Skripte (`script-src`, sonst `default-src`) `'unsafe-inline'` ohne Nonce oder Hash, `'unsafe-eval'` oder eine Quelle wie `*`, `https:`, `http:` oder `data:` erlaubt (Letztere nicht mit `'strict-dynamic'`), oder wenn sie Skripte gar nicht regelt. Gibt es Header und `<meta>`-Tag, reicht es, wenn eine der beiden Richtlinien dicht ist. Impressum und Datenschutzerklärung erkennt spurlos am Linktext oder an der Adresse, auf Deutsch und Englisch. Ein Link wie „Impressum & Datenschutz“ zählt für beides. Passen mehrere, gewinnt ein Link auf der eigenen Seite, dann einer, dessen Text mit dem Stichwort beginnt („Datenschutz“, „Privacy Policy“), dann einer, der es später im Text nennt, zuletzt einer, bei dem nur die Adresse passt.
-
-Bei den eingebundenen Dateien zählt, was im HTML steht: `<script src>`, Stylesheets, `<iframe>`, `<img>`, `<video>`, `<audio>` und `<source>`. Über http auf einer https-Seite blockiert der Browser Skripte, Stylesheets und Frames; Bilder und Medien lädt er über https oder gar nicht. Ohne `integrity` kann ein fremder Server ein Skript jederzeit austauschen. Skripte, die nicht laufen, zählen nicht, etwa solche mit `type="text/plain"`, wie Cookie-Banner sie bis zur Einwilligung zurückhalten. Im Bericht stehen die Adressen ohne Query (`…/api/js?…`), denn dort stehen oft API-Schlüssel; `--json` enthält sie vollständig.
-
-Jeder einzelne Befund hat im Bericht seine eigene Ampel, die Prüfung bekommt die schlechteste davon. So sieht man, welcher Eintrag eine Prüfung gelb oder rot macht.
-
-Bekannte Sitzungs- und Sicherheits-Cookies sind zum Beispiel `XSRF-TOKEN` und `<app>-session` von Laravel, `PHPSESSID`, `JSESSIONID`, `csrftoken` von Django und `__cf_bm` von Cloudflare. Im Browser-Speicher kennt spurlos Einträge, die Frameworks selbst anlegen, etwa die Scroll-Positionen von Vue Router (`vue-router:scroll`). Die Liste steht in `src/services.json` (Kategorie `necessary`).
-
-Cookie-Banner erkennt spurlos an ihren Servern, an ihren Dateien auf der eigenen Seite (so auch Borlabs Cookie, Complianz oder Real Cookie Banner unter WordPress), an ihren Cookies und an ihren Einträgen im Browser-Speicher (Kategorie `consent`). Die Prüfung „Fremde Server“ nennt, welcher geladen wird, und sagt, wenn bekannte Tracker trotzdem schon vor jeder Wahl im Banner laden. Ob ein Banner nötig ist oder richtig eingestellt, beurteilt spurlos nicht.
-
-Auch andere Dienste erkennt spurlos an ihren Pfaden, etwa Matomo (`/matomo.php`) oder Sentry (`/envelope/`). Laufen sie auf der eigenen Seite oder einer Subdomain, ändert das keine Ampel, denn die IP-Adresse bleibt bei der Seite; die Prüfung „Fremde Server“ nennt sie trotzdem („Auf eigenen Servern erkannt“), in `--json` unter `selfHosted`. Einen fremden Host, dessen Name nichts verrät, benennt spurlos so ebenfalls. Dienste, die erst nach einer Zustimmung laden, sieht spurlos nicht: Es prüft nur, was ohne Klick passiert.
-
-Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
-
-### Eigene Server auf anderen Domains
-
-Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, Wikipedia etwa von `wikimedia.org`. Solche Server sind gelb statt rot, wenn spurlos sie der Seite zuordnen kann, und der Bericht sagt, warum:
-
-- **laut --own:** Du nennst sie selbst, `--own cdn-firma.net`. Das ist eindeutig und der richtige Weg für die eigene Seite.
-- **laut Zertifikat:** Das TLS-Zertifikat der Seite nennt auch diese Domain, wie das von `wikipedia.org` die Domain `wikimedia.org`. spurlos liest es aus der Verbindung, die Chromium ohnehin hat, und glaubt ihm nur, wenn sein Inhaber (CN) die Seite selbst ist, denn Sammelzertifikate von Hostern nennen fremde Kunden.
-- **dem Namen nach:** Die Domain trägt den Namen der Seite als ganzes Wort, `media.kuketz.de` bei `kuketz-blog.de`, `img.chefkoch-cdn.de` bei `chefkoch.de` oder `bildstatic.de` bei `bild.de`. Teile eines Worts zählen nicht (`ottonova.de` gehört nicht zu `otto.de`), kurze Namen und Allerweltswörter wie `shop` oder `blog` auch nicht. Das ist eine Vermutung, prüfe sie.
-
-Ein bekannter Dienst aus `src/services.json` gehört nie zur Seite, auch nicht mit `--own`, außer die Seite ist dieser Dienst selbst: Auf `doctolib.de` können die Server von Doctolib wie `media.doctolib.com` aus den Gründen oben zur Seite gehören, die anderer Dienste nicht. Das gilt ebenso für Cookies dieser Domains. Gelb bleibt es, weil die IP-Adresse trotzdem an einen anderen Host geht; betreibt ihn ein Dienstleister, erfährt auch der sie.
-
-Eine weitere Ausnahme ist die Plattform, auf der die Seite selbst läuft. spurlos erkennt sie an einem Header der Seite: Wix an `x-wix-request-id`, Shopify an `powered-by: Shopify`, Squarespace an `server: Squarespace`, Webflow an `x-wf-region`, IONOS MyWebsite am Cookie `DIY_SB`, das es in `set-cookie` setzt. Ihre Server sind dann gelb („gehört zum Hoster der Seite“), ihre Cookies auch, denn sie liefern die Seite ohnehin aus und kennen die IP-Adresse schon. Apps, Tracker und andere Dienste auf der Seite bleiben rot. In `--json` steht die Plattform bei `third-party` unter `platform`.
-
-## Wie spurlos aufruft
-
-Die Seite selbst öffnet spurlos als normaler Chrome und hängt seinen Namen an die Kennung an:
-
-```
-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.3.0
-```
-
-„HeadlessChrome“ fehlt darin mit Absicht, auch in den Client Hints (`sec-ch-ua`). Viele Cookie-Banner und Tracker laden für Aufrufe, die sie für Bots halten, gar nicht erst. spurlos würde dann eine saubere Seite melden, während echte Besucher getrackt werden. Verstecken will sich spurlos trotzdem nicht: Der eigene Name steht in jeder Kennung, und `navigator.webdriver` bleibt `true`.
-
-Mit derselben Kennung fragt spurlos ab, ob http auf https weiterleitet: Manche Server antworten dort einem Bot anders als einem Browser (DuckDuckGo liefert einem Bot die Seite über http aus, einen Browser leitet es weiter). Impressum und Datenschutzerklärung fragt spurlos offen als Bot ab, denn dort geht es nicht um Tracker, die sich vor Bots verstecken:
-
-```
-spurlos/0.3.0 (+https://github.com/mmohrx/spurlos)
-```
-
-Manche Bot-Schutzdienste lehnen diese Abfragen ab. Antwortet http:// mit einem Fehler, meldet spurlos das gelb, denn ob der Server weiterleitet, bleibt dann offen. Ebenso bei Impressum und Datenschutz, wenn sie spurlos abweisen oder hängen lassen. spurlos versucht nicht, den Bot-Schutz zu umgehen.
-
-Weil spurlos fremde Seiten öffnet, läuft Chromium in seiner eigenen Sandbox, wo das System eine erlaubt (macOS, Windows, Linux mit User-Namespaces). Fehlt sie, meldet spurlos das auf stderr. Im Docker-Image läuft Chromium ohne Sandbox, dort ist der Container als Benutzer `node` die Grenze; prüfe unbekannte Seiten unter Linux am besten so. Downloads einer Seite nimmt spurlos nicht an.
-
-Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt, und am Ende ein Bildschirmfoto der Seite, so wie ein Besucher sie zuerst sieht, samt Cookie-Banner. Er lädt nichts nach und enthält kein JavaScript, lässt sich also auch offline öffnen oder per Mail verschicken. Mehrere Adressen stehen in einer Seite untereinander. Das PDF ist derselbe Bericht, gedruckt vom Chromium, das spurlos ohnehin nutzt, im Format A4 und immer hell, jede Adresse ab einer neuen Seite. Das Bildschirmfoto macht spurlos nur für HTML und PDF; in `--json` steht es nicht. Beim Drucken ist JavaScript aus und jede Anfrage gesperrt.
+Die genauen Regeln stehen in [docs/de/checks.md](docs/de/checks.md): welche Header geprüft werden, welche Cookies spurlos kennt, wann ein Server auf einer anderen Domain zur Seite gehört und woran es die Plattform erkennt, auf der die Seite läuft.
 
 ## Für KI-Assistenten (MCP)
 
@@ -155,81 +111,13 @@ Mit Docker statt Node: `"command": "docker", "args": ["run", "-i", "--rm", "ghcr
 
 Die Sprache richtet sich wie bei der CLI nach `--lang`, `SPURLOS_LANG` oder dem System, `--user-agent` gilt für alle Aufrufe. `--auth` gibt es dort nicht, denn die Adressen wählt der Assistent. Höchstens zwei Prüfungen laufen gleichzeitig, weitere warten. Jeder Bericht trägt den Hinweis, dass er keine Rechtsberatung ist.
 
-## Seiten hinter einer Anmeldung
-
-Interne Seiten und Staging-Seiten vor dem Livegang stecken oft hinter HTTP Basic Auth. Die Zugangsdaten gibst du am besten über die Umgebung mit, dann stehen sie nicht in der Shell-Historie und nicht in der Prozessliste:
-
-```
-SPURLOS_AUTH='team:geheim' npx spurlos https://staging.firma.de
-```
-
-`--auth team:geheim` geht auch und hat Vorrang. Mit Docker gibt `-e SPURLOS_AUTH` die Variable weiter, ohne dass das Passwort im Befehl steht: `docker run --rm -e SPURLOS_AUTH ghcr.io/mmohrx/spurlos https://staging.firma.de`. Das Passwort geht nur an genau die angegebene Adresse (Schema, Host, Port). Fremde Server, die die Seite lädt, bekommen es nie, auch wenn sie nach einer Anmeldung fragen, und Impressum oder Datenschutz nur, wenn sie unter derselben Adresse liegen. Leitet `firma.de` auf `www.firma.de` weiter, gib gleich `www.firma.de` an. Mehrere Adressen gehen mit einer Anmeldung nur, wenn sie dieselbe Adresse teilen (`https://staging.firma.de/` und `https://staging.firma.de/kontakt`); sonst endet spurlos mit Exit-Code `2`, bevor es etwas aufruft. Die Prüfung, ob http auf https weiterleitet, läuft ohne Anmeldung. Ist die Adresse selbst `http://`, geht das Passwort unverschlüsselt; spurlos weist auf stderr darauf hin.
-
-Verlangt die Seite eine Anmeldung und es gibt keine oder die falsche, prüft spurlos nicht die Fehlerseite, sondern endet mit Exit-Code `2` und sagt, woran es lag.
-
-Genauso bei `403` oder `429` auf die Seite selbst, meist ein Bot-Schutz: Was dessen Fehlerseite lädt, sagt nichts darüber, was Besucher bekommen. spurlos gibt sich nicht als Mensch aus und umgeht keinen Bot-Schutz; ist es deine Seite, lass spurlos dort zu. Manche Bot-Schutz-Dienste antworten auch mit `200` und einer eigenen Prüfseite; die erkennt spurlos nicht und prüft sie wie die Seite.
-
 ## In der CI
 
 ```
 npx spurlos https://staging.firma.de || echo "neue Spuren"
 ```
 
-Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn sich eine Seite nicht prüfen ließ oder der Aufruf falsch war (unbekannte Option, ungültige URL, unbekannte Sprache, mehr als eines von `--json`, `--html`, `--pdf`, eines davon mit mehreren `-o`, eine Baseline, die sich nicht lesen lässt, eine Anmeldung für Adressen auf verschiedenen Servern, etwas anderes als ein Hostname bei `--own`) oder sich eine Datei von `-o` nicht schreiben ließ. Auch eine fehlende oder abgelehnte Anmeldung endet mit `2`, ebenso eine Seite, die den Aufruf mit `403` oder `429` abweist. Bei mehreren Adressen gilt der schlechteste Fall; die Berichte der Seiten, die sich prüfen ließen, schreibt spurlos trotzdem.
-
-Mit `--json` kommt das vollständige Ergebnis als JSON: `scan` enthält die Rohdaten (alle Anfragen, Cookies, Speicher, Header, Zertifikat samt den Namen darin, Links, Formulare, eingebundene Dateien, die Hosts von `--own`), `results` je Prüfung ein Objekt mit `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `resources`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) und den Befunden, `note` den Hinweis auf die fehlende Rechtsberatung. Server und Cookies, die zur Seite zu gehören scheinen, tragen `own` mit dem Grund (`option`, `certificate`, `name`, `platform`). Bei `third-party` stehen unter `selfHosted` die bekannten Dienste, die auf der eigenen Seite laufen. Bei mehreren Adressen ist es eine Liste solcher Objekte. Die roten Prüfungen etwa:
-
-```
-npx spurlos https://staging.firma.de --json | jq -r '.results[] | select(.level == "red") | .check'
-```
-
-### Nur neue Spuren melden
-
-Eine Seite ist selten ganz grün. Damit die CI trotzdem anschlägt, wenn etwas dazukommt, etwa ein neuer Tracker oder ein neues Cookie, vergleicht `--baseline` mit einer früheren Ausgabe von `--json`:
-
-```
-npx spurlos https://www.firma.de --json -o spurlos-baseline.json   # einmal, dann ins Repository
-npx spurlos https://www.firma.de --baseline spurlos-baseline.json
-```
-
-Der Bericht markiert dann jeden Befund, der neu ist oder schlechter als vorher, mit `[neu]` und listet, was weggefallen ist. Exit-Code `1` gibt es nur noch bei einem neuen roten Befund. Mit `--json` steht der Vergleich unter `compare` (`baseline`, `new`, `gone`, je Befund `key` und `level`). Die Seiten findet spurlos in der Baseline über ihre Adresse; prüfst du eine einzige Seite gegen eine Baseline mit einer einzigen, gehören die beiden zusammen. Eine Seite, die die Baseline nicht kennt, hat nur neue Befunde. Die Server eines bekannten Dienstes zählen dabei als ein Befund, mit dem Eintrag aus `src/services.json` als Schlüssel (`third-party nmrodam.com`): Manche Dienste nutzen bei jedem Aufruf eine neue Subdomain, und das ist nichts Neues.
-
-### GitHub Action
-
-```yaml
-name: spurlos
-on:
-  schedule:
-    - cron: "0 6 * * 1"   # jeden Montag
-  workflow_dispatch:
-
-jobs:
-  spurlos:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: mmohrx/spurlos@main   # besser auf ein Release festgelegt: @vX.Y.Z
-        with:
-          url: https://www.firma.de
-          baseline: spurlos-baseline.json
-      - if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: spurlos
-          path: ${{ runner.temp }}/spurlos/
-```
-
-Die Action installiert spurlos und Chromium aus ihrem eigenen Stand, prüft und schreibt den Bericht in die Zusammenfassung des Laufs. Dazu legt sie `report.json`, `report.html` und `report.txt` in `$RUNNER_TEMP/spurlos/` ab; die Pfade stehen auch in den Ausgaben `json` und `html`, der Exit-Code in `exit-code`. Der Schritt schlägt fehl, wie es der Exit-Code sagt.
-
-| Eingabe | |
-|---|---|
-| `url` | die Adresse, oder mehrere, getrennt durch Leerzeichen oder Zeilenumbrüche |
-| `baseline` | eine frühere Ausgabe von `--json` im Repository |
-| `lang` | `de` oder `en`; ohne Angabe gelten dieselben Regeln wie in der CLI |
-| `auth` | `benutzer:passwort` für HTTP Basic Auth, am besten aus einem Secret: `${{ secrets.STAGING_AUTH }}` |
-| `own` | eigene Server auf anderen Domains wie bei `--own`, getrennt durch Leerzeichen oder Zeilenumbrüche |
-| `user-agent` | eigene Browserkennung für alle Aufrufe |
-| `args` | weitere Optionen, etwa `--verbose`, getrennt an Leerzeichen; ohne `--json`, `--html` und `--pdf`, die Dateien gehen nach ihrer Endung |
+Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn sich eine Seite nicht prüfen ließ oder der Aufruf falsch war. Alle Fälle, das JSON von `--json`, der Vergleich mit einer Baseline und die GitHub Action stehen in [docs/de/ci.md](docs/de/ci.md).
 
 ## Bekannte Dienste ergänzen
 
