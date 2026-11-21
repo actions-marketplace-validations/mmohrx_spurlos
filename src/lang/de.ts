@@ -6,11 +6,13 @@ import { plural } from './plural.ts'
 // Deutsch mit „du“, Anführungszeichen als Paar „…“.
 
 const de = {
-  usage: (langs: string) => `spurlos <url> [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <datei>] [--auth <benutzer:passwort>] [--user-agent <kennung>]
+  usage: (langs: string) => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <datei> …]
+        [--baseline <datei>] [--auth <benutzer:passwort>] [--user-agent <kennung>]
 spurlos mcp [--lang ${langs}] [--user-agent <kennung>]
 
 Ruft die Seite wie ein neuer Besucher auf, der nichts anklickt, und zeigt,
 welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
+Mehrere Adressen prüft spurlos nacheinander, mit je einem Bericht.
 
   --lang        Sprache: ${langs}. Ohne Angabe gilt SPURLOS_LANG, dann
                 die Sprache des Systems (LC_ALL, LC_MESSAGES, LANG), sonst de
@@ -19,7 +21,12 @@ welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
   --html        Bericht als HTML-Seite, etwa: spurlos <url> --html > bericht.html
   --pdf         Bericht als PDF, etwa: spurlos <url> --pdf > bericht.pdf
   -o, --output  in eine Datei statt auf die Ausgabe, das Format nach der
-                Endung (.pdf, .html, .json, sonst Text): -o bericht.pdf
+                Endung (.pdf, .html, .json, sonst Text): -o bericht.pdf;
+                mehrmals für mehrere Formate aus einem Lauf, dann ohne
+                --json, --html und --pdf
+  --baseline    mit einer früheren Ausgabe von --json vergleichen: Der
+                Bericht markiert neue Befunde, Exit-Code 1 nur bei neuen
+                roten Befunden
   --auth        Anmeldung per HTTP Basic Auth, nur an die geprüfte Adresse;
                 besser über SPURLOS_AUTH, dann steht das Passwort nicht in
                 der Shell-Historie
@@ -30,6 +37,7 @@ spurlos mcp startet einen MCP-Server über stdio: Ein KI-Assistent kann
 damit selbst Seiten prüfen lassen, Einrichtung im README.
 
 Exit-Code: 0 ohne roten Befund, 1 mit rotem Befund, 2 bei einem Fehler.
+Mit --baseline zählen nur neue rote Befunde.
 
 Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   disclaimer: 'Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.',
@@ -37,6 +45,8 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   unknownLang: (from: string, value: string, langs: string) => `${from} kennt nur ${langs}, nicht ${value}.`,
   invalidUrl: (arg: string) => `${arg} ist keine gültige Adresse.`,
   oneFormat: '--json, --html und --pdf gehen nur einzeln.',
+  formatWithOutputs: 'Mit mehreren -o entscheidet die Endung jeder Datei über ihr Format, ohne --json, --html oder --pdf.',
+  authOneOrigin: '--auth und SPURLOS_AUTH gelten nur für eine Adresse (Schema, Host, Port); mehrere Adressen müssen sie teilen.',
   pdfToTerminal: 'Das PDF gehört in eine Datei, nicht ins Terminal: spurlos <url> -o bericht.pdf',
   written: (file: string) => `Bericht in ${file} geschrieben.`,
   cannotWrite: (file: string, reason: string) => `${file} ließ sich nicht schreiben: ${reason}`,
@@ -53,6 +63,11 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
     }`,
   authFormat: '--auth und SPURLOS_AUTH brauchen benutzer:passwort.',
   authOverHttp: 'Die Adresse ist http://, das Passwort geht unverschlüsselt an den Server.',
+  cannotRead: (file: string, reason: string) => `${file} ließ sich nicht lesen: ${reason}`,
+  notBaseline: (file: string) => `${file} ist keine Ausgabe von spurlos --json.`,
+  compared: (file: string, fresh: number, gone: number) => `verglichen mit ${file}: ${fresh} neu, ${gone} weg`,
+  isNew: 'neu',
+  gone: 'weg',
   title: {
     'third-party': 'Fremde Server',
     cookies: 'Cookies und Speicher',

@@ -46,12 +46,14 @@ npx spurlos <url> --lang en
 
 | Option | |
 |---|---|
+| `<url> …` | one or more addresses; several are checked one after the other, with a report each |
 | `--lang de\|en` | language of the report. Without it, `SPURLOS_LANG` applies, then the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`), else `de` |
 | `--verbose`, `-v` | details for the green checks too |
 | `--json` | the full result as JSON |
 | `--html` | the report as a self-contained HTML page, e.g. to pass on |
 | `--pdf` | the report as a PDF |
-| `-o`, `--output <file>` | the report into a file instead of the output. Without `--json`, `--html` or `--pdf` the extension decides: `spurlos example.com -o report.pdf` (`.pdf`, `.html`, `.json`, else text) |
+| `-o`, `--output <file>` | the report into a file instead of the output. Without `--json`, `--html` or `--pdf` the extension decides: `spurlos example.com -o report.pdf` (`.pdf`, `.html`, `.json`, else text). Given more than once, one run writes several formats: `-o report.json -o report.html`; then each file's extension decides, and `--json`, `--html` and `--pdf` do not go with it |
+| `--baseline <file>` | compare with an earlier output of `--json`, see [In CI](#in-ci) |
 | `--auth <user:password>` | login by HTTP basic auth, e.g. for a staging site. Better through `SPURLOS_AUTH`, see [Sites behind a login](#sites-behind-a-login) |
 | `--user-agent <string>` | your own user agent for every request |
 | `--help`, `-h` | help |
@@ -107,7 +109,7 @@ spurlos/0.3.0 (+https://github.com/mmohrx/spurlos)
 
 Because spurlos opens pages it does not know, Chromium runs in its own sandbox wherever the system allows one (macOS, Windows, Linux with user namespaces). Without one, spurlos says so on stderr. In the Docker image Chromium runs without its sandbox, as the container, running as user `node`, is the boundary; on Linux, that is the best way to check unknown sites. spurlos accepts no downloads from a page.
 
-The HTML report holds every finding, with the green checks folded. It loads nothing and contains no JavaScript, so it opens offline and can be sent by mail. The PDF is the same report, printed by the Chromium spurlos uses anyway, on A4 and always light. While printing, JavaScript is off and every request is blocked.
+The HTML report holds every finding, with the green checks folded. It loads nothing and contains no JavaScript, so it opens offline and can be sent by mail. Several addresses go into one page, one below the other. The PDF is the same report, printed by the Chromium spurlos uses anyway, on A4 and always light, each address starting on a new page. While printing, JavaScript is off and every request is blocked.
 
 ## For AI assistants (MCP)
 
@@ -137,7 +139,7 @@ Internal sites and staging sites before launch often sit behind HTTP basic auth.
 SPURLOS_AUTH='team:secret' npx spurlos https://staging.company.com
 ```
 
-`--auth team:secret` works too and takes precedence. With Docker, `-e SPURLOS_AUTH` passes the variable on without the password in the command: `docker run --rm -e SPURLOS_AUTH ghcr.io/mmohrx/spurlos https://staging.company.com`. The password goes only to exactly the address given (scheme, host, port). Third-party servers the page loads never get it, even when they ask for a login, and Impressum or privacy pages only when they live at the same address. If `company.com` redirects to `www.company.com`, give `www.company.com` right away. The check whether http redirects to https runs without the login. If the address itself is `http://`, the password goes unencrypted; spurlos points that out on stderr.
+`--auth team:secret` works too and takes precedence. With Docker, `-e SPURLOS_AUTH` passes the variable on without the password in the command: `docker run --rm -e SPURLOS_AUTH ghcr.io/mmohrx/spurlos https://staging.company.com`. The password goes only to exactly the address given (scheme, host, port). Third-party servers the page loads never get it, even when they ask for a login, and Impressum or privacy pages only when they live at the same address. If `company.com` redirects to `www.company.com`, give `www.company.com` right away. Several addresses go with a login only if they share that address (`https://staging.company.com/` and `https://staging.company.com/contact`); otherwise spurlos ends with exit code `2` before opening anything. The check whether http redirects to https runs without the login. If the address itself is `http://`, the password goes unencrypted; spurlos points that out on stderr.
 
 If the page asks for a login and there is none or the wrong one, spurlos does not check the error page but ends with exit code `2` and says why.
 
@@ -147,13 +149,60 @@ If the page asks for a login and there is none or the wrong one, spurlos does no
 npx spurlos https://staging.company.com --lang en || echo "new traces"
 ```
 
-Exit code `0` without a red finding, `1` with one, `2` if the page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, more than one of `--json`, `--html`, `--pdf`) or the file of `-o` could not be written. A missing or rejected login ends with `2` too.
+Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, more than one of `--json`, `--html`, `--pdf`, one of them with several `-o`, a baseline that cannot be read, a login for addresses on different servers) or a file of `-o` could not be written. A missing or rejected login ends with `2` too. With several addresses the worst case counts; spurlos still writes the reports of the pages it could check.
 
-With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate, links, forms), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. The red checks, for example:
+With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate, links, forms), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. With several addresses it is a list of such objects. The red checks, for example:
 
 ```
 npx spurlos https://staging.company.com --json | jq -r '.results[] | select(.level == "red") | .check'
 ```
+
+### Only report new traces
+
+A site is rarely all green. To have CI still speak up when something is added, such as a new tracker or a new cookie, `--baseline` compares with an earlier output of `--json`:
+
+```
+npx spurlos https://www.company.com --json -o spurlos-baseline.json   # once, then into the repository
+npx spurlos https://www.company.com --baseline spurlos-baseline.json
+```
+
+The report then marks every finding that is new or worse than before with `[new]` and lists what has gone. Exit code `1` comes only with a new red finding. With `--json` the comparison is under `compare` (`baseline`, `new`, `gone`, each finding with `key` and `level`). spurlos finds the pages in the baseline by their address; checking a single page against a baseline of a single page, the two belong together. A page the baseline does not know has only new findings.
+
+### GitHub Action
+
+```yaml
+name: spurlos
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # every Monday
+  workflow_dispatch:
+
+jobs:
+  spurlos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: mmohrx/spurlos@main   # better pinned to a release: @vX.Y.Z
+        with:
+          url: https://www.company.com
+          baseline: spurlos-baseline.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spurlos
+          path: ${{ runner.temp }}/spurlos/
+```
+
+The action installs spurlos and Chromium from its own checkout, checks, and writes the report into the run's summary. It also puts `report.json`, `report.html` and `report.txt` into `$RUNNER_TEMP/spurlos/`; the paths are in the outputs `json` and `html` too, the exit code in `exit-code`. The step fails as the exit code says.
+
+| Input | |
+|---|---|
+| `url` | the address, or several, separated by spaces or new lines |
+| `baseline` | an earlier output of `--json` in the repository |
+| `lang` | `de` or `en`; without it the same rules as on the command line apply |
+| `auth` | `user:password` for HTTP basic auth, best from a secret: `${{ secrets.STAGING_AUTH }}` |
+| `user-agent` | your own user agent for every request |
+| `args` | further options, such as `--verbose`, split at spaces; no `--json`, `--html` or `--pdf`, the files go by their extension |
 
 ## Adding known services
 

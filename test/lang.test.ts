@@ -40,6 +40,6 @@ test('an unknown choice is reported, with the language that applies without it',
 test('every language has a help naming all options', () => {
   for (const l of LANGS) {
     const usage = MESSAGES[l].usage(LANGS.join('|'))
-    for (const option of ['--lang', '--verbose', '--json', '--user-agent', '--help']) expect(usage).toContain(option)
+    for (const option of ['--lang', '--verbose', '--json', '--html', '--pdf', '--output', '--baseline', '--auth', '--user-agent', '--help']) expect(usage).toContain(option)
   }
 })

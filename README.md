@@ -46,12 +46,14 @@ npx spurlos <url>
 
 | Option | |
 |---|---|
+| `<url> …` | eine oder mehrere Adressen; mehrere prüft spurlos nacheinander, mit je einem Bericht |
 | `--lang de\|en` | Sprache des Berichts. Ohne Angabe gilt `SPURLOS_LANG`, dann die Sprache des Systems (`LC_ALL`, `LC_MESSAGES`, `LANG`), sonst `de` |
 | `--verbose`, `-v` | Details auch zu den grünen Prüfungen |
 | `--json` | vollständiges Ergebnis als JSON |
 | `--html` | Bericht als eigenständige HTML-Seite, etwa zum Weiterschicken |
 | `--pdf` | Bericht als PDF |
-| `-o`, `--output <datei>` | Bericht in eine Datei statt auf die Ausgabe. Ohne `--json`, `--html` oder `--pdf` entscheidet die Endung: `spurlos firma.de -o bericht.pdf` (`.pdf`, `.html`, `.json`, sonst Text) |
+| `-o`, `--output <datei>` | Bericht in eine Datei statt auf die Ausgabe. Ohne `--json`, `--html` oder `--pdf` entscheidet die Endung: `spurlos firma.de -o bericht.pdf` (`.pdf`, `.html`, `.json`, sonst Text). Mehrmals angegeben, schreibt ein Lauf mehrere Formate: `-o bericht.json -o bericht.html`; dann entscheidet bei jeder Datei die Endung, `--json`, `--html` und `--pdf` gehen damit nicht |
+| `--baseline <datei>` | mit einer früheren Ausgabe von `--json` vergleichen, siehe [In der CI](#in-der-ci) |
 | `--auth <benutzer:passwort>` | Anmeldung per HTTP Basic Auth, etwa für eine Staging-Seite. Besser über `SPURLOS_AUTH`, siehe [Seiten hinter einer Anmeldung](#seiten-hinter-einer-anmeldung) |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
 | `--help`, `-h` | Hilfe |
@@ -107,7 +109,7 @@ spurlos/0.3.0 (+https://github.com/mmohrx/spurlos)
 
 Weil spurlos fremde Seiten öffnet, läuft Chromium in seiner eigenen Sandbox, wo das System eine erlaubt (macOS, Windows, Linux mit User-Namespaces). Fehlt sie, meldet spurlos das auf stderr. Im Docker-Image läuft Chromium ohne Sandbox, dort ist der Container als Benutzer `node` die Grenze; prüfe unbekannte Seiten unter Linux am besten so. Downloads einer Seite nimmt spurlos nicht an.
 
-Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt. Er lädt nichts nach und enthält kein JavaScript, lässt sich also auch offline öffnen oder per Mail verschicken. Das PDF ist derselbe Bericht, gedruckt vom Chromium, das spurlos ohnehin nutzt, im Format A4 und immer hell. Beim Drucken ist JavaScript aus und jede Anfrage gesperrt.
+Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt. Er lädt nichts nach und enthält kein JavaScript, lässt sich also auch offline öffnen oder per Mail verschicken. Mehrere Adressen stehen in einer Seite untereinander. Das PDF ist derselbe Bericht, gedruckt vom Chromium, das spurlos ohnehin nutzt, im Format A4 und immer hell, jede Adresse ab einer neuen Seite. Beim Drucken ist JavaScript aus und jede Anfrage gesperrt.
 
 ## Für KI-Assistenten (MCP)
 
@@ -137,7 +139,7 @@ Interne Seiten und Staging-Seiten vor dem Livegang stecken oft hinter HTTP Basic
 SPURLOS_AUTH='team:geheim' npx spurlos https://staging.firma.de
 ```
 
-`--auth team:geheim` geht auch und hat Vorrang. Mit Docker gibt `-e SPURLOS_AUTH` die Variable weiter, ohne dass das Passwort im Befehl steht: `docker run --rm -e SPURLOS_AUTH ghcr.io/mmohrx/spurlos https://staging.firma.de`. Das Passwort geht nur an genau die angegebene Adresse (Schema, Host, Port). Fremde Server, die die Seite lädt, bekommen es nie, auch wenn sie nach einer Anmeldung fragen, und Impressum oder Datenschutz nur, wenn sie unter derselben Adresse liegen. Leitet `firma.de` auf `www.firma.de` weiter, gib gleich `www.firma.de` an. Die Prüfung, ob http auf https weiterleitet, läuft ohne Anmeldung. Ist die Adresse selbst `http://`, geht das Passwort unverschlüsselt; spurlos weist auf stderr darauf hin.
+`--auth team:geheim` geht auch und hat Vorrang. Mit Docker gibt `-e SPURLOS_AUTH` die Variable weiter, ohne dass das Passwort im Befehl steht: `docker run --rm -e SPURLOS_AUTH ghcr.io/mmohrx/spurlos https://staging.firma.de`. Das Passwort geht nur an genau die angegebene Adresse (Schema, Host, Port). Fremde Server, die die Seite lädt, bekommen es nie, auch wenn sie nach einer Anmeldung fragen, und Impressum oder Datenschutz nur, wenn sie unter derselben Adresse liegen. Leitet `firma.de` auf `www.firma.de` weiter, gib gleich `www.firma.de` an. Mehrere Adressen gehen mit einer Anmeldung nur, wenn sie dieselbe Adresse teilen (`https://staging.firma.de/` und `https://staging.firma.de/kontakt`); sonst endet spurlos mit Exit-Code `2`, bevor es etwas aufruft. Die Prüfung, ob http auf https weiterleitet, läuft ohne Anmeldung. Ist die Adresse selbst `http://`, geht das Passwort unverschlüsselt; spurlos weist auf stderr darauf hin.
 
 Verlangt die Seite eine Anmeldung und es gibt keine oder die falsche, prüft spurlos nicht die Fehlerseite, sondern endet mit Exit-Code `2` und sagt, woran es lag.
 
@@ -147,13 +149,60 @@ Verlangt die Seite eine Anmeldung und es gibt keine oder die falsche, prüft spu
 npx spurlos https://staging.firma.de || echo "neue Spuren"
 ```
 
-Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn die Seite sich nicht prüfen ließ oder der Aufruf falsch war (unbekannte Option, ungültige URL, unbekannte Sprache, mehr als eines von `--json`, `--html`, `--pdf`) oder sich die Datei von `-o` nicht schreiben ließ. Auch eine fehlende oder abgelehnte Anmeldung endet mit `2`.
+Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn sich eine Seite nicht prüfen ließ oder der Aufruf falsch war (unbekannte Option, ungültige URL, unbekannte Sprache, mehr als eines von `--json`, `--html`, `--pdf`, eines davon mit mehreren `-o`, eine Baseline, die sich nicht lesen lässt, eine Anmeldung für Adressen auf verschiedenen Servern) oder sich eine Datei von `-o` nicht schreiben ließ. Auch eine fehlende oder abgelehnte Anmeldung endet mit `2`. Bei mehreren Adressen gilt der schlechteste Fall; die Berichte der Seiten, die sich prüfen ließen, schreibt spurlos trotzdem.
 
-Mit `--json` kommt das vollständige Ergebnis als JSON: `scan` enthält die Rohdaten (alle Anfragen, Cookies, Speicher, Header, Zertifikat, Links, Formulare), `results` je Prüfung ein Objekt mit `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) und den Befunden, `note` den Hinweis auf die fehlende Rechtsberatung. Die roten Prüfungen etwa:
+Mit `--json` kommt das vollständige Ergebnis als JSON: `scan` enthält die Rohdaten (alle Anfragen, Cookies, Speicher, Header, Zertifikat, Links, Formulare), `results` je Prüfung ein Objekt mit `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) und den Befunden, `note` den Hinweis auf die fehlende Rechtsberatung. Bei mehreren Adressen ist es eine Liste solcher Objekte. Die roten Prüfungen etwa:
 
 ```
 npx spurlos https://staging.firma.de --json | jq -r '.results[] | select(.level == "red") | .check'
 ```
+
+### Nur neue Spuren melden
+
+Eine Seite ist selten ganz grün. Damit die CI trotzdem anschlägt, wenn etwas dazukommt, etwa ein neuer Tracker oder ein neues Cookie, vergleicht `--baseline` mit einer früheren Ausgabe von `--json`:
+
+```
+npx spurlos https://www.firma.de --json -o spurlos-baseline.json   # einmal, dann ins Repository
+npx spurlos https://www.firma.de --baseline spurlos-baseline.json
+```
+
+Der Bericht markiert dann jeden Befund, der neu ist oder schlechter als vorher, mit `[neu]` und listet, was weggefallen ist. Exit-Code `1` gibt es nur noch bei einem neuen roten Befund. Mit `--json` steht der Vergleich unter `compare` (`baseline`, `new`, `gone`, je Befund `key` und `level`). Die Seiten findet spurlos in der Baseline über ihre Adresse; prüfst du eine einzige Seite gegen eine Baseline mit einer einzigen, gehören die beiden zusammen. Eine Seite, die die Baseline nicht kennt, hat nur neue Befunde.
+
+### GitHub Action
+
+```yaml
+name: spurlos
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # jeden Montag
+  workflow_dispatch:
+
+jobs:
+  spurlos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: mmohrx/spurlos@main   # besser auf ein Release festgelegt: @vX.Y.Z
+        with:
+          url: https://www.firma.de
+          baseline: spurlos-baseline.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spurlos
+          path: ${{ runner.temp }}/spurlos/
+```
+
+Die Action installiert spurlos und Chromium aus ihrem eigenen Stand, prüft und schreibt den Bericht in die Zusammenfassung des Laufs. Dazu legt sie `report.json`, `report.html` und `report.txt` in `$RUNNER_TEMP/spurlos/` ab; die Pfade stehen auch in den Ausgaben `json` und `html`, der Exit-Code in `exit-code`. Der Schritt schlägt fehl, wie es der Exit-Code sagt.
+
+| Eingabe | |
+|---|---|
+| `url` | die Adresse, oder mehrere, getrennt durch Leerzeichen oder Zeilenumbrüche |
+| `baseline` | eine frühere Ausgabe von `--json` im Repository |
+| `lang` | `de` oder `en`; ohne Angabe gelten dieselben Regeln wie in der CLI |
+| `auth` | `benutzer:passwort` für HTTP Basic Auth, am besten aus einem Secret: `${{ secrets.STAGING_AUTH }}` |
+| `user-agent` | eigene Browserkennung für alle Aufrufe |
+| `args` | weitere Optionen, etwa `--verbose`, getrennt an Leerzeichen; ohne `--json`, `--html` und `--pdf`, die Dateien gehen nach ihrer Endung |
 
 ## Bekannte Dienste ergänzen
 

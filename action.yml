@@ -1,0 +1,94 @@
+name: spurlos
+description: Opens a website like a first-time visitor and reports third-party requests, cookies, legal pages, HTTPS and headers.
+author: Martin Mohr
+branding:
+  icon: search
+  color: green
+
+# Runs spurlos from the action's own checkout, at the ref the workflow names (mmohrx/spurlos@v1):
+# no npm package needed, and the dependencies come from the lockfile.
+inputs:
+  url:
+    description: The address to check; several separated by spaces or new lines.
+    required: true
+  baseline:
+    description: An earlier output of spurlos --json in the repository. With it only new red findings fail the step.
+    required: false
+    default: ""
+  lang:
+    description: Language of the report, de or en. Without it, the same rules as on the command line apply.
+    required: false
+    default: ""
+  auth:
+    description: HTTP basic auth as user:password, for a staging site. Pass it from a secret.
+    required: false
+    default: ""
+  user-agent:
+    description: Your own user agent for every request.
+    required: false
+    default: ""
+  args:
+    description: Further options for spurlos, such as --verbose, split at spaces; no format flags, the files go by their extension.
+    required: false
+    default: ""
+
+outputs:
+  json:
+    description: Path of the full result as JSON, to keep as an artifact or as the next baseline.
+    value: ${{ steps.run.outputs.json }}
+  html:
+    description: Path of the report as an HTML page.
+    value: ${{ steps.run.outputs.html }}
+  exit-code:
+    description: 0 without a red finding, 1 with one (with a baseline only new ones), 2 if a page could not be checked.
+    value: ${{ steps.run.outputs.exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: 24
+    - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      with:
+        package_json_file: ${{ github.action_path }}/package.json
+    - name: Install spurlos and Chromium
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        pnpm install --prod --frozen-lockfile
+        pnpm exec playwright install --with-deps chromium-headless-shell
+    - id: run
+      name: Check
+      shell: bash
+      # inputs through the environment, never into the script itself: a URL is text, not shell
+      env:
+        URLS: ${{ inputs.url }}
+        BASELINE: ${{ inputs.baseline }}
+        ARGS: ${{ inputs.args }}
+        USER_AGENT: ${{ inputs.user-agent }}
+        SPURLOS_LANG: ${{ inputs.lang }}
+        SPURLOS_AUTH: ${{ inputs.auth }}
+        SPURLOS: ${{ github.action_path }}/src/cli.ts
+      run: |
+        out="$RUNNER_TEMP/spurlos"
+        mkdir -p "$out"
+        read -r -d '' -a urls <<< "$URLS" || true
+        read -r -a extra <<< "$ARGS" || true
+        options=(-o "$out/report.json" -o "$out/report.html" -o "$out/report.txt")
+        if [ -n "$BASELINE" ]; then options+=(--baseline "$BASELINE"); fi
+        if [ -n "$USER_AGENT" ]; then options+=(--user-agent "$USER_AGENT"); fi
+        set +e
+        node "$SPURLOS" "${urls[@]}" "${options[@]}" "${extra[@]}"
+        code=$?
+        set -e
+        # in <pre>, escaped: the report quotes the page, and a ``` in it must not end a code block
+        if [ -f "$out/report.txt" ]; then
+          { echo '<pre>'; sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' "$out/report.txt"; echo '</pre>'; } >> "$GITHUB_STEP_SUMMARY"
+        fi
+        {
+          echo "json=$out/report.json"
+          echo "html=$out/report.html"
+          echo "exit-code=$code"
+        } >> "$GITHUB_OUTPUT"
+        exit "$code"

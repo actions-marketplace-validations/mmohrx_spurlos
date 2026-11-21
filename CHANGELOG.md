@@ -2,6 +2,12 @@
 
 ## Unveröffentlicht
 
+- `--baseline <datei>`: mit einer früheren Ausgabe von `--json` vergleichen. Der Bericht markiert neue Befunde mit `[neu]` und listet, was weggefallen ist; Exit-Code 1 nur noch bei neuen roten Befunden. In `--json` unter `compare`.
+- GitHub Action (`uses: mmohrx/spurlos@…`): prüft, schreibt den Bericht in die Zusammenfassung des Laufs und legt JSON, HTML und Text ab, auf Wunsch gegen eine Baseline.
+- Mehrere Adressen in einem Lauf: `spurlos a.de b.de/kontakt`, je ein Bericht; in `--json` dann eine Liste, im HTML und PDF eine Seite mit allen.
+- `-o` mehrmals: ein Lauf schreibt mehrere Formate, etwa `-o bericht.json -o bericht.html`; das Format nach der Endung, ohne `--json`, `--html` oder `--pdf`.
+- Eine Anmeldung (`--auth`, `SPURLOS_AUTH`) gilt bei mehreren Adressen nur, wenn sie dieselbe Adresse (Schema, Host, Port) teilen.
+
 - README: Umgebungsvariablen auf einen Blick, Wartezeiten, keine Telemetrie, Basic Auth mit Docker.
 - Links zum Unterstützen (Ko-fi, GitHub Sponsors) im README, in der Hilfe, in `package.json` und als Button auf GitHub.
 

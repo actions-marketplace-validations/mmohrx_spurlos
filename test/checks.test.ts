@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import { cookies, disclosure, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfStorage, serviceOfHost, thirdParty } from '../src/checks.ts'
+import {
+  compare, cookies, disclosure, findings, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  thirdParty, type Result,
+} from '../src/checks.ts'
 import type { Scan } from '../src/scan.ts'
 
 const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], userAgent: 'test', sandbox: true }
@@ -210,6 +213,37 @@ describe('headers', () => {
       level: 'yellow',
       missing: ['Content-Security-Policy', 'X-Content-Type-Options', 'Referrer-Policy', 'Permissions-Policy'],
     })
+  })
+})
+
+describe('compare', () => {
+  const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })) })
+  const disc = (version: boolean): Result => ({ check: 'disclosure', level: version ? 'yellow' : 'green', findings: [{ source: 'header', name: 'server', value: version ? 'nginx/1.2' : 'nginx', version }] })
+
+  test('findings carry a key that stays the same across scans', () => {
+    expect(findings(third('a.example'))).toEqual([{ key: 'third-party a.example', level: 'red' }])
+  })
+
+  test('two findings with the same key both count', () => {
+    const form = (action: string): Result => forms({ ...base, forms: [{ action: 'https://www.firma.de/suche', method: 'get' }, { action, method: 'get' }] })
+    expect(findings(form('http://www.firma.de/suche')).map(f => f.key)).toEqual(['form get https://www.firma.de/suche', 'form get http://www.firma.de/suche'])
+    const twice = form('https://www.firma.de/suche')
+    expect(findings(twice).map(f => f.key)).toEqual(['form get https://www.firma.de/suche', 'form get https://www.firma.de/suche #2'])
+  })
+
+  test('new is what was not flagged before, or milder; gone what is no longer flagged', () => {
+    const r = compare([third('a.example', 'b.example'), disc(true)], [third('a.example', 'c.example'), disc(false)])
+    expect(r.fresh.map(f => f.key)).toEqual(['third-party b.example', 'disclosure server'])
+    expect(r.gone.map(f => f.key)).toEqual(['third-party c.example'])
+  })
+
+  test('the same findings compare as nothing new', () => {
+    expect(compare([third('a.example')], [third('a.example')])).toEqual({ fresh: [], gone: [] })
+  })
+
+  test('a baseline from an older spurlos, with lists missing, does not throw', () => {
+    const old = [{ check: 'headers', level: 'yellow', missing: ['Permissions-Policy'], checked: 5 }] as unknown as Result[]
+    expect(compare([third()], old)).toEqual({ fresh: [], gone: [{ key: 'header Permissions-Policy', level: 'yellow' }] })
   })
 })
 

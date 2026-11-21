@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
-import type { Result } from '../src/checks.ts'
-import { banner, clean, html, json, text } from '../src/report.ts'
+import { compare, type Result } from '../src/checks.ts'
+import { banner, clean, html, htmlReports, json, jsonReports, text } from '../src/report.ts'
 import type { Scan } from '../src/scan.ts'
 
 // escapes, so the test shows what it feeds in: ESC, BEL, a right-to-left override, an Arabic letter mark, an 8-bit CSI
@@ -54,4 +54,37 @@ test('the logo for the help: the lights in color only when asked', () => {
   expect(banner()).not.toContain('\x1b')
   expect(banner()).toContain('█ ● ● ● █   spurlos')
   expect(banner(true)).toContain('\x1b[31m●')
+})
+
+const page = (finalUrl: string, extra: Partial<Scan> = {}) => ({ url: finalUrl, finalUrl, settled: true, ...extra }) as Scan
+const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })) })
+
+test('new findings since the baseline are marked, gone ones listed', () => {
+  const now = [third('a.example', 'b.example')]
+  const before = [third('a.example', 'c.example')]
+  const c = { file: 'baseline.json', comparison: compare(now, before), before }
+  const report = text(page('https://shop.example/'), now, 'de', { compare: c })
+  expect(report).toContain('verglichen mit baseline.json: 1 neu, 1 weg')
+  expect(report).toContain('🔴 [neu] b.example')
+  expect(report).toContain('🔴 a.example')
+  expect(report).not.toContain('[neu] a.example')
+  // gone, named as the baseline's report named it
+  expect(report).toContain('weg: c.example')
+  expect(html(page('https://shop.example/'), now, 'en', { compare: c })).toContain('<li class="red"><span class="new">new</span>b.example')
+  expect(JSON.parse(json(page('https://shop.example/'), now, 'de', c)).compare).toEqual({
+    baseline: 'baseline.json',
+    new: [{ key: 'third-party b.example', level: 'red' }],
+    gone: [{ key: 'third-party c.example', level: 'red' }],
+  })
+})
+
+test('several pages: one HTML page with a section each, a JSON list', () => {
+  const reports = [{ scan: page('https://a.example/'), results: [third()] }, { scan: page('https://b.example/'), results: [third('x.example')] }]
+  const out = htmlReports(reports, 'de')
+  expect(out.match(/<section class="report">/g)).toHaveLength(2)
+  // the logo once, the disclaimer once
+  expect(out.match(/<svg class="logo light"/g)).toHaveLength(1)
+  expect(out.match(/keine Rechtsberatung/g)).toHaveLength(1)
+  const list = JSON.parse(jsonReports(reports, 'de'))
+  expect(list.map((r: { scan: Scan }) => r.scan.finalUrl)).toEqual(['https://a.example/', 'https://b.example/'])
 })

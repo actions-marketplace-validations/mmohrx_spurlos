@@ -46,7 +46,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829814092.636313,
+        "expires": 1829818369.036599,
         "secure": false,
         "httpOnly": false
       }
@@ -161,7 +161,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829814092.636313,
+          "expires": 1829818369.036599,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,

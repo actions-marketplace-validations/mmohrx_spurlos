@@ -225,3 +225,85 @@ export function disclosure(scan: Scan): Result {
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
   return [thirdParty(scan), cookies(scan), legal(scan), https(scan, now), headers(scan), forms(scan), disclosure(scan)]
 }
+
+/**
+ * What identifies a finding from one scan to the next, whatever the language: the report marks findings by it, and
+ * --baseline compares by it.
+ */
+export const key = {
+  host: (host: string) => `third-party ${host}`,
+  cookie: (c: { name: string; domain: string }) => `cookie ${c.name} ${c.domain}`,
+  storage: (e: { area: string; key: string }) => `storage ${e.area} ${e.key}`,
+  legal: (kind: LegalKind) => `legal ${kind}`,
+  https: (what: 'https' | 'cert' | 'http' | 'hsts') => `https ${what}`,
+  header: (name: string) => `header ${name}`,
+  form: (f: { method: string; action: string }) => `form ${f.method} ${f.action}`,
+  disclosure: (d: { name: string }) => `disclosure ${d.name}`,
+}
+
+export type Finding = { key: string; level: Level }
+
+// a baseline is a JSON file, maybe from an older spurlos: a list missing from it counts as empty
+const list = <T>(v: T[] | undefined): T[] => (Array.isArray(v) ? v : [])
+
+/** the second of two findings with the same key gets #2, so both count: two forms posting to the same address */
+export function numbered(keys: string[]): string[] {
+  const seen = new Map<string, number>()
+  return keys.map(k => {
+    const n = (seen.get(k) ?? 0) + 1
+    seen.set(k, n)
+    return n === 1 ? k : `${k} #${n}`
+  })
+}
+
+/** Each finding of a check with its own light, in the order the report lists them; keys unique within the check. */
+export function findings(r: Result): Finding[] {
+  const found = unnumbered(r)
+  const keys = numbered(found.map(f => f.key))
+  return found.map((f, i) => ({ key: keys[i] ?? f.key, level: f.level }))
+}
+
+function unnumbered(r: Result): Finding[] {
+  switch (r.check) {
+    case 'third-party':
+      return list(r.hosts).map(h => ({ key: key.host(h.host), level: 'red' }))
+    case 'cookies':
+      return [
+        ...list(r.cookies).map(c => ({ key: key.cookie(c), level: cookieLevel({ ...c, missing: list(c.missing) }) })),
+        ...list(r.storage).map(e => ({ key: key.storage(e), level: storageLevel(e) })),
+      ]
+    case 'legal':
+      return list(r.pages).map(p => ({ key: key.legal(p.kind), level: legalLevel(p) }))
+    case 'https':
+      return [
+        ...(r.https ? [] : [{ key: key.https('https'), level: 'red' as const }]),
+        ...(r.certDaysLeft === undefined ? [] : [{ key: key.https('cert'), level: certLevel(r.certDaysLeft) }]),
+        ...(r.http ? [{ key: key.https('http'), level: httpLevel(r.http) }] : []),
+        ...(r.https && !r.hsts ? [{ key: key.https('hsts'), level: 'yellow' as const }] : []),
+      ]
+    case 'headers':
+      return list(r.missing).map(h => ({ key: key.header(h), level: 'yellow' as const }))
+    case 'forms':
+      return list(r.forms).map(f => ({ key: key.form(f), level: formLevel(f) }))
+    case 'disclosure':
+      return list(r.findings).map(d => ({ key: key.disclosure(d), level: disclosureLevel(d) }))
+    default:
+      return []
+  }
+}
+
+/** fresh: findings that are red or yellow now and were not, or were milder, before · gone: red or yellow before, and not now */
+export type Comparison = { fresh: Finding[]; gone: Finding[] }
+
+/** Compares the results of a scan with those of an earlier one, the baseline. */
+export function compare(now: Result[], before: Result[]): Comparison {
+  const flagged = (results: Result[]) => results.flatMap(findings).filter(f => f.level !== 'green')
+  const was = new Map(flagged(before).map(f => [f.key, f.level]))
+  const is = new Set(flagged(now).map(f => f.key))
+  const milder = (a: Level, b: Level) => SEVERITY.indexOf(a) > SEVERITY.indexOf(b)
+  const fresh = flagged(now).filter(f => {
+    const old = was.get(f.key)
+    return old === undefined || milder(old, f.level)
+  })
+  return { fresh, gone: flagged(before).filter(f => !is.has(f.key)) }
+}

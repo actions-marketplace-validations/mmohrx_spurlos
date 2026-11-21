@@ -1,4 +1,7 @@
-import { certLevel, cookieLevel, SEVERITY, disclosureLevel, formLevel, httpLevel, legalLevel, storageLevel, type Level, type Result } from './checks.ts'
+import {
+  certLevel, cookieLevel, SEVERITY, disclosureLevel, formLevel, httpLevel, key, legalLevel, numbered, storageLevel,
+  type Comparison, type Level, type Result,
+} from './checks.ts'
 import { readFileSync } from 'node:fs'
 import { styleText } from 'node:util'
 import { MESSAGES, type Lang, type Messages } from './lang/index.ts'
@@ -12,20 +15,47 @@ function lifetime(t: Messages, expires: number, now: number): string {
   return days < 1 ? t.underADay : t.days(days)
 }
 
-/** one finding: what it is, and after a dash what spurlos makes of it */
-type Item = { level: Level; label: string; detail?: string }
+/** one finding: what it is, and after a dash what spurlos makes of it; key: what --baseline knows it by */
+type Item = { level: Level; label: string; detail?: string; key: string }
 /** a check as the report shows it: a short value next to the title, each finding with its own light, notes under them */
 type Section = { value: string; items: Item[]; notes: string[] }
 
-const item = (level: Level, label: string, detail?: string): Item => (detail === undefined ? { level, label } : { level, label, detail })
+const item = (key: string, level: Level, label: string, detail?: string): Item =>
+  detail === undefined ? { key, level, label } : { key, level, label, detail }
 
+/** one page's report; compare: how it differs from the same page in the baseline file, whose results are before */
+export type Report = { scan: Scan; results: Result[]; compare?: { file: string; comparison: Comparison; before: Result[] } }
+
+/** a check as the report shows it, its keys numbered as findings() numbers them, so --baseline finds each one */
 function section(t: Messages, r: Result, now: number): Section {
+  const s = unkeyed(t, r, now)
+  const keys = numbered(s.items.map(i => i.key))
+  return { ...s, items: s.items.map((i, n) => ({ ...i, key: keys[n] ?? i.key })) }
+}
+
+/**
+ * What has gone since the baseline, as the baseline's report named it, in the language of this one. A baseline from
+ * an older spurlos may lack what its report needs; then the key stands in.
+ */
+function goneLabels(t: Messages, compare: NonNullable<Report['compare']>, now: number): string[] {
+  const labels = new Map<string, string>()
+  for (const r of compare.before) {
+    try {
+      for (const i of section(t, r, now).items) labels.set(i.key, i.label)
+    } catch {
+      // the key will do
+    }
+  }
+  return compare.comparison.gone.map(f => labels.get(f.key) ?? f.key)
+}
+
+function unkeyed(t: Messages, r: Result, now: number): Section {
   switch (r.check) {
     case 'third-party':
       if (!r.hosts.length) return { value: t.none, items: [], notes: [t.thirdPartyNone] }
       return {
         value: `${r.hosts.length}`,
-        items: r.hosts.map(h => item('red', h.host, h.service ? `${h.service.name} (${t.requests(h.requests)})` : t.requests(h.requests))),
+        items: r.hosts.map(h => item(key.host(h.host), 'red', h.host, h.service ? `${h.service.name} (${t.requests(h.requests)})` : t.requests(h.requests))),
         notes: [t.thirdParty],
       }
 
@@ -39,9 +69,9 @@ function section(t: Messages, r: Result, now: number): Section {
             lifetime(t, c.expires, now),
             ...(c.missing.length ? [t.cookieMissing(c.missing)] : []),
           ]
-          return item(cookieLevel(c), `Cookie ${c.name} (${c.domain})`, about.join(', '))
+          return item(key.cookie(c), cookieLevel(c), `Cookie ${c.name} (${c.domain})`, about.join(', '))
         }),
-        ...r.storage.map(s => item(storageLevel(s), `${s.area}: ${s.key}`, s.service?.name ?? t.unknown)),
+        ...r.storage.map(s => item(key.storage(s), storageLevel(s), `${s.area}: ${s.key}`, s.service?.name ?? t.unknown)),
       ]
       const unknown = r.storage.some(s => !s.service) || r.cookies.some(c => !c.service && !c.thirdParty)
       const note = unknown && r.level !== 'red' ? t.cookiesReview : r.level === 'green' ? t.cookiesNecessary : null
@@ -53,43 +83,43 @@ function section(t: Messages, r: Result, now: number): Section {
       return {
         value: t.legal(r.level === 'green'),
         items: r.pages.map(p => {
-          if (!p.link) return item(legalLevel(p), `${t.legalName[p.kind]}: ${t.legalNoLink}`)
+          if (!p.link) return item(key.legal(p.kind), legalLevel(p), `${t.legalName[p.kind]}: ${t.legalNoLink}`)
           const v = p.visit
           const state = !v ? t.legalNotChecked : 'error' in v ? t.legalUnreachable(v.error === NO_RESPONSE ? t.noResponse : v.error) : v.status < 300 ? t.legalOk : t.legalStatus(v.status)
-          return item(legalLevel(p), `${t.legalName[p.kind]}: ${t.quote(p.link.text || p.link.href)} → ${p.link.href}`, state)
+          return item(key.legal(p.kind), legalLevel(p), `${t.legalName[p.kind]}: ${t.quote(p.link.text || p.link.href)} → ${p.link.href}`, state)
         }),
         notes: [],
       }
 
     case 'https': {
       const items: (Item | null)[] = [
-        r.https ? null : item('red', t.noHttps),
+        r.https ? null : item(key.https('https'), 'red', t.noHttps),
         r.certDaysLeft === undefined
           ? null
-          : item(certLevel(r.certDaysLeft), r.certDaysLeft < 0 ? t.certExpired : t.certDays(r.certDaysLeft) + (r.certDaysLeft < 14 ? t.certRenew : '')),
-        r.http ? item(httpLevel(r.http), t.http[r.http]) : null,
-        r.https && !r.hsts ? item('yellow', t.noHsts) : null,
+          : item(key.https('cert'), certLevel(r.certDaysLeft), r.certDaysLeft < 0 ? t.certExpired : t.certDays(r.certDaysLeft) + (r.certDaysLeft < 14 ? t.certRenew : '')),
+        r.http ? item(key.https('http'), httpLevel(r.http), t.http[r.http]) : null,
+        r.https && !r.hsts ? item(key.https('hsts'), 'yellow', t.noHsts) : null,
       ]
       return { value: t.https[r.level], items: items.filter(i => i !== null), notes: [] }
     }
 
     case 'headers':
       if (!r.missing.length) return { value: t.headersOk, items: [], notes: [] }
-      return { value: t.headersMissing(r.missing.length, r.checked), items: r.missing.map(m => item('yellow', t.headerMissing(m))), notes: [] }
+      return { value: t.headersMissing(r.missing.length, r.checked), items: r.missing.map(m => item(key.header(m), 'yellow', t.headerMissing(m))), notes: [] }
 
     case 'disclosure': {
       if (!r.findings.length) return { value: t.none, items: [], notes: [t.disclosureNone] }
       const versions = r.findings.filter(d => d.version).length
       return {
         value: t.disclosure(versions),
-        items: r.findings.map(d => item(disclosureLevel(d), d.source === 'header' ? `Header ${d.name}: ${d.value}` : `<meta name="generator">: ${d.value}`)),
+        items: r.findings.map(d => item(key.disclosure(d), disclosureLevel(d), d.source === 'header' ? `Header ${d.name}: ${d.value}` : `<meta name="generator">: ${d.value}`)),
         notes: versions ? [t.disclosureWhy, t.disclosureHint] : [],
       }
     }
 
     case 'forms':
       if (!r.forms.length) return { value: t.formsNone, items: [], notes: [] }
-      return { value: `${r.forms.length}`, items: r.forms.map(f => item(formLevel(f), `${f.method.toUpperCase()} ${f.action}`, t.form[f.problem ?? 'ok'])), notes: [] }
+      return { value: `${r.forms.length}`, items: r.forms.map(f => item(key.form(f), formLevel(f), `${f.method.toUpperCase()} ${f.action}`, t.form[f.problem ?? 'ok'])), notes: [] }
   }
 }
 
@@ -111,7 +141,8 @@ export function banner(color = false): string {
 const MARK: Record<Level, string> = { red: '✖', yellow: '▲', green: '✔' }
 const BADGE = { red: ['bgRed', 'white', 'bold'], yellow: ['bgYellow', 'black', 'bold'], green: ['bgGreen', 'black', 'bold'] } as const
 
-export type TextOptions = { now?: number; color?: boolean; verbose?: boolean; width?: number }
+/** compare: how the page differs from the baseline, to mark new findings */
+export type TextOptions = { now?: number; color?: boolean; verbose?: boolean; width?: number; compare?: Report['compare'] }
 
 /**
  * Link texts, header values, cookie names and addresses come from the page. Control characters in them could
@@ -122,12 +153,24 @@ export const clean = (s: string) => s.replace(UNSAFE, '\ufffd')
 // what JSON.stringify leaves as it is: DEL, C1 and the bidi marks; C0 it escapes itself, and its own line breaks must stay
 const UNSAFE_IN_JSON = /[\u007f-\u009f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g
 
+/** what --json holds for one page */
+function data({ scan, results, compare }: Report, lang: Lang) {
+  const diff = compare ? { compare: { baseline: compare.file, new: compare.comparison.fresh, gone: compare.comparison.gone } } : {}
+  return { scan, results, ...diff, note: MESSAGES[lang].disclaimer }
+}
+
 /**
- * The full result as JSON. The values stay as the page sent them; JSON.stringify escapes C0 control characters,
- * the rest of UNSAFE is escaped here, so printing the JSON cannot steer the terminal either.
+ * The full result as JSON: one object for one page, a list of them for several. The values stay as the page sent
+ * them; JSON.stringify escapes C0 control characters, the rest of UNSAFE is escaped here, so printing the JSON cannot
+ * steer the terminal either.
  */
-export function json(scan: Scan, results: Result[], lang: Lang): string {
-  return JSON.stringify({ scan, results, note: MESSAGES[lang].disclaimer }, null, 2).replace(UNSAFE_IN_JSON, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
+export function json(scan: Scan, results: Result[], lang: Lang, compare?: Report['compare']): string {
+  return jsonReports([{ scan, results, ...(compare ? { compare } : {}) }], lang)
+}
+
+export function jsonReports(reports: Report[], lang: Lang): string {
+  const out = reports.length === 1 && reports[0] ? data(reports[0], lang) : reports.map(r => data(r, lang))
+  return JSON.stringify(out, null, 2).replace(UNSAFE_IN_JSON, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
 }
 
 /** words to lines of at most max characters; a longer word keeps a line of its own */
@@ -150,13 +193,14 @@ function wrap(s: string, max: number): string[] {
  * With color, for a terminal: colored marks and badges; without, the same layout with emoji lights.
  */
 export function text(scan: Scan, results: Result[], lang: Lang, options: TextOptions = {}): string {
-  const { now = Date.now(), color = false, verbose = false, width = 80 } = options
+  const { now = Date.now(), color = false, verbose = false, width = 80, compare } = options
   const t = MESSAGES[lang]
   type Format = Parameters<typeof styleText>[0]
   const style = (format: Format, s: string) => (color ? styleText(format, s, { validateStream: false }) : s)
   const mark = (l: Level) => (color ? style([l, 'bold'], MARK[l]) : LIGHT[l])
   const dot = (l: Level) => (color ? style(l, '●') : LIGHT[l])
   const titleWidth = Math.max(...Object.values(t.title).map(s => s.length))
+  const fresh = new Set(compare?.comparison.fresh.map(f => f.key))
 
   const counts = SEVERITY.map(level => [level, results.filter(r => r.level === level).length] as const).filter(([, n]) => n)
   const summary = color
@@ -167,10 +211,11 @@ export function text(scan: Scan, results: Result[], lang: Lang, options: TextOpt
   const block = (r: Result, s: Section): string[] => {
     const head = `${mark(r.level)} ${style('bold', t.title[r.check].padEnd(titleWidth))}  ${style(r.level, clean(s.value))}`
     if (r.level === 'green' && !verbose) return [head]
-    const tree = s.items.map(({ level, label, detail }, i) => {
+    const tree = s.items.map(({ key, level, label, detail }, i) => {
       // the thing itself stands out, what spurlos makes of it is dimmed
       const about = detail === undefined ? '' : style('dim', ` – ${clean(detail)}`)
-      return `  ${style('dim', i === s.items.length - 1 ? '└─' : '├─')} ${dot(level)} ${clean(label)}${about}`
+      const mark = fresh.has(key) ? `${style(['cyan', 'bold'], `[${t.isNew}]`)} ` : ''
+      return `  ${style('dim', i === s.items.length - 1 ? '└─' : '├─')} ${dot(level)} ${mark}${clean(label)}${about}`
     })
     const indent = s.items.length ? '     ' : '  '
     const notes = s.notes.flatMap(note =>
@@ -190,9 +235,11 @@ export function text(scan: Scan, results: Result[], lang: Lang, options: TextOpt
   return [
     `${style('bold', 'spurlos')} ${style('dim', VERSION)}  ${style('cyan', clean(scan.finalUrl))}`,
     ...(scan.finalUrl !== scan.url ? [style('dim', t.openedAs(clean(scan.url)))] : []),
+    ...(compare ? [style('dim', clean(t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)))] : []),
     summary,
     '',
     ...body,
+    ...(compare?.comparison.gone.length ? [...goneLabels(t, compare, now).map(l => style('dim', `${t.gone}: ${clean(l)}`)), ''] : []),
     ...(scan.settled ? [] : [...wrap(t.unsettled, width).map(l => style('yellow', l)), '']),
     ...(hidden ? [style('dim', t.verbose)] : []),
     ...wrap(t.disclaimer, width).map(l => style('dim', l)),
@@ -228,13 +275,16 @@ summary.head::after { content: "▸"; margin-left: auto; color: var(--dim) } det
 .yellow > .head .mark, .yellow > .head .value, li.yellow::before { color: var(--yellow) }
 .green > .head .mark, .green > .head .value, li.green::before { color: var(--green) }
 ul { margin: 0; padding: 0 14px 4px 40px; list-style: none }
+.new { margin-right: 6px; padding: 0 5px; border-radius: 4px; background: #0b6bcb; color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase }
+.report + .report { margin-top: 40px; padding-top: 28px; border-top: 2px solid var(--line) }
 li { position: relative; padding: 3px 0; overflow-wrap: anywhere }
 li::before { content: "●"; position: absolute; left: -18px }
 .detail { color: var(--dim) }
 .note { margin: 0; padding: 4px 14px 10px 40px; color: var(--dim); font-size: 14px }
 .warn { color: var(--yellow) }
 footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--dim); font-size: 13px }
-@media print { main { max-width: none; padding: 0 } .check { break-inside: avoid } summary.head::after, details[open] > summary.head::after { content: none } }
+@media print { main { max-width: none; padding: 0 } .check { break-inside: avoid } .report + .report { break-before: page; border: 0 }
+  summary.head::after, details[open] > summary.head::after { content: none } }
 `
 
 /** the logo from assets/, made by scripts/logo.mjs; inline, so the report loads nothing. Package and image ship it. */
@@ -242,34 +292,62 @@ const logo = (scheme: 'light' | 'dark') =>
   readFileSync(new URL(`../assets/logo-${scheme}.svg`, import.meta.url), 'utf8').replace('<svg ', `<svg class="logo ${scheme}" `)
 
 /** now: when the report says it was checked; timeZone: the zone it says that in, the system's by default */
-export type HtmlOptions = { now?: number; timeZone?: string }
+export type HtmlOptions = { now?: number; timeZone?: string; compare?: Report['compare'] }
 
 /**
  * The report as a self-contained HTML page: no scripts, no requests, so it can be mailed or opened offline.
  * Like the text, everything from the page passes clean() and is escaped; the page's own CSP forbids anything
- * but its inline style, in case something slipped through. All findings are in it: red and yellow checks open,
- * green ones folded. Addresses from the page are shown, not linked.
+ * but its inline style, in case something slipped through. All findings are in it:
+ * red and yellow checks open, green ones folded. Addresses from the page are shown, not linked.
  */
 export function html(scan: Scan, results: Result[], lang: Lang, options: HtmlOptions = {}): string {
+  const { compare, ...rest } = options
+  return htmlReports([{ scan, results, ...(compare ? { compare } : {}) }], lang, rest)
+}
+
+/** Several pages' reports in one HTML page, one after the other; printed, each starts on a page of its own. */
+export function htmlReports(reports: Report[], lang: Lang, options: Omit<HtmlOptions, 'compare'> = {}): string {
   const { now = Date.now(), timeZone } = options
   const t = MESSAGES[lang]
-  const counts = SEVERITY.map(level => [level, results.filter(r => r.level === level).length] as const).filter(([, n]) => n)
   // with the zone named, so a report sent on stays clear to readers elsewhere
   const date = new Intl.DateTimeFormat(lang, {
     day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short', ...(timeZone ? { timeZone } : {}),
   }).format(now)
 
-  const block = (r: Result, s: Section): string => {
-    const head = `<span class="mark">${MARK[r.level]}</span><span class="title">${escape(t.title[r.check])}</span><span class="value">${escape(s.value)}</span>`
-    if (!s.items.length && !s.notes.length) return `<div class="check ${r.level}"><p class="head">${head}</p></div>`
-    const items = s.items.map(({ level, label, detail }) => `<li class="${level}">${escape(label)}${detail === undefined ? '' : `<span class="detail"> – ${escape(detail)}</span>`}</li>`)
-    const list = items.length ? `<ul>${items.join('')}</ul>` : ''
-    const notes = s.notes.map(n => `<p class="note">${escape(n)}</p>`).join('')
-    return `<details class="check ${r.level}"${r.level === 'green' ? '' : ' open'}><summary class="head">${head}</summary>${list}${notes}</details>`
+  const report = ({ scan, results, compare }: Report, first: boolean): string => {
+    const counts = SEVERITY.map(level => [level, results.filter(r => r.level === level).length] as const).filter(([, n]) => n)
+    const fresh = new Set(compare?.comparison.fresh.map(f => f.key))
+    const block = (r: Result, s: Section): string => {
+      const head = `<span class="mark">${MARK[r.level]}</span><span class="title">${escape(t.title[r.check])}</span><span class="value">${escape(s.value)}</span>`
+      if (!s.items.length && !s.notes.length) return `<div class="check ${r.level}"><p class="head">${head}</p></div>`
+      const items = s.items.map(({ key, level, label, detail }) => {
+        const mark = fresh.has(key) ? `<span class="new">${escape(t.isNew)}</span>` : ''
+        return `<li class="${level}">${mark}${escape(label)}${detail === undefined ? '' : `<span class="detail"> – ${escape(detail)}</span>`}</li>`
+      })
+      const list = items.length ? `<ul>${items.join('')}</ul>` : ''
+      const notes = s.notes.map(n => `<p class="note">${escape(n)}</p>`).join('')
+      return `<details class="check ${r.level}"${r.level === 'green' ? '' : ' open'}><summary class="head">${head}</summary>${list}${notes}</details>`
+    }
+    const sorted = results.map(r => ({ r, s: section(t, r, now) })).sort((a, b) => SEVERITY.indexOf(a.r.level) - SEVERITY.indexOf(b.r.level))
+    const meta = [
+      ...(scan.finalUrl !== scan.url ? [t.openedAs(scan.url)] : []),
+      t.checkedAt(date),
+      ...(compare ? [t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)] : []),
+      ...(compare ? goneLabels(t, compare, now).map(l => `${t.gone}: ${l}`) : []),
+    ]
+    return `<section class="report">
+<header>
+<div class="top">
+<div>
+<h1>${escape(scan.finalUrl)}</h1>
+${meta.map(m => `<p class="meta">${escape(m)}</p>`).join('\n')}
+</div>
+${first ? `<p class="brand">${logo('light')}${logo('dark')}${escape(VERSION)}</p>\n` : ''}</div>
+<p class="summary">${counts.map(([l, n]) => `<span class="badge ${l}">${escape(t.summary[l](n))}</span>`).join(' ')}</p>
+</header>
+${sorted.map(({ r, s }) => block(r, s)).join('\n')}
+${scan.settled ? '' : `<p class="warn">${escape(t.unsettled)}</p>\n`}</section>`
   }
-
-  const sorted = results.map(r => ({ r, s: section(t, r, now) })).sort((a, b) => SEVERITY.indexOf(a.r.level) - SEVERITY.indexOf(b.r.level))
-  const meta = [...(scan.finalUrl !== scan.url ? [t.openedAs(scan.url)] : []), t.checkedAt(date)]
 
   return `<!doctype html>
 <html lang="${lang}">
@@ -277,21 +355,11 @@ export function html(scan: Scan, results: Result[], lang: Lang, options: HtmlOpt
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
 <meta name="referrer" content="no-referrer">
-<title>spurlos · ${escape(scan.finalUrl)}</title>
+<title>spurlos · ${escape(reports.map(r => r.scan.finalUrl).join(', '))}</title>
 <style>${CSS}</style>
 <main>
-<header>
-<div class="top">
-<div>
-<h1>${escape(scan.finalUrl)}</h1>
-${meta.map(m => `<p class="meta">${escape(m)}</p>`).join('\n')}
-</div>
-<p class="brand">${logo('light')}${logo('dark')}${escape(VERSION)}</p>
-</div>
-<p class="summary">${counts.map(([l, n]) => `<span class="badge ${l}">${escape(t.summary[l](n))}</span>`).join(' ')}</p>
-</header>
-${sorted.map(({ r, s }) => block(r, s)).join('\n')}
-${scan.settled ? '' : `<p class="warn">${escape(t.unsettled)}</p>\n`}<footer>${escape(t.disclaimer)}</footer>
+${reports.map((r, i) => report(r, i === 0)).join('\n')}
+<footer>${escape(t.disclaimer)}</footer>
 </main>
 </html>
 `

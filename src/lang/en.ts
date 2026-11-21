@@ -4,11 +4,13 @@ import { plural } from './plural.ts'
 
 
 const en: Messages = {
-  usage: langs => `spurlos <url> [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <file>] [--auth <user:password>] [--user-agent <string>]
+  usage: langs => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <file> …]
+        [--baseline <file>] [--auth <user:password>] [--user-agent <string>]
 spurlos mcp [--lang ${langs}] [--user-agent <string>]
 
 Opens the site like a new visitor who clicks nothing, and shows which
 third-party servers it contacts and which cookies it sets.
+Several addresses are checked one after the other, with a report each.
 
   --lang        language: ${langs}. Without it, SPURLOS_LANG applies, then
                 the system language (LC_ALL, LC_MESSAGES, LANG), else de
@@ -17,7 +19,12 @@ third-party servers it contacts and which cookies it sets.
   --html        the report as an HTML page, e.g.: spurlos <url> --html > report.html
   --pdf         the report as a PDF, e.g.: spurlos <url> --pdf > report.pdf
   -o, --output  into a file instead of the output, the format by its
-                extension (.pdf, .html, .json, else text): -o report.pdf
+                extension (.pdf, .html, .json, else text): -o report.pdf;
+                more than once for several formats from one run, then
+                without --json, --html and --pdf
+  --baseline    compare with an earlier output of --json: the report
+                marks new findings, exit code 1 only for new red
+                findings
   --auth        login by HTTP basic auth, only to the address checked;
                 better through SPURLOS_AUTH, then the password stays out of
                 the shell history
@@ -28,6 +35,7 @@ spurlos mcp starts an MCP server over stdio: it lets an AI assistant
 check sites itself, setup in the README.
 
 Exit code: 0 without a red finding, 1 with a red finding, 2 on an error.
+With --baseline only new red findings count.
 
 Does spurlos help you? https://ko-fi.com/mmohrx`,
   disclaimer: 'Technical pre-check – not legal advice, and no statement on whether the site complies with the GDPR.',
@@ -35,6 +43,8 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   unknownLang: (from, value, langs) => `${from} only knows ${langs}, not ${value}.`,
   invalidUrl: arg => `${arg} is not a valid address.`,
   oneFormat: '--json, --html and --pdf only go one at a time.',
+  formatWithOutputs: 'With several -o each file’s extension decides its format, without --json, --html or --pdf.',
+  authOneOrigin: '--auth and SPURLOS_AUTH only apply to one address (scheme, host, port); several addresses have to share it.',
   pdfToTerminal: 'The PDF belongs in a file, not in the terminal: spurlos <url> -o report.pdf',
   written: file => `Report written to ${file}.`,
   cannotWrite: (file, reason) => `${file} could not be written: ${reason}`,
@@ -50,6 +60,11 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
     }`,
   authFormat: '--auth and SPURLOS_AUTH take user:password.',
   authOverHttp: 'The address is http://, the password goes to the server unencrypted.',
+  cannotRead: (file, reason) => `${file} could not be read: ${reason}`,
+  notBaseline: file => `${file} is not an output of spurlos --json.`,
+  compared: (file, fresh, gone) => `compared with ${file}: ${fresh} new, ${gone} gone`,
+  isNew: 'new',
+  gone: 'gone',
   title: {
     'third-party': 'Third-party servers',
     cookies: 'Cookies and storage',
