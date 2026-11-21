@@ -61,6 +61,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
       reason === NO_RESPONSE ? 'no response'
       : reason === AUTH_REQUIRED ? 'The page asks for a login. --auth or SPURLOS_AUTH only applies to exactly the address given (scheme, host, port).'
       : reason === AUTH_REJECTED ? 'The login was rejected.'
+      : /^page\.goto: Timeout \d+ms exceeded/.test(reason) ? `no answer after ${Number(/(\d+)ms/.exec(reason)?.[1]) / 1000} seconds`
       : reason.startsWith(`${REFUSED} `) ? `The page turned the request away with status ${reason.slice(REFUSED.length + 1)}, often because of a bot check. Its error page says nothing about what visitors get. If it is your site, let spurlos through the bot check.`
       : reason
     }`,

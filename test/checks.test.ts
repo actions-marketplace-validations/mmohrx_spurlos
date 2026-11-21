@@ -199,6 +199,21 @@ describe('legal', () => {
     expect(legalLinks(page.slice(0, 1), 'https://www.firma.de/')[0]?.href).toBe('https://policies.google.com/privacy')
   })
 
+  test('a link whose text starts with the word wins over one that names it later, and both over the address alone', () => {
+    const datenschutz = (page: { text: string; href: string }[]) => legalLinks(page, 'https://proton.me/').find(l => l.kind === 'datenschutz')?.href
+    // proton.me: a blog teaser comes first, the policy later
+    expect(datenschutz([
+      { text: 'About Swiss privacy', href: 'https://proton.me/blog/switzerland' },
+      { text: 'Privacy Policy', href: 'https://proton.me/legal/privacy' },
+    ])).toBe('https://proton.me/legal/privacy')
+    // mozilla.org: cookie settings under /privacy/ come first, the notice later
+    expect(datenschutz([
+      { text: 'Cookie settings', href: 'https://proton.me/privacy/websites/cookie-settings/' },
+      { text: 'this Privacy Notice', href: 'https://proton.me/privacy/websites/' },
+    ])).toBe('https://proton.me/privacy/websites/')
+    expect(datenschutz([{ text: 'Mehr zum Datenschutz', href: 'https://proton.me/blog' }, { text: '» Datenschutz', href: 'https://proton.me/ds' }])).toBe('https://proton.me/ds')
+  })
+
   test('a link that names both counts for both', () => {
     const both = [{ text: 'Impressum & Datenschutz', href: 'https://www.firma.de/impressum/' }]
     expect(legalLinks(both).map(l => l.kind)).toEqual(['impressum', 'datenschutz'])

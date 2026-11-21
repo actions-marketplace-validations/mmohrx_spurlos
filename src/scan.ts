@@ -7,7 +7,7 @@ import { legalLinks } from './checks.ts'
 export const VERSION: string = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
 const HOME = 'https://github.com/mmohrx/spurlos'
 
-/** Open about itself, for the requests where a bot check changes nothing: the legal pages and the http probe. */
+/** Open about itself, for the requests where a bot check changes nothing: the legal pages. */
 export const BOT_AGENT = `spurlos/${VERSION} (+${HOME})`
 
 /** how Chrome names the platform, in the user agent and in the client hints */
@@ -256,8 +256,15 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const roots: (Document | ShadowRoot)[] = [document]
       for (let i = 0; i < roots.length; i++) for (const el of roots[i]!.querySelectorAll('*')) if (el.shadowRoot) roots.push(el.shadowRoot)
       const all = (selector: string) => roots.flatMap(r => [...r.querySelectorAll(selector)])
+      // the text a visitor reads: a script inside the link (proton.me has one) is none of it
+      const textOf = (a: Element) => {
+        if (!a.querySelector('script, style, noscript, template')) return a.textContent ?? ''
+        const copy = a.cloneNode(true) as Element
+        for (const el of copy.querySelectorAll('script, style, noscript, template')) el.remove()
+        return copy.textContent ?? ''
+      }
       const links = all('a[href]').map(a => ({
-        text: (a.textContent ?? '').trim().replace(/\s+/g, ' '),
+        text: textOf(a).trim().replace(/\s+/g, ' '),
         href: (a as HTMLAnchorElement).href,
       }))
       const forms = (all('form') as HTMLFormElement[]).map(f => ({ action: f.action, method: (f.getAttribute('method') ?? 'get').toLowerCase() }))
@@ -313,9 +320,10 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     if (generator) result.generator = generator
     if (screenshot) result.screenshot = screenshot
     // the http probe and the legal pages do not depend on each other: ask them all at once.
+    // http:// as the page was asked: some servers answer a bot there with the page and a browser with a redirect.
     // One page can be both Impressum and Datenschutz; open it once.
     const [http, ...legal] = await Promise.all([
-      finalUrl.startsWith('https:') ? probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch, options.userAgent ?? BOT_AGENT) : undefined,
+      finalUrl.startsWith('https:') ? probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch, userAgent) : undefined,
       ...[...new Set(legalLinks(links, finalUrl).map(l => l.href))].map(visitor),
     ])
     if (http) result.http = http

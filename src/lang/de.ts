@@ -63,6 +63,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
       reason === NO_RESPONSE ? 'keine Antwort'
       : reason === AUTH_REQUIRED ? 'Die Seite verlangt eine Anmeldung. --auth oder SPURLOS_AUTH gilt nur für genau die angegebene Adresse (Schema, Host, Port).'
       : reason === AUTH_REJECTED ? 'Die Anmeldung wurde abgelehnt.'
+      : /^page\.goto: Timeout \d+ms exceeded/.test(reason) ? `keine Antwort nach ${Number(/(\d+)ms/.exec(reason)?.[1]) / 1000} Sekunden`
       : reason.startsWith(`${REFUSED} `) ? `Die Seite hat den Aufruf mit Status ${reason.slice(REFUSED.length + 1)} abgewiesen, oft wegen eines Bot-Schutzes. Ihre Fehlerseite sagt nichts darüber, was Besucher bekommen. Ist es deine Seite, lass spurlos im Bot-Schutz zu.`
       : reason
     }`,

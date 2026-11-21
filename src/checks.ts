@@ -243,16 +243,29 @@ const LEGAL: Record<LegalKind, RegExp> = {
 }
 
 /**
- * The first link per kind whose text or address names it, on the page's own site if there is one: a cookie banner's
- * link to policies.google.com/privacy is Google's policy, not the site's. A link like „Impressum & Datenschutz“
- * counts for both.
+ * How well a link names its kind, best first: its text starts with the word (Datenschutz, Privacy Policy) · names it
+ * further on („this Privacy Notice“, but also a teaser like „About Swiss privacy“) · only its address does (a cookie
+ * settings page under /privacy/) · not at all.
+ */
+function legalRank(l: Link, kind: LegalKind): number {
+  const text = LEGAL[kind].exec(l.text)
+  if (text) return /^[\W\d_]*$/.test(l.text.slice(0, text.index)) ? 0 : 1
+  return LEGAL[kind].test(l.href) ? 2 : 3
+}
+
+/**
+ * The link per kind that names it best, on the page's own site if there is one: a cookie banner's link to
+ * policies.google.com/privacy is Google's policy, not the site's. Of equals, the first on the page. A link like
+ * „Impressum & Datenschutz“ counts for both.
  */
 export function legalLinks(links: Link[], pageUrl?: string): (Link & { kind: LegalKind })[] {
   const own = pageUrl ? site(new URL(pageUrl).hostname) : undefined
   const out: (Link & { kind: LegalKind })[] = []
   for (const kind of ['impressum', 'datenschutz'] as const) {
-    const candidates = links.filter(l => /^https?:/.test(l.href) && (LEGAL[kind].test(l.text) || LEGAL[kind].test(l.href)))
-    const l = candidates.find(l => site(new URL(l.href).hostname) === own) ?? candidates[0]
+    const score = (l: Link) => (site(new URL(l.href).hostname) === own ? 0 : 4) + legalRank(l, kind)
+    const candidates = links.filter(l => /^https?:/.test(l.href) && legalRank(l, kind) < 3)
+    // sort is stable: of equal scores, the first on the page stays first
+    const l = candidates.sort((a, b) => score(a) - score(b))[0]
     if (l) out.push({ ...l, kind })
   }
   return out

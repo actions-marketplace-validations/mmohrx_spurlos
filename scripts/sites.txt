@@ -56,3 +56,57 @@ squarespace.com
 wetter.com
 wix.com
 www.revenexx.com
+
+# Telekommunikation
+telekom.de
+vodafone.de
+o2online.de
+
+# Versicherungen und Krankenkassen
+allianz.de
+huk.de
+tk.de
+aok.de
+
+# Banken
+sparkasse.de
+ing.de
+commerzbank.de
+
+# Handel
+ebay.de
+kleinanzeigen.de
+thalia.de
+dm.de
+lidl.de
+rewe.de
+
+# Reisen und Vergleich
+booking.com
+airbnb.de
+lufthansa.com
+check24.de
+
+# Öffentlich-rechtliche und Streaming
+zdf.de
+ardmediathek.de
+spotify.com
+
+# Bund und Hochschulen
+bundestag.de
+bsi.bund.de
+arbeitsagentur.de
+www.tu.berlin
+lmu.de
+
+# Baukästen und Software
+wordpress.org
+jimdo.com
+shopify.com
+mozilla.org
+
+# Datenschutzfreundliche Dienste
+proton.me
+signal.org
+duckduckgo.com
+tutanota.com

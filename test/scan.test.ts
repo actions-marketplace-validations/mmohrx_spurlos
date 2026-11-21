@@ -50,11 +50,15 @@ describe('scan', { timeout: 30_000 }, () => {
     await expect(scan(`${SITE}/blocked.html`, { setup: offline, fetch: redirects })).rejects.toThrow(`${REFUSED} 403`)
     expect(MESSAGES.de.failed('https://shop.example/', `${REFUSED} 403`)).toContain('mit Status 403 abgewiesen, oft wegen eines Bot-Schutzes')
     expect(MESSAGES.en.failed('https://shop.example/', `${REFUSED} 429`)).toContain('turned the request away with status 429')
+    expect(MESSAGES.de.failed('https://a.example/', 'page.goto: Timeout 30000ms exceeded.')).toBe('https://a.example/ ließ sich nicht prüfen: keine Antwort nach 30 Sekunden')
+    expect(MESSAGES.en.failed('https://a.example/', 'page.goto: Timeout 30000ms exceeded.')).toBe('https://a.example/ could not be checked: no answer after 30 seconds')
   })
 
-  test('a privacy policy as a PDF opens as a download, and counts as reachable', async () => {
+  test('a privacy policy as a PDF opens as a download, and counts as reachable; a script in its link is no text', async () => {
     const s = await scan(`${SITE}/pdf.html`, { setup: offline, fetch: redirects })
     expect(s.legal.find(v => v.url === `${SITE}/datenschutz.pdf`)).toMatchObject({ status: 200 })
+    // a script inside the link is not part of its text
+    expect(s.links.find(l => l.href === `${SITE}/datenschutz.pdf`)?.text).toBe('Datenschutz')
     expect(pick(runChecks(s), 'legal').level).toBe('green')
   })
 
@@ -164,7 +168,8 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(page?.ch).not.toMatch(/Headless/)
 
     expect(seen.find(r => r.url === `${SITE}/impressum`)?.ua).toBe(BOT_AGENT)
-    expect(fetched).toEqual([BOT_AGENT])
+    // http:// as the page: DuckDuckGo serves a bot the page there, a browser a redirect
+    expect(fetched).toEqual([s.userAgent])
     expect(BOT_AGENT).toMatch(/^spurlos\/\d+\.\d+\.\d+ \(\+https:\/\/github\.com\/mmohrx\/spurlos\)$/)
   })
 

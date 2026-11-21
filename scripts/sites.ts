@@ -30,7 +30,8 @@ type Run = { site: string; file: string; code: number; error?: string; results?:
 const args = process.argv.slice(2)
 const jobsAt = args.indexOf('--jobs')
 const jobs = jobsAt >= 0 ? Number(args.splice(jobsAt, 2)[1]) || 3 : 3
-const sites = args.length ? args : readFileSync(LIST, 'utf8').split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
+// a list in one argument too: "a.de b.de" or a.de,b.de
+const sites = args.length ? args.flatMap(a => a.split(/[\s,]+/)).filter(Boolean) : readFileSync(LIST, 'utf8').split('\n').map(l => l.replace(/#.*/, '').trim()).filter(Boolean)
 
 /** a file name for a site: ikea.com/de/de as ikea.com_de_de */
 const fileOf = (site: string) => site.replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/[^a-z0-9.-]+/gi, '_') + '.json'
@@ -47,7 +48,11 @@ function check(site: string, dir: string): Promise<Run> {
       const run: Run = { site, file, code: code ?? -1 }
       const path = join(dir, file)
       if (run.code <= 1 && existsSync(path)) run.results = JSON.parse(readFileSync(path, 'utf8')).results
-      else run.error = code === null ? `nach ${TIMEOUT / 1000} s abgebrochen` : stderr.replace(/^spurlos: /gm, '').split('\n').filter(l => l && !l.includes('geschrieben')).join(' ') || `Exit-Code ${code}`
+      else {
+        run.error = code === null ? `nach ${TIMEOUT / 1000} s abgebrochen` : stderr.replace(/^spurlos: /gm, '').split('\n').filter(l => l && !l.includes('geschrieben')).join(' ') || `Exit-Code ${code}`
+        // so a later run knows the site was tried, and failed
+        writeFileSync(path.replace(/\.json$/, '.error'), run.error + '\n')
+      }
       resolve(run)
     })
   })
@@ -68,12 +73,17 @@ async function all(dir: string): Promise<Run[]> {
   return runs.sort((a, b) => sites.indexOf(a.site) - sites.indexOf(b.site))
 }
 
-/** the results of a site in an earlier run, if it could be checked then */
-function before(dir: string | undefined, site: string): Result[] | undefined | null {
-  if (!dir) return undefined
-  const path = join(ROOT, dir, fileOf(site))
-  if (!existsSync(path)) return null
-  return JSON.parse(readFileSync(path, 'utf8')).results
+/**
+ * The site in the last earlier run that tried it: its results, null if it failed then, undefined if no run tried it.
+ * A run of only some sites leaves the others to the runs before.
+ */
+function before(site: string): { results: Result[] | null; run: string } | undefined {
+  for (const run of previous) {
+    const path = join(ROOT, run, fileOf(site))
+    if (existsSync(path)) return { results: JSON.parse(readFileSync(path, 'utf8')).results, run }
+    if (existsSync(path.replace(/\.json$/, '.error'))) return { results: null, run }
+  }
+  return undefined
 }
 
 const lights = (results: Result[]) => ORDER.map(c => LIGHT[results.find(r => r.check === c)?.level ?? 'green']).join('')
@@ -104,26 +114,27 @@ function unknowns(runs: Run[]) {
 const now = new Date()
 const stamp = new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 16).replace('T', '_').replace(':', '-')
 mkdirSync(ROOT, { recursive: true })
-const previous = readdirSync(ROOT).filter(d => /^\d{4}-\d\d-\d\d_/.test(d) && d < stamp).sort().at(-1)
+// newest first
+const previous = readdirSync(ROOT).filter(d => /^\d{4}-\d\d-\d\d_/.test(d) && d < stamp).sort().reverse()
 const dir = join(ROOT, stamp)
 mkdirSync(dir, { recursive: true })
-console.error(`spurlos: ${sites.length} Seiten nach ${dir}${previous ? `, Vergleich mit ${previous}` : ''}`)
+console.error(`spurlos: ${sites.length} Seiten nach ${dir}${previous.length ? ', Vergleich je Seite mit ihrem letzten Lauf' : ''}`)
 
 const runs = await all(dir)
 const out: string[] = [`# Lauf ${stamp}`, '', `Ampeln je Seite: ${ORDER.join(' · ')}`, '']
 let broke = false
 for (const run of runs) {
-  const old = before(previous, run.site)
+  const last = before(run.site)
+  const old = last?.results
   if (run.error) {
-    // null: the site had no result last time either
-    const fresh = old !== null && old !== undefined
+    const fresh = Boolean(old)
     if (fresh) broke = true
-    out.push(`❌ ${run.site}: ${run.error}${fresh ? '  ← beim letzten Mal ging es noch' : ''}`)
+    out.push(`❌ ${run.site}: ${run.error}${fresh ? `  ← ging am ${last?.run} noch` : ''}`)
     continue
   }
   const results = run.results ?? []
   const changes: string[] = []
-  if (old === null) changes.push('ließ sich beim letzten Mal nicht prüfen')
+  if (old === null) changes.push(`ließ sich am ${last?.run} nicht prüfen`)
   if (old) {
     for (const c of ORDER) {
       const was = old.find(r => r.check === c)?.level

@@ -24,7 +24,10 @@
 - Weist die Seite selbst den Aufruf mit `403` oder `429` ab, meist ein Bot-Schutz, prüft spurlos nicht die Fehlerseite, sondern endet mit Exit-Code 2 und sagt, woran es lag.
 - Impressum oder Datenschutz als PDF zählen als erreichbar; vorher brach das Öffnen als Download ab.
 - Bekannte Dienste auf der eigenen Seite, an ihren Pfaden erkannt (Matomo, Sentry, Plausible), nennt die Prüfung „Fremde Server“, ohne dass sich die Ampel ändert; in `--json` unter `selfHosted`. Fremde Hosts ohne bekannten Namen benennt spurlos so ebenfalls.
-- `src/services.json`: Sentry, HolaCDN, Contentful, Bynder, Verint, Centinel; alle `bm_`-Cookies des Akamai Bot Managers.
+- HTTPS: Ob http auf https weiterleitet, fragt spurlos mit derselben Kennung ab wie die Seite, nicht mehr als Bot; DuckDuckGo etwa liefert einem Bot die Seite über http aus und meldete so zu Unrecht rot.
+- `src/services.json`: Sentry, HolaCDN, Contentful, Bynder, Verint, Centinel, Tealium, Adobe Target und Experience Platform Tags, Mapp Intelligence (Webtrekk), Snowplow, Kameleoon, Dynamic Yield, trbo, Amazon Ads, Ogury, Commanders Act TrustCommander, Dynatrace, Statsig, Cloudinary, Contentstack, Builder.io, AWS WAF, Radware Bot Manager; alle `bm_`-Cookies des Akamai Bot Managers, das Cookie von reCAPTCHA.
+- Impressum und Datenschutz: Ein Link, dessen Text mit dem Stichwort beginnt („Datenschutz“, „Privacy Policy“), geht einem vor, der es erst später nennt („About Swiss privacy“), und beide einem, bei dem nur die Adresse passt (Cookie-Einstellungen unter `/privacy/`). Skripte im Link zählen nicht mehr zu seinem Text.
+- Antwortet die Seite gar nicht, sagt die Meldung „keine Antwort nach 30 Sekunden“ statt der Meldung von Playwright.
 
 - README: Umgebungsvariablen auf einen Blick, Wartezeiten, keine Telemetrie, Basic Auth mit Docker.
 - Links zum Unterstützen (Ko-fi, GitHub Sponsors) im README, in der Hilfe, in `package.json` und als Button auf GitHub.
