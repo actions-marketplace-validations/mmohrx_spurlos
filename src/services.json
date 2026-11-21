@@ -94,6 +94,7 @@
   { "name": "Real Cookie Banner", "category": "consent", "hosts": [], "paths": ["/wp-content/plugins/real-cookie-banner/"], "cookies": ["real_cookie_banner"] },
   { "name": "CookieYes (WordPress)", "category": "consent", "hosts": [], "paths": ["/wp-content/plugins/cookie-law-info/"], "cookies": ["cookielawinfo-", "viewed_cookie_policy"] },
   { "name": "Cookie Notice", "category": "consent", "hosts": [], "paths": ["/wp-content/plugins/cookie-notice/"], "cookies": ["cookie_notice_accepted"] },
+  { "name": "DSGVO All in One", "category": "consent", "hosts": [], "paths": ["/wp-content/plugins/dsgvo-all-in-one-for-wp/"], "storage": ["dsgvoaio"] },
   { "name": "GDPR Cookie Compliance", "category": "consent", "hosts": [], "paths": ["/wp-content/plugins/gdpr-cookie-compliance/"], "cookies": ["moove_gdpr_popup"] },
   { "name": "Pandectes", "category": "consent", "hosts": ["pandectes.io"], "cookies": ["_pandectes_gdpr"] },
   { "name": "IAB TCF", "category": "consent", "hosts": [], "cookies": ["euconsent-v2", "eupubconsent-v2"] },
@@ -111,7 +112,7 @@
   { "name": "Mapbox", "category": "maps", "hosts": ["mapbox.com"] },
   { "name": "OpenStreetMap", "category": "maps", "hosts": ["openstreetmap.org"] },
 
-  { "name": "Facebook", "category": "social", "hosts": ["facebook.com", "facebook.net", "fbcdn.net"] },
+  { "name": "Facebook", "category": "social", "hosts": ["facebook.com", "facebook.net", "fbcdn.net"], "storage": ["fbssls_"] },
   { "name": "Instagram", "category": "social", "hosts": ["instagram.com", "cdninstagram.com"] },
   { "name": "X (Twitter)", "category": "social", "hosts": ["twitter.com", "x.com", "twimg.com"] },
   { "name": "LinkedIn", "category": "social", "hosts": ["linkedin.com", "licdn.com"] },
@@ -119,6 +120,8 @@
   { "name": "TikTok", "category": "social", "hosts": ["tiktok.com", "tiktokcdn.com"] },
   { "name": "Reddit", "category": "social", "hosts": ["reddit.com", "redditstatic.com"] },
   { "name": "Spotify", "category": "social", "hosts": ["spotify.com", "scdn.co"] },
+  { "name": "FuPa", "category": "social", "hosts": ["fupa.net"] },
+  { "name": "Instafeed", "category": "social", "hosts": ["nfcube.com"] },
   { "name": "SoundCloud", "category": "social", "hosts": ["soundcloud.com", "sndcdn.com"] },
 
   { "name": "Intercom", "category": "chat", "hosts": ["intercom.io", "intercomcdn.com"], "cookies": ["intercom-"] },
@@ -140,9 +143,10 @@
   { "name": "Cloudflare Turnstile", "category": "captcha", "hosts": ["challenges.cloudflare.com"] },
   { "name": "Friendly Captcha", "category": "captcha", "hosts": ["friendlycaptcha.com", "frcapi.com"] },
 
-  { "name": "Google", "category": "other", "hosts": ["google.com", "gstatic.com", "googleapis.com"] },
+  { "name": "Google", "category": "other", "hosts": ["google.com", "gstatic.com", "googleapis.com", "googleusercontent.com"] },
   { "name": "Google Sign-In", "category": "other", "hosts": ["accounts.google.com"], "cookies": ["g_state"] },
   { "name": "Trusted Shops", "category": "other", "hosts": ["trustedshops.com", "trustedshops.de"] },
+  { "name": "Reputon", "category": "other", "hosts": ["reputon.com"] },
   { "name": "Trustpilot", "category": "other", "hosts": ["trustpilot.com"] },
   { "name": "Calendly", "category": "other", "hosts": ["calendly.com"] },
   { "name": "Typeform", "category": "other", "hosts": ["typeform.com"] },
@@ -179,7 +183,7 @@
   { "name": "Font Awesome", "category": "cdn", "hosts": ["kit.fontawesome.com", "use.fontawesome.com", "ka-f.fontawesome.com"] },
   { "name": "Shopify", "category": "cdn", "hosts": ["cdn.shopify.com", "shopifycdn.com", "shopifysvc.com", "myshopify.com", "shop.app"], "headers": ["powered-by: Shopify"] },
 
-  { "name": "Session", "category": "necessary", "httpOnly": true, "hosts": [], "cookies": ["PHPSESSID", "JSESSIONID", "ASP.NET_SessionId", ".AspNetCore.Session", "sessionid", "wp_woocommerce_session_", "*_session", "*-session"] },
+  { "name": "Session", "category": "necessary", "httpOnly": true, "hosts": [], "cookies": ["PHPSESSID", "JSESSIONID", "CFID", "CFTOKEN", "ASP.NET_SessionId", ".AspNetCore.Session", "sessionid", "wp_woocommerce_session_", "*_session", "*-session"] },
   { "name": "CSRF-Token", "category": "necessary", "hosts": [], "cookies": ["XSRF-TOKEN", "csrftoken", "_csrf", ".AspNetCore.Antiforgery."] },
   { "name": "WordPress", "category": "necessary", "hosts": [], "cookies": ["wordpress_test_cookie"], "storage": ["wpEmojiSettingsSupports"] },
   { "name": "Wix", "category": "necessary", "hosts": [], "cookies": ["svSession", "bSession", "ssr-caching", "server-session-bind"], "storage": ["fedops.logger.", "mpaSessionId", "wix-motion-"] },
