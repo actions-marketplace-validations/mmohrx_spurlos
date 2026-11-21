@@ -45,6 +45,7 @@
     "test": "vitest run",
     "start": "node --experimental-strip-types src/cli.ts",
     "examples": "node --experimental-strip-types scripts/examples.ts",
+    "sites": "node --experimental-strip-types scripts/sites.ts",
     "logo": "node scripts/logo.mjs"
   },
   "dependencies": {

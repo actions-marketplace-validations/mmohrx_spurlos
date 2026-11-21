@@ -1,0 +1,58 @@
+# Seiten für scripts/sites.ts, eine Adresse je Zeile; # leitet einen Kommentar ein
+
+# Nachrichten
+bbc.com
+bild.de
+cnn.com
+derstandard.at
+faz.net
+golem.de
+heise.de
+lemonde.fr
+nytimes.com
+nzz.ch
+orf.at
+spiegel.de
+sueddeutsche.de
+t-online.de
+tagesschau.de
+theguardian.com
+zeit.de
+
+# Shops und Vergleich
+allbirds.com
+amazon.de
+idealo.de
+ikea.com/de/de
+mediamarkt.de
+otto.de
+zalando.de
+
+# Banken
+dkb.de
+n26.com
+
+# Datenschutz und Technik
+digitalcourage.de
+kuketz-blog.de
+mailbox.org
+netzpolitik.org
+posteo.de
+github.com
+stackoverflow.com
+chip.de
+
+# Behörden, Kommunen, Bahn
+bahn.de
+berlin.de
+bund.de
+muenchen.de
+
+# Sonstiges
+chefkoch.de
+de.wikipedia.org
+google.de
+squarespace.com
+wetter.com
+wix.com
+www.revenexx.com

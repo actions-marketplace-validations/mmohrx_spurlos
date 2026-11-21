@@ -14,6 +14,8 @@ spurlos meldet einen Host oder ein Cookie als „unbekannt“, obwohl du weißt,
 - `hosts` gelten samt Subdomains, `cookies` als Anfang des Namens (`_pk_id` deckt auch `_pk_id.1.abcd` ab), mit `*` vorn als Ende (`*-session`). Einträge im Browser-Speicher stehen unter `storage`, Teile von Dateipfaden für Dienste, die auf der Seite selbst oder auf einem unbekannten Host liegen (etwa WordPress-Plugins, ein eigenes Matomo), unter `paths`: mit `/` am Ende ein Verzeichnis irgendwo im Pfad, sonst das Ende des Pfads. Präfixe für Cookies so lang wählen, dass sie keine fremden Namen treffen (`*_posthog` statt `ph_`).
 - Nenn im Pull Request eine Quelle, etwa die Doku des Anbieters, die Host oder Cookie belegt.
 
+Was spurlos auf echten Seiten nicht kennt, zeigt `pnpm sites`: Es prüft die Seiten aus [`scripts/sites.txt`](scripts/sites.txt) erneut, vergleicht mit dem letzten Lauf und listet unbekannte Hosts, Cookies und Speicher-Einträge, die häufigsten zuerst. Die Ergebnisse liegen in `~/.cache/spurlos-sites/`, nicht im Repo. Die Seiten sind echte, das Skript braucht also Netz und gehört nicht zu `pnpm test`.
+
 ## Fehler und Ideen
 
 Öffne ein Issue mit der Vorlage. Bei einem Fehler hilft die Ausgabe von `spurlos <url> --json`; kürze darin, was du nicht teilen magst.
