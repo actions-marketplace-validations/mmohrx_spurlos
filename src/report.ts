@@ -1,5 +1,5 @@
 import {
-  certLevel, cookieLevel, SEVERITY, disclosureLevel, formLevel, httpLevel, key, legalLevel, numbered, resourceLevel, storageLevel,
+  certLevel, cookieLevel, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
   type Comparison, type Level, type Result,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
@@ -62,12 +62,14 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       const hints = [
         categories.has('fonts') ? t.thirdPartyHint.fonts : null,
         categories.has('cdn') ? t.thirdPartyHint.cdn : null,
+        categories.has('consent') ? t.thirdPartyHint.consent : null,
+        categories.has('captcha') ? t.thirdPartyHint.captcha : null,
         EMBEDS.some(c => categories.has(c)) ? t.thirdPartyHint.embed : null,
         trackers ? t.thirdPartyHint.tracking : null,
       ]
       return {
         value: `${r.hosts.length}`,
-        items: r.hosts.map(h => item(key.host(h.host), 'red', h.host, h.service ? `${h.service.name} (${t.requests(h.requests)})` : t.requests(h.requests))),
+        items: r.hosts.map(h => item(key.host(h.host), hostLevel(h), h.host, h.service ? `${h.service.name} (${t.requests(h.requests)})` : t.requests(h.requests))),
         notes: [t.thirdParty, ...consent, ...hints.filter(n => n !== null)],
       }
     }
@@ -131,7 +133,8 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       const has = (p: string) => r.findings.some(f => f.problem === p)
       return {
         value: `${r.findings.length}`,
-        items: r.findings.map(f => item(key.resource(f), resourceLevel(f), `${f.tag} ${f.url}`, t.resource[f.problem])),
+        // shortened: a query is noise here and may hold an API key; --json keeps the full address
+        items: r.findings.map(f => item(key.resource(f), resourceLevel(f), `${f.tag} ${withoutQuery(f.url)}${withoutQuery(f.url) === f.url ? '' : '?…'}`, t.resource[f.problem])),
         notes: [...(has('insecure') ? [t.resourcesInsecure] : []), ...(has('no-integrity') ? [t.resourcesIntegrity] : [])],
       }
     }

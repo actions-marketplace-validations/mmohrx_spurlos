@@ -96,7 +96,14 @@ export function consentManagers(scan: Scan): string[] {
   return [...new Set(found.filter(s => s?.category === 'consent').map(s => s?.name ?? ''))]
 }
 
-/** Every request to another site than the page's own counts: it hands the visitor's IP to someone else. */
+/**
+ * Every request to another site hands the visitor's IP to someone else. A cookie banner has to load before anyone can
+ * agree, and a captcha protects a form: yellow, as the site needs them, though they might be hosted or loaded later.
+ * Anything else red.
+ */
+export const hostLevel = (h: ThirdParty): Level => (h.service?.category === 'consent' || h.service?.category === 'captcha' ? 'yellow' : 'red')
+
+/** Every request to another site than the page's own counts. */
 export function thirdParty(scan: Scan): Result {
   const own = ownSites(scan)
   const counts = new Map<string, number>()
@@ -104,7 +111,7 @@ export function thirdParty(scan: Scan): Result {
   const hosts = [...counts]
     .map(([host, requests]) => ({ host, service: serviceOfHost(host), requests }))
     .sort((a, b) => a.host.localeCompare(b.host))
-  return { check: 'third-party', level: hosts.length ? 'red' : 'green', hosts, consent: consentManagers(scan) }
+  return { check: 'third-party', level: worst(hosts.map(hostLevel)), hosts, consent: consentManagers(scan) }
 }
 
 const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.status >= 200 && v.status < 300
@@ -328,7 +335,18 @@ export const key = {
   csp: (weakness: string) => `csp ${weakness}`,
   form: (f: { method: string; action: string }) => `form ${f.method} ${f.action}`,
   disclosure: (d: { name: string }) => `disclosure ${d.name}`,
-  resource: (r: { problem: string; url: string }) => `resource ${r.problem} ${r.url}`,
+  // without the query: a cache buster like ?ver=6.4.2 changes with every update, the file stays the same
+  resource: (r: { problem: string; url: string }) => `resource ${r.problem} ${withoutQuery(r.url)}`,
+}
+
+/** an address without query and fragment, which may hold API keys and cache busters: https://cdn.example/app.js */
+export function withoutQuery(url: string): string {
+  try {
+    const u = new URL(url)
+    return u.origin + u.pathname
+  } catch {
+    return url
+  }
 }
 
 export type Finding = { key: string; level: Level }
@@ -356,7 +374,7 @@ export function findings(r: Result): Finding[] {
 function unnumbered(r: Result): Finding[] {
   switch (r.check) {
     case 'third-party':
-      return list(r.hosts).map(h => ({ key: key.host(h.host), level: 'red' }))
+      return list(r.hosts).map(h => ({ key: key.host(h.host), level: hostLevel(h) }))
     case 'cookies':
       return [
         ...list(r.cookies).map(c => ({ key: key.cookie(c), level: cookieLevel({ ...c, missing: list(c.missing) }) })),

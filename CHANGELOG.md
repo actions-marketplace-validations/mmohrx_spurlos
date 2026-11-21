@@ -13,6 +13,8 @@
 - Rot sind bei den Cookies nur noch fremde Domains und bekannte Tracker; bekannte Cookies etwa eines Chats oder Zahlungsanbieters sind gelb.
 - Tipps im Bericht: Schriften und Bibliotheken selbst ausliefern, Einbettungen erst nach einem Klick laden, Beispielwerte für fehlende Header und HSTS.
 - Bildschirmfoto der Seite beim ersten Aufruf im HTML- und PDF-Bericht.
+- Fremde Server: Cookie-Banner und Captchas sind gelb statt rot, denn die Seite braucht sie; alle anderen bleiben rot.
+- Eingebundene Dateien: Skripte, die nicht laufen (`type="text/plain"`, wie Cookie-Banner sie zurückhalten, oder `nomodule`), zählen nicht; Adressen im Bericht ohne Query, in der etwa API-Schlüssel stehen.
 - `src/services.json` kennt rund 130 Dienste statt 25, mit neuen Kategorien (`analytics`, `consent`, `social`, `chat`, `payment`) und `paths` für Dienste auf der eigenen Seite.
 
 - README: Umgebungsvariablen auf einen Blick, Wartezeiten, keine Telemetrie, Basic Auth mit Docker.

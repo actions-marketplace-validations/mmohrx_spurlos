@@ -96,6 +96,8 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   thirdPartyHint: {
     fonts: 'Schriften lassen sich vom eigenen Server ausliefern, dann geht dafür keine Anfrage nach außen.',
     cdn: 'Bibliotheken von einem CDN lassen sich ebenso vom eigenen Server ausliefern.',
+    consent: 'Den Cookie-Banner braucht die Seite, bevor jemand zustimmen kann. Es gibt auch Banner zum Selbsthosten, dann geht dafür keine Anfrage nach außen.',
+    captcha: 'Ein Captcha lässt sich so einbinden, dass es erst mit dem Formular lädt, nicht auf jeder Seite.',
     embed: 'Videos, Karten, Chats und Beiträge aus sozialen Netzwerken lassen sich so einbinden, dass sie erst nach einem Klick laden.',
     tracking: 'Tracker lassen sich so einbinden, dass sie erst laden, wenn jemand im Cookie-Banner zustimmt.',
   },

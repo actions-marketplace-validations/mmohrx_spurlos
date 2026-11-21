@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { runChecks, type Result } from '../src/checks.ts'
+import { hostLevel, runChecks, type Result } from '../src/checks.ts'
 import { text } from '../src/report.ts'
 import { BOT_AGENT, scan } from '../src/scan.ts'
 import { fetched, offline, redirects, seen, SITE, staysOnHttp } from './site.ts'
@@ -71,7 +71,12 @@ describe('scan', { timeout: 30_000 }, () => {
         // integrity="" protects nothing
         'no-integrity https://cdn.jsdelivr.net/npm/slider.js']),
     )
+    // held back by the cookie banner: it does not run, so it is no finding
+    expect(res.findings.some(f => f.url.includes('maps.googleapis.com'))).toBe(false)
     expect(pick(results, 'third-party').consent).toEqual(['Usercentrics'])
+    // the banner yellow, the trackers red
+    const hostLights = Object.fromEntries(third.hosts.map(h => [h.host, hostLevel(h)]))
+    expect(hostLights).toMatchObject({ 'app.usercentrics.eu': 'yellow', 'www.googletagmanager.com': 'red', 'fonts.googleapis.com': 'red' })
     expect(pick(results, 'forms').forms.map(f => f.problem)).toEqual(['unencrypted', 'third-party'])
     expect(pick(results, 'disclosure').findings.map(d => `${d.name}: ${d.value}`)).toEqual([
       'server: Apache/2.4.41 (Ubuntu)',

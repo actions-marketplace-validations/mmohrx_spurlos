@@ -217,7 +217,12 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
         // integrity="" protects nothing
         if (/^https?:/.test(url)) resources.push({ tag, url, integrity: (el.getAttribute('integrity') ?? '').trim() !== '' })
       }
-      for (const el of document.querySelectorAll('script[src]')) embed('script', el, (el as HTMLScriptElement).src)
+      // a script with another type does not run: cookie banners hold scripts back as type="text/plain" until consent
+      const runs = (el: Element) => {
+        const type = (el.getAttribute('type') ?? '').trim().toLowerCase()
+        return !el.hasAttribute('nomodule') && (type === '' || type === 'module' || /^(text|application)\/(x-)?(java|ecma)script$/.test(type))
+      }
+      for (const el of document.querySelectorAll('script[src]')) if (runs(el)) embed('script', el, (el as HTMLScriptElement).src)
       for (const el of document.querySelectorAll('link[href]')) {
         if (/(^|\s)stylesheet(\s|$)/i.test(el.getAttribute('rel') ?? '')) embed('stylesheet', el, (el as HTMLLinkElement).href)
       }

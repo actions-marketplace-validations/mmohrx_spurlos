@@ -93,6 +93,8 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   thirdPartyHint: {
     fonts: 'Fonts can be served from the own server, then no request goes out for them.',
     cdn: 'Libraries from a CDN can be served from the own server as well.',
+    consent: 'The site needs the cookie banner before anyone can agree. There are also banners to host yourself, then no request goes out for it.',
+    captcha: 'A captcha can be embedded so that it only loads with the form, not on every page.',
     embed: 'Videos, maps, chats and social media posts can be embedded so that they only load after a click.',
     tracking: 'Trackers can be embedded so that they only load once someone agrees in the cookie banner.',
   },

@@ -2,7 +2,7 @@ spurlos 0.3.0  https://shop.example/tracked.html
 6 Mängel · 2 Hinweise
 
 🔴 Fremde Server              6
-  ├─ 🔴 app.usercentrics.eu – Usercentrics (1 Anfrage)
+  ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
   ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 Anfrage)
   ├─ 🔴 cdn.unbekannt.example – 1 Anfrage
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
@@ -17,6 +17,8 @@ spurlos 0.3.0  https://shop.example/tracked.html
        keine Anfrage nach außen.
      → Bibliotheken von einem CDN lassen sich ebenso vom eigenen Server
        ausliefern.
+     → Den Cookie-Banner braucht die Seite, bevor jemand zustimmen kann. Es gibt
+       auch Banner zum Selbsthosten, dann geht dafür keine Anfrage nach außen.
      → Videos, Karten, Chats und Beiträge aus sozialen Netzwerken lassen sich so
        einbinden, dass sie erst nach einem Klick laden.
      → Tracker lassen sich so einbinden, dass sie erst laden, wenn jemand im
@@ -39,11 +41,11 @@ spurlos 0.3.0  https://shop.example/tracked.html
   └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen. – etwa Strict-Transport-Security: max-age=31536000
 
 🔴 Eingebundene Dateien       5
-  ├─ 🟡 script https://www.googletagmanager.com/gtag/js?id=G-TEST – von einem fremden Server, ohne integrity
+  ├─ 🟡 script https://www.googletagmanager.com/gtag/js?… – von einem fremden Server, ohne integrity
   ├─ 🟡 script https://app.usercentrics.eu/browser-ui/latest/loader.js – von einem fremden Server, ohne integrity
   ├─ 🔴 script http://shop.example/alt.js – über http auf einer https-Seite
   ├─ 🟡 script https://cdn.jsdelivr.net/npm/slider.js – von einem fremden Server, ohne integrity
-  └─ 🟡 stylesheet https://fonts.googleapis.com/css2?family=Inter – von einem fremden Server, ohne integrity
+  └─ 🟡 stylesheet https://fonts.googleapis.com/css2?… – von einem fremden Server, ohne integrity
      → Skripte, Stylesheets und Frames über http blockiert der Browser auf einer
        https-Seite, Bilder und Videos lädt er über https oder gar nicht.
      → Ohne integrity-Attribut kann der fremde Server die Datei jederzeit

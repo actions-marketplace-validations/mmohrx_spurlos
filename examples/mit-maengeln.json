@@ -61,7 +61,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829818423.237459,
+        "expires": 1829819889.52401,
         "secure": false,
         "httpOnly": false
       }
@@ -73,7 +73,7 @@
       }
     ],
     "headers": {
-      "content-length": "963",
+      "content-length": "1091",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -250,7 +250,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829818423.237459,
+          "expires": 1829819889.52401,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,

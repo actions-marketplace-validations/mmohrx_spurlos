@@ -77,7 +77,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 
 | Check | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Third-party servers | none | – | at least one request to another domain |
+| Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address | at least one request to another domain that belongs to no cookie banner and no captcha |
 | Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a third-party cookie or one of a known tracker |
 | Legal notice and privacy policy | both linked and reachable | – | a link is missing or the page answers with an error |
 | HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing answers on http, certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
@@ -88,7 +88,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 
 The headers checked are `Content-Security-Policy`, `X-Frame-Options` (or `frame-ancestors` in the CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` and `Permissions-Policy`. CSP and Referrer-Policy also count as a `<meta>` tag, for hosts like GitHub Pages where headers cannot be set. A CSP lets scripts through if, for scripts (`script-src`, else `default-src`), it allows `'unsafe-inline'` without a nonce or hash, `'unsafe-eval'` or a source like `*`, `https:`, `http:` or `data:` (the latter not with `'strict-dynamic'`), or if it does not restrict scripts at all. With both a header and a `<meta>` tag, it is enough for one of the two policies to be tight. spurlos recognizes the legal notice and privacy policy by link text or address, in German and English. A link like “Impressum & Datenschutz” counts for both.
 
-For embedded files, what counts is what the HTML says: `<script src>`, stylesheets, `<iframe>`, `<img>`, `<video>`, `<audio>` and `<source>`. Over http on an https page the browser blocks scripts, stylesheets and frames; images and media it loads over https or not at all. Without `integrity`, a third-party server can swap a script at any time.
+For embedded files, what counts is what the HTML says: `<script src>`, stylesheets, `<iframe>`, `<img>`, `<video>`, `<audio>` and `<source>`. Over http on an https page the browser blocks scripts, stylesheets and frames; images and media it loads over https or not at all. Without `integrity`, a third-party server can swap a script at any time. Scripts that do not run do not count, such as those with `type="text/plain"`, as cookie banners hold them back until consent. The report shows addresses without their query (`…/api/js?…`), as that often holds API keys; `--json` has them in full.
 
 Every finding in the report has its own light, and the check gets the worst of them. That way you see which entry makes a check yellow or red.
 

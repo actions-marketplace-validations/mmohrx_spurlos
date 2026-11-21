@@ -77,7 +77,7 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 
 | Prüfung | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Fremde Server | keine | – | mindestens eine Anfrage an eine andere Domain |
+| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner und keinem Captcha gehört |
 | Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies und solche, in denen der Cookie-Banner die Wahl speichert | eigene Cookies oder Einträge, die spurlos nicht kennt oder die zu einem Dienst wie einem Chat oder Zahlungsanbieter gehören; ein Cookie ohne `Secure` auf einer https-Seite; ein Sitzungs-Cookie ohne `HttpOnly` | Cookie einer fremden Domain oder eines bekannten Trackers |
 | Impressum und Datenschutz | beide verlinkt und erreichbar | – | ein Link fehlt oder die Seite antwortet mit einem Fehler |
 | HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS (oder `max-age=0`), über http antwortet nichts, Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
@@ -88,7 +88,7 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 
 Geprüft werden bei den Headern `Content-Security-Policy`, `X-Frame-Options` (oder `frame-ancestors` in der CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` und `Permissions-Policy`. CSP und Referrer-Policy zählen auch als `<meta>`-Tag, für Hoster wie GitHub Pages, bei denen sich keine Header setzen lassen. Eine CSP lässt Skripte durch, wenn sie für Skripte (`script-src`, sonst `default-src`) `'unsafe-inline'` ohne Nonce oder Hash, `'unsafe-eval'` oder eine Quelle wie `*`, `https:`, `http:` oder `data:` erlaubt (Letztere nicht mit `'strict-dynamic'`), oder wenn sie Skripte gar nicht regelt. Gibt es Header und `<meta>`-Tag, reicht es, wenn eine der beiden Richtlinien dicht ist. Impressum und Datenschutzerklärung erkennt spurlos am Linktext oder an der Adresse, auf Deutsch und Englisch. Ein Link wie „Impressum & Datenschutz“ zählt für beides.
 
-Bei den eingebundenen Dateien zählt, was im HTML steht: `<script src>`, Stylesheets, `<iframe>`, `<img>`, `<video>`, `<audio>` und `<source>`. Über http auf einer https-Seite blockiert der Browser Skripte, Stylesheets und Frames; Bilder und Medien lädt er über https oder gar nicht. Ohne `integrity` kann ein fremder Server ein Skript jederzeit austauschen.
+Bei den eingebundenen Dateien zählt, was im HTML steht: `<script src>`, Stylesheets, `<iframe>`, `<img>`, `<video>`, `<audio>` und `<source>`. Über http auf einer https-Seite blockiert der Browser Skripte, Stylesheets und Frames; Bilder und Medien lädt er über https oder gar nicht. Ohne `integrity` kann ein fremder Server ein Skript jederzeit austauschen. Skripte, die nicht laufen, zählen nicht, etwa solche mit `type="text/plain"`, wie Cookie-Banner sie bis zur Einwilligung zurückhalten. Im Bericht stehen die Adressen ohne Query (`…/api/js?…`), denn dort stehen oft API-Schlüssel; `--json` enthält sie vollständig.
 
 Jeder einzelne Befund hat im Bericht seine eigene Ampel, die Prüfung bekommt die schlechteste davon. So sieht man, welcher Eintrag eine Prüfung gelb oder rot macht.
 

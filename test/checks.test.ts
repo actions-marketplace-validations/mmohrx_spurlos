@@ -289,7 +289,13 @@ describe('cookie banners', () => {
   })
 
   test('the third-party check names them', () => {
-    expect(thirdParty({ ...base, requests: [req('app.usercentrics.eu'), req('app.usercentrics.eu')] })).toMatchObject({ level: 'red', consent: ['Usercentrics'] })
+    expect(thirdParty({ ...base, requests: [req('app.usercentrics.eu'), req('app.usercentrics.eu')] })).toMatchObject({ level: 'yellow', consent: ['Usercentrics'] })
+  })
+
+  test('cookie banners and captchas are yellow, anything else on another site red', () => {
+    expect(thirdParty({ ...base, requests: [req('consent.cookiebot.com'), req('challenges.cloudflare.com')] }).level).toBe('yellow')
+    expect(thirdParty({ ...base, requests: [req('consent.cookiebot.com'), req('fonts.gstatic.com')] }).level).toBe('red')
+    expect(thirdParty({ ...base, requests: [req('js.stripe.com')] }).level).toBe('red')
   })
 
   test("the banner's own cookie is green, a chat's yellow, a tracker's red", () => {
@@ -306,6 +312,9 @@ describe('compare', () => {
 
   test('findings carry a key that stays the same across scans', () => {
     expect(findings(third('a.example'))).toEqual([{ key: 'third-party a.example', level: 'red' }])
+    // a file without its query: a new cache buster is no new finding
+    const file = (url: string) => findings(resources({ ...base, resources: [{ tag: 'script', url, integrity: false }] }))
+    expect(file('https://cdn.jsdelivr.net/x.js?ver=1')).toEqual(file('https://cdn.jsdelivr.net/x.js?ver=2'))
   })
 
   test('two findings with the same key both count', () => {
