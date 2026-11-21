@@ -14,7 +14,8 @@ export type Service = { name: string; category: string; hosts: string[]; cookies
 /**
  * Why another site counts as the page's own: named with --own · listed in the page's own certificate · named like
  * the page (media.kuketz.de on kuketz-blog.de) · it is the platform that hosts the page (Wix's servers on a Wix
- * site). A known service never does, but for the platform's.
+ * site). A known service never does, but for the platform's, and on a page that is that service itself (media.doctolib.com
+ * on doctolib.de).
  */
 export type OwnReason = 'option' | 'certificate' | 'name' | 'platform'
 export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason }

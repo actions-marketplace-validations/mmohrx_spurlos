@@ -25,7 +25,7 @@
   { "name": "Hotjar", "category": "tracking", "hosts": ["hotjar.com", "hotjar.io"], "cookies": ["_hj"] },
   { "name": "Microsoft Clarity", "category": "tracking", "hosts": ["clarity.ms"], "cookies": ["_clck", "_clsk"] },
   { "name": "Matomo", "category": "tracking", "hosts": ["matomo.cloud"], "paths": ["/matomo.php", "/matomo.js", "/piwik.php", "/piwik.js"], "cookies": ["_pk_"] },
-  { "name": "Matomo (vb-tool.de)", "category": "tracking", "hosts": ["vb-tool.de"] },
+  { "name": "Matomo (vb-tool.de)", "category": "tracking", "hosts": ["metrics.vb-tool.de"] },
   { "name": "Triptease", "category": "tracking", "hosts": ["triptease.io"], "cookies": ["triptease-"], "storage": ["triptease", "tt-domain-user-id"] },
   { "name": "etracker", "category": "tracking", "hosts": ["etracker.com", "etracker.de"] },
   { "name": "Adobe Analytics", "category": "tracking", "hosts": ["omtrdc.net", "2o7.net", "demdex.net"], "cookies": ["AMCV_", "AMCVS_", "demdex", "s_cc", "s_fid", "s_vi"] },
@@ -176,7 +176,7 @@
   { "name": "Akamai mPulse", "category": "other", "hosts": ["go-mpulse.net", "akstat.io"], "storage": ["_boomr_"] },
   { "name": "Datadog RUM", "category": "other", "hosts": ["datadoghq.com", "datadoghq.eu"], "cookies": ["_dd_s"], "storage": ["_dd_tab_id"] },
   { "name": "ipify", "category": "other", "hosts": ["ipify.org"] },
-  { "name": "Cloudflare Trace (Standortabfrage)", "category": "other", "hosts": ["www.cloudflare.com"] },
+  { "name": "Cloudflare Trace", "category": "other", "hosts": ["www.cloudflare.com"] },
   { "name": "Squarespace", "category": "other", "hosts": ["squarespace.com", "squarespace-cdn.com", "sqspcdn.com"], "headers": ["server: Squarespace"] },
   { "name": "Jimdo", "category": "other", "hosts": ["jimdo.com", "jimdo.systems", "jimstatic.com", "jimcdn.com"], "storage": ["web-store-state"] },
   { "name": "Webflow", "category": "other", "hosts": ["website-files.com", "webflow.com", "webflow.io", "d3e54v103j8qbb.cloudfront.net"], "headers": ["x-wf-region"], "storage": ["colorThemes_"] },
@@ -226,9 +226,9 @@
   { "name": "Radware Bot Manager", "category": "necessary", "hosts": [], "cookies": ["__uzma", "__uzmb", "__uzmc", "__uzmd", "__uzme"] },
   { "name": "Queue-it", "category": "necessary", "hosts": ["queue-it.net"], "cookies": ["QueueITAccepted-"] },
   { "name": "Imperva", "category": "necessary", "hosts": [], "cookies": ["incap_ses_", "visid_incap_", "nlbi_"] },
-  { "name": "i18next (Sprache)", "category": "necessary", "hosts": [], "storage": ["i18nextLng"] },
-  { "name": "Nuxt i18n (Sprache)", "category": "necessary", "hosts": [], "cookies": ["i18n_redirected"] },
-  { "name": "Polylang (Sprache)", "category": "necessary", "hosts": [], "cookies": ["pll_language"] },
+  { "name": "i18next", "category": "necessary", "hosts": [], "storage": ["i18nextLng"] },
+  { "name": "Nuxt i18n", "category": "necessary", "hosts": [], "cookies": ["i18n_redirected"] },
+  { "name": "Polylang", "category": "necessary", "hosts": [], "cookies": ["pll_language"] },
   { "name": "IONOS MyWebsite", "category": "necessary", "hosts": [], "cookies": ["DIY_SB"] },
-  { "name": "Vue Router (Scroll-Positionen)", "category": "necessary", "hosts": [], "storage": ["vue-router:scroll", "vue:scroll:"] }
+  { "name": "Vue Router", "category": "necessary", "hosts": [], "storage": ["vue-router:scroll", "vue:scroll:"] }
 ]

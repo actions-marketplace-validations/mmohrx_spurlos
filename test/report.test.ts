@@ -168,3 +168,17 @@ test('the platform the site runs on is named, and gives no tips for its own serv
   expect(de).not.toContain('Eigene Server nennst du mit --own')
   expect(text(page('https://shop.example/'), [r], 'en')).toContain('The site runs on Shopify.')
 })
+
+test('a page that is a known service itself names why its servers are its own, and gives no tracker tips for them', () => {
+  const r: Result = {
+    check: 'third-party',
+    level: 'yellow',
+    hosts: [{ host: 'static.hotjar.io', service: { name: 'Hotjar', category: 'tracking', hosts: ['hotjar.io'] }, requests: 2, own: 'name' }],
+    consent: [],
+    selfHosted: [],
+  }
+  const de = text(page('https://www.hotjar.com/'), [r], 'de')
+  expect(de).toContain('🟡 static.hotjar.io – Hotjar, gehört dem Namen nach zur Seite (2 Anfragen)')
+  expect(de).not.toContain('Tracker')
+  expect(de).not.toContain('Keinen bekannten Cookie-Banner')
+})

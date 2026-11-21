@@ -55,8 +55,8 @@ function goneLabels(t: Messages, compare: NonNullable<Report['compare']>, now: n
 function unkeyed(t: Messages, r: Result, now: number): Section {
   switch (r.check) {
     case 'third-party': {
-      // the platform's servers give no tips: the site cannot do without the host it runs on
-      const categories = new Set(r.hosts.filter(h => h.own !== 'platform').map(h => h.service?.category))
+      // the site's own servers give no tips: not the platform it runs on, nor a known service's on its own site
+      const categories = new Set(r.hosts.filter(h => !h.own).map(h => h.service?.category))
       const trackers = categories.has('tracking')
       const consent = r.consent.length ? [t.consentFound(r.consent.join(', ')), ...(trackers ? [t.consentButTrackers] : [])] : trackers ? [t.consentNone] : []
       // a baseline from an older spurlos has none
@@ -73,7 +73,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       return {
         value: `${r.hosts.length}`,
         items: r.hosts.map(h => {
-          const about = [h.service?.name, h.own && (h.own === 'platform' || !h.service) ? t.ownBy[h.own] : undefined].filter(Boolean).join(', ') || undefined
+          const about = [h.service?.name, h.own ? t.ownBy[h.own] : undefined].filter(Boolean).join(', ') || undefined
           return item(key.host(h.host), hostLevel(h), h.host, about ? `${about} (${t.requests(h.requests)})` : t.requests(h.requests))
         }),
         notes: [
