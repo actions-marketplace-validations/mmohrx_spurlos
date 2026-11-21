@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.3.0 – 2026-11-21
 
 - `--html`: der Bericht als eigenständige HTML-Seite mit Logo, ohne JavaScript und ohne Nachladen, zum Weiterschicken.
 - `--pdf`: derselbe Bericht als PDF, gedruckt vom vorhandenen Chromium, ohne neue Abhängigkeit. Beim Drucken ist JavaScript aus und jede Anfrage gesperrt.

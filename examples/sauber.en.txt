@@ -1,4 +1,4 @@
-spurlos 0.2.0  https://shop.example/
+spurlos 0.3.0  https://shop.example/
 7 fine
 
 🟢 Third-party servers              none

@@ -83,7 +83,7 @@ Subdomains count as the site itself (`cdn.company.com` belongs to `www.company.c
 spurlos opens the page itself as a regular Chrome and adds its name to the user agent:
 
 ```
-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.2.0
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.3.0
 ```
 
 “HeadlessChrome” is left out on purpose, in the client hints (`sec-ch-ua`) too. Many cookie banners and trackers do not load at all for visits they take for bots. spurlos would then report a clean page while real visitors get tracked. It does not hide, though: its name is in every user agent, and `navigator.webdriver` stays `true`.
@@ -91,7 +91,7 @@ Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/15
 The legal notice, the privacy policy and the http redirect are requested openly as a bot, since bot detection changes nothing there:
 
 ```
-spurlos/0.2.0 (+https://github.com/mmohrx/spurlos)
+spurlos/0.3.0 (+https://github.com/mmohrx/spurlos)
 ```
 
 Because spurlos opens pages it does not know, Chromium runs in its own sandbox wherever the system allows one (macOS, Windows, Linux with user namespaces). Without one, spurlos says so on stderr. In the Docker image Chromium runs without its sandbox, as the container, running as user `node`, is the boundary; on Linux, that is the best way to check unknown sites. spurlos accepts no downloads from a page.
