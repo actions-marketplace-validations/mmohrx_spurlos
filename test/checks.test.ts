@@ -82,6 +82,8 @@ describe('own servers on other sites', () => {
     expect(own({ headers: { 'powered-by': 'Something else' } }, 'cdn.shopify.com')).toEqual({ 'cdn.shopify.com': null })
     // Squarespace says so in its server header, whatever the case
     expect(own({ headers: { server: 'squarespace' } }, 'static1.squarespace.com', 'images.squarespace-cdn.com')).toEqual({ 'static1.squarespace.com': 'platform', 'images.squarespace-cdn.com': 'platform' })
+    // Webflow by a header of its own
+    expect(own({ headers: { 'x-wf-region': 'us-east-1' } }, 'cdn.prod.website-files.com', 'd3e54v103j8qbb.cloudfront.net')).toEqual({ 'cdn.prod.website-files.com': 'platform', 'd3e54v103j8qbb.cloudfront.net': 'platform' })
     const r = thirdParty({ ...base, ...wix, requests: [req('static.parastorage.com')] })
     expect(r).toMatchObject({ level: 'yellow', platform: 'Wix' })
     // a cookie on the platform's domain is the site's too
