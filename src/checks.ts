@@ -1,4 +1,4 @@
-import { getDomain } from 'tldts'
+import { getDomain, getDomainWithoutSuffix } from 'tldts'
 import knownServices from './services.json' with { type: 'json' }
 import type { Cookie, Form, Link, Resource, Scan, Visit } from './scan.ts'
 
@@ -9,9 +9,17 @@ export type Level = 'green' | 'yellow' | 'red'
  */
 export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; storage?: string[]; paths?: string[]; httpOnly?: boolean }
 
-export type ThirdParty = { host: string; service: Service | undefined; requests: number }
-/** missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie */
-export type CookieFinding = Cookie & { thirdParty: boolean; service: Service | undefined; missing: ('Secure' | 'HttpOnly')[] }
+/**
+ * Why another site counts as the page's own: named with --own · listed in the page's own certificate · named like
+ * the page (media.kuketz.de on kuketz-blog.de). A known service never does.
+ */
+export type OwnReason = 'option' | 'certificate' | 'name'
+export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason }
+/**
+ * missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie ·
+ * own: set on another site's domain that seems to belong to the page
+ */
+export type CookieFinding = Cookie & { thirdParty: boolean; service: Service | undefined; missing: ('Secure' | 'HttpOnly')[]; own?: OwnReason }
 export type StorageFinding = Scan['storage'][number] & { service: Service | undefined }
 /** a header or meta tag that names the software behind the page; version: it names its version too */
 export type Disclosure = { source: 'header' | 'meta'; name: string; value: string; version: boolean }
@@ -99,20 +107,65 @@ export function consentManagers(scan: Scan): string[] {
   return [...new Set(found.filter(s => s?.category === 'consent').map(s => s?.name ?? ''))]
 }
 
+// words too common to tie two names together: shop.de does not own shop-cdn.com
+const COMMON = new Set(['blog', 'shop', 'store', 'online', 'news', 'mein', 'meine', 'home', 'info', 'portal', 'service', 'group', 'media', 'site', 'world', 'live', 'digital'])
+// what a site adds to its name for the server of its files: bildstatic.de, chefkoch-cdn.de
+const AFFIXES = ['statics', 'static', 'cdn', 'img', 'images', 'media', 'assets', 'files', 'content', 'cache']
+const word = (w: string) => w.length >= 4 && !COMMON.has(w)
+
+/** the names a host's site goes by: chefkoch-cdn.de as chefkoch-cdn and chefkoch, bildstatic.de as bild */
+function namesOf(label: string): Set<string> {
+  const names = new Set([label, ...label.split('-')])
+  for (const a of AFFIXES) {
+    if (label.startsWith(a)) names.add(label.slice(a.length))
+    if (label.endsWith(a)) names.add(label.slice(0, -a.length))
+  }
+  return names
+}
+
+/** The sites in the page's own certificate, if its holder (CN) is the page's site: a hoster's shared one names strangers. */
+function certificateSites(scan: Scan, own: Set<string>): Set<string> {
+  const { names, subject } = scan.certificate ?? {}
+  const bare = (n: string) => site(n.replace(/^\*\./, ''))
+  return names && subject && own.has(bare(subject)) ? new Set(names.map(bare)) : new Set()
+}
+
+/** Tells, for a host or cookie domain on another site, whether and why it seems to belong to the page. */
+export function ownership(scan: Scan): (host: string) => OwnReason | undefined {
+  const own = ownSites(scan)
+  const declared = scan.own ?? []
+  const certified = certificateSites(scan, own)
+  const labels = [...own].map(s => getDomainWithoutSuffix(s) ?? s)
+  return host => {
+    if (serviceOfHost(host)) return undefined
+    if (declared.some(d => host === d || host.endsWith('.' + d))) return 'option'
+    if (certified.has(site(host))) return 'certificate'
+    const names = namesOf(getDomainWithoutSuffix(host) ?? host)
+    if (labels.some(l => (word(l) && names.has(l)) || l.split('-').filter(word).some(w => names.has(w)))) return 'name'
+    return undefined
+  }
+}
+
 /**
  * Every request to another site hands the visitor's IP to someone else. A cookie banner has to load before anyone can
  * agree, and a captcha protects a form: yellow, as the site needs them, though they might be hosted or loaded later.
+ * A server that seems to belong to the page is yellow too: the IP still goes to another host, maybe a provider's.
  * Anything else red.
  */
-export const hostLevel = (h: ThirdParty): Level => (h.service?.category === 'consent' || h.service?.category === 'captcha' ? 'yellow' : 'red')
+export const hostLevel = (h: ThirdParty): Level =>
+  h.own || h.service?.category === 'consent' || h.service?.category === 'captcha' ? 'yellow' : 'red'
 
 /** Every request to another site than the page's own counts. */
 export function thirdParty(scan: Scan): Result {
   const own = ownSites(scan)
+  const owner = ownership(scan)
   const counts = new Map<string, number>()
   for (const r of scan.requests) if (!own.has(site(r.host))) counts.set(r.host, (counts.get(r.host) ?? 0) + 1)
   const hosts = [...counts]
-    .map(([host, requests]) => ({ host, service: serviceOfHost(host), requests }))
+    .map(([host, requests]): ThirdParty => {
+      const reason = owner(host)
+      return { host, service: serviceOfHost(host), requests, ...(reason ? { own: reason } : {}) }
+    })
     .sort((a, b) => a.host.localeCompare(b.host))
   return { check: 'third-party', level: worst(hosts.map(hostLevel)), hosts, consent: consentManagers(scan) }
 }
@@ -122,11 +175,11 @@ const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.statu
 // The level of each single finding; a check's level is the worst of its findings.
 
 /**
- * A third-party cookie or a known tracker's is red; a known session, security or consent cookie green, unless it
- * lacks Secure or HttpOnly; any other yellow, a chat's or a payment provider's too.
+ * A third-party cookie or a known tracker's is red, unless the other site seems to belong to the page; a known session,
+ * security or consent cookie green, unless it lacks Secure or HttpOnly; any other yellow, a chat's or a payment provider's too.
  */
 export const cookieLevel = (c: CookieFinding): Level =>
-  c.thirdParty || isTracker(c.service) ? 'red' : isNecessary(c.service) && !c.missing.length ? 'green' : 'yellow'
+  (c.thirdParty && !c.own) || isTracker(c.service) ? 'red' : isNecessary(c.service) && !c.missing.length ? 'green' : 'yellow'
 /** a version number tells an attacker which known holes to try; the bare name of the software is only a hint */
 export const disclosureLevel = (d: Disclosure): Level => (d.version ? 'yellow' : 'green')
 /** what a framework keeps there to run is green; anything else an app stores wants a look */
@@ -147,13 +200,16 @@ export const resourceLevel = (r: ResourceFinding): Level =>
  */
 export function cookies(scan: Scan): Result {
   const own = ownSites(scan)
+  const owner = ownership(scan)
   const https = isHttps(scan)
   const found = scan.cookies.map((c): CookieFinding => {
     const service = serviceOfCookie(c.name)
     const missing: CookieFinding['missing'] = []
     if (https && !c.secure) missing.push('Secure')
     if (service?.httpOnly && !c.httpOnly) missing.push('HttpOnly')
-    return { ...c, thirdParty: !own.has(site(c.domain)), service, missing }
+    const thirdParty = !own.has(site(c.domain))
+    const reason = thirdParty ? owner(c.domain) : undefined
+    return { ...c, thirdParty, service, missing, ...(reason ? { own: reason } : {}) }
   })
   const storage = scan.storage.map(e => ({ ...e, service: serviceOfStorage(e.key) }))
   const level = worst([...found.map(cookieLevel), ...storage.map(storageLevel)])

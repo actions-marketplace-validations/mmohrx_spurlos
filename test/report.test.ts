@@ -99,3 +99,16 @@ test('several pages: one HTML page with a section each, a JSON list', () => {
   const list = JSON.parse(jsonReports(reports, 'de'))
   expect(list.map((r: { scan: Scan }) => r.scan.finalUrl)).toEqual(['https://a.example/', 'https://b.example/'])
 })
+
+test('a server of the page on another site says why it counts as the page’s own', () => {
+  const scan = { url: 'https://de.wikipedia.org/', finalUrl: 'https://de.wikipedia.org/', settled: true } as Scan
+  const results = [
+    { check: 'third-party', level: 'yellow', consent: [], hosts: [{ host: 'upload.wikimedia.org', service: undefined, requests: 2, own: 'certificate' }] },
+    { check: 'cookies', level: 'yellow', storage: [], cookies: [{ name: 'WMF-Uniq', domain: 'upload.wikimedia.org', expires: -1, secure: true, httpOnly: true, thirdParty: true, service: undefined, missing: [], own: 'certificate' }] },
+  ] as Result[]
+  const de = text(scan, results, 'de')
+  expect(de).toContain('🟡 upload.wikimedia.org – gehört laut Zertifikat zur Seite (2 Anfragen)')
+  expect(de).toContain('🟡 Cookie WMF-Uniq (upload.wikimedia.org) – gehört laut Zertifikat zur Seite, unbekannt')
+  expect(de).toContain('Gelb statt rot, wo ein Server zur Seite zu gehören scheint.')
+  expect(text(scan, results, 'en')).toContain('belongs to the site per its certificate (2 requests)')
+})

@@ -58,6 +58,7 @@ npx spurlos <url> --lang en
 | `--baseline <file>` | compare with an earlier output of `--json`, see [In CI](#in-ci) |
 | `--auth <user:password>` | login by HTTP basic auth, e.g. for a staging site. Better through `SPURLOS_AUTH`, see [Sites behind a login](#sites-behind-a-login) |
 | `--user-agent <string>` | your own user agent for every request |
+| `--own <host>` | servers that belong to the site though on another domain, such as its CDN: `--own cdn-company.net`, subdomains included; repeated or comma-separated. See [Own servers on other domains](#own-servers-on-other-domains) |
 | `--help`, `-h` | help |
 
 The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. Where there is a common fix, the report names it right away, such as serving fonts yourself or an example value for a missing header. These are technical hints, not legal advice. In a terminal the report is colored; with `-o`, in a pipe or with `NO_COLOR` set, it stays plain text. `--html` and `--pdf` go to the output too (`--pdf > report.pdf`), but spurlos does not write a PDF into the terminal. With Docker a file of `-o` stays in the container; redirect instead: `docker run --rm ghcr.io/mmohrx/spurlos example.com --pdf > report.pdf`.
@@ -77,8 +78,8 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 
 | Check | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address | at least one request to another domain that belongs to no cookie banner and no captcha |
-| Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a third-party cookie or one of a known tracker |
+| Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address; and servers that seem to belong to the site (`--own`, certificate, name) | at least one request to another domain that belongs to no cookie banner, no captcha and not to the site |
+| Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a cookie of another domain that does not seem to belong to the site, or one of a known tracker |
 | Legal notice and privacy policy | both linked and reachable | – | a link is missing or the page answers with an error |
 | HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing or only an error answers on http (4xx, 5xx, often a bot check), certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
 | Security headers | all set | one or more missing; the CSP lets scripts through | – |
@@ -97,6 +98,16 @@ Known session and security cookies include `XSRF-TOKEN` and `<app>-session` from
 spurlos recognizes cookie banners by their servers, by their files on the site itself (so also Borlabs Cookie, Complianz or Real Cookie Banner on WordPress), by their cookies and by their browser storage entries (category `consent`). The check “Third-party servers” names which one loads, and says when known trackers load before any choice in the banner anyway. Whether a banner is needed or set up correctly, spurlos does not judge.
 
 Subdomains count as the site itself (`cdn.company.com` belongs to `www.company.com`), following the Public Suffix List (`company.co.uk`).
+
+### Own servers on other domains
+
+Many sites load images and scripts from a second domain of their own, Wikipedia for example from `wikimedia.org`. Such servers are yellow instead of red when spurlos can tie them to the site, and the report says why:
+
+- **per --own:** you name them yourself, `--own cdn-company.net`. That is unambiguous and the right way for your own site.
+- **per its certificate:** the site's TLS certificate names that domain too, as the one of `wikipedia.org` names `wikimedia.org`. spurlos reads it from the connection Chromium has anyway, and trusts it only if its holder (CN) is the site itself, since hosters' shared certificates name other customers.
+- **by its name:** the domain carries the site's name as a whole word, `media.kuketz.de` on `kuketz-blog.de`, `img.chefkoch-cdn.de` on `chefkoch.de` or `bildstatic.de` on `bild.de`. Parts of a word do not count (`ottonova.de` does not belong to `otto.de`), nor do short names and common words such as `shop` or `blog`. This is a guess; check it.
+
+A known service from `src/services.json` never belongs to the site, not even with `--own`. The same goes for cookies of these domains. It stays yellow because the IP address still goes to another host; if a provider runs it, the provider learns it too.
 
 ## How spurlos visits
 
@@ -122,7 +133,7 @@ The HTML report holds every finding, with the green checks folded, and at the en
 
 ## For AI assistants (MCP)
 
-`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`) and `format` (`text` or `json`). It runs on your machine, like the CLI: the assistant starts it itself and talks to it over stdin and stdout. There is no open port, so it needs no token either.
+`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`), `format` (`text` or `json`) and `own` (a list of host names, as with `--own`). It runs on your machine, like the CLI: the assistant starts it itself and talks to it over stdin and stdout. There is no open port, so it needs no token either.
 
 In Claude Code:
 
@@ -158,9 +169,9 @@ If the page asks for a login and there is none or the wrong one, spurlos does no
 npx spurlos https://staging.company.com --lang en || echo "new traces"
 ```
 
-Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, more than one of `--json`, `--html`, `--pdf`, one of them with several `-o`, a baseline that cannot be read, a login for addresses on different servers) or a file of `-o` could not be written. A missing or rejected login ends with `2` too. With several addresses the worst case counts; spurlos still writes the reports of the pages it could check.
+Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, more than one of `--json`, `--html`, `--pdf`, one of them with several `-o`, a baseline that cannot be read, a login for addresses on different servers, anything but a host name with `--own`) or a file of `-o` could not be written. A missing or rejected login ends with `2` too. With several addresses the worst case counts; spurlos still writes the reports of the pages it could check.
 
-With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate, links, forms, embedded files), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `resources`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. With several addresses it is a list of such objects. The red checks, for example:
+With `--json` you get the full result as JSON: `scan` holds the raw data (every request, cookies, storage, headers, certificate with the names in it, links, forms, embedded files, the hosts of `--own`), `results` one object per check with `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `resources`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. Servers and cookies that seem to belong to the site carry `own` with the reason (`option`, `certificate`, `name`). With several addresses it is a list of such objects. The red checks, for example:
 
 ```
 npx spurlos https://staging.company.com --json | jq -r '.results[] | select(.level == "red") | .check'
@@ -210,6 +221,7 @@ The action installs spurlos and Chromium from its own checkout, checks, and writ
 | `baseline` | an earlier output of `--json` in the repository |
 | `lang` | `de` or `en`; without it the same rules as on the command line apply |
 | `auth` | `user:password` for HTTP basic auth, best from a secret: `${{ secrets.STAGING_AUTH }}` |
+| `own` | own servers on other domains as with `--own`, separated by spaces or new lines |
 | `user-agent` | your own user agent for every request |
 | `args` | further options, such as `--verbose`, split at spaces; no `--json`, `--html` or `--pdf`, the files go by their extension |
 

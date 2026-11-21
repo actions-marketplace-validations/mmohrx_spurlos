@@ -7,7 +7,7 @@ import { LANGS, MESSAGES, pickLang } from './lang/index.ts'
 import { serve } from './mcp.ts'
 import { pdf } from './pdf.ts'
 import { banner, clean, htmlReports, jsonReports, text, type Report } from './report.ts'
-import { scan, toUrl } from './scan.ts'
+import { ownHost, scan, toUrl } from './scan.ts'
 
 // colors only in a terminal that wants them: tty.hasColors() honours NO_COLOR, FORCE_COLOR and TERM
 const color = process.stdout.isTTY && process.stdout.hasColors()
@@ -22,6 +22,7 @@ const OPTIONS = {
   lang: { type: 'string' },
   'user-agent': { type: 'string' },
   auth: { type: 'string' },
+  own: { type: 'string', multiple: true },
   help: { type: 'boolean', short: 'h' },
 } as const
 
@@ -58,7 +59,7 @@ else await check(positionals)
 
 async function mcp() {
   // the format is the client's to choose, per call
-  const ignored = (['json', 'html', 'pdf', 'output', 'baseline', 'auth', 'verbose'] as const).filter(f => values[f]).map(f => `--${f}`)
+  const ignored = (['json', 'html', 'pdf', 'output', 'baseline', 'auth', 'verbose', 'own'] as const).filter(f => values[f]).map(f => `--${f}`)
   if (ignored.length) {
     console.error(`spurlos: ${say.mcpOnly(ignored.join(', '))}`)
     process.exit(2)
@@ -156,6 +157,17 @@ async function check(args: string[]) {
   }
   if (auth && urls.some(u => u.startsWith('http:'))) console.error(`spurlos: ${say.authOverHttp}`)
 
+  // host names only, as the browser writes them (Bücher.de as xn--bcher-kva.de); *.cdn.de means cdn.de and its subdomains
+  const own: string[] = []
+  for (const value of (values.own ?? []).flatMap(v => v.split(','))) {
+    const host = ownHost(value)
+    if (!host) {
+      console.error(clean(`spurlos: ${say.invalidOwn(value)}`))
+      process.exit(2)
+    }
+    own.push(host)
+  }
+
   const baselineFile = values.baseline
   const baseline = baselineFile ? await readBaseline(baselineFile) : undefined
 
@@ -167,7 +179,7 @@ async function check(args: string[]) {
   // one after the other: each scan starts its own Chromium
   for (const url of urls) {
     try {
-      const s = await scan(url, { ...(ua ? { userAgent: ua } : {}), ...(auth ? { auth } : {}), ...(screenshot ? { screenshot } : {}) })
+      const s = await scan(url, { ...(ua ? { userAgent: ua } : {}), ...(auth ? { auth } : {}), ...(screenshot ? { screenshot } : {}), ...(own.length ? { own } : {}) })
       const results = runChecks(s)
       const before = baseline?.(s.url, s.finalUrl, urls.length === 1)
       reports.push({ scan: s, results, ...(before && baselineFile ? { compare: { file: baselineFile, comparison: compare(results, before), before } } : {}) })

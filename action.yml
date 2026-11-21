@@ -23,6 +23,10 @@ inputs:
     description: HTTP basic auth as user:password, for a staging site. Pass it from a secret.
     required: false
     default: ""
+  own:
+    description: Servers that belong to the site, such as its CDN, subdomains included; several separated by spaces or new lines. Yellow instead of red.
+    required: false
+    default: ""
   user-agent:
     description: Your own user agent for every request.
     required: false
@@ -67,6 +71,7 @@ runs:
         BASELINE: ${{ inputs.baseline }}
         ARGS: ${{ inputs.args }}
         USER_AGENT: ${{ inputs.user-agent }}
+        OWN: ${{ inputs.own }}
         SPURLOS_LANG: ${{ inputs.lang }}
         SPURLOS_AUTH: ${{ inputs.auth }}
         SPURLOS: ${{ github.action_path }}/src/cli.ts
@@ -78,6 +83,8 @@ runs:
         options=(-o "$out/report.json" -o "$out/report.html" -o "$out/report.txt")
         if [ -n "$BASELINE" ]; then options+=(--baseline "$BASELINE"); fi
         if [ -n "$USER_AGENT" ]; then options+=(--user-agent "$USER_AGENT"); fi
+        read -r -d '' -a own <<< "$OWN" || true
+        for host in "${own[@]}"; do options+=(--own "$host"); done
         set +e
         node "$SPURLOS" "${urls[@]}" "${options[@]}" "${extra[@]}"
         code=$?

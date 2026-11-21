@@ -36,6 +36,47 @@ describe('thirdParty', () => {
   })
 })
 
+describe('own servers on other sites', () => {
+  const own = (scan: Partial<Scan>, ...hosts: string[]) => {
+    const r = thirdParty({ ...base, ...scan, requests: hosts.map(req) })
+    if (r.check !== 'third-party') throw new Error()
+    return Object.fromEntries(r.hosts.map(h => [h.host, h.own ?? null]))
+  }
+
+  test('--own names them, subdomains included; they are yellow', () => {
+    expect(own({ own: ['ztat.net'] }, 'img01.ztat.net', 'ztat.net', 'notztat.net')).toEqual({ 'img01.ztat.net': 'option', 'ztat.net': 'option', 'notztat.net': null })
+    expect(thirdParty({ ...base, own: ['ztat.net'], requests: [req('img01.ztat.net')] }).level).toBe('yellow')
+  })
+
+  test('the page’s own certificate names them, if its holder is the page', () => {
+    const certificate = { validTo: 0, issuer: 'x', subject: '*.wikipedia.org', names: ['*.wikipedia.org', '*.wikimedia.org', 'wikimedia.org'] }
+    const wiki = { url: 'https://de.wikipedia.org/', finalUrl: 'https://de.wikipedia.org/', certificate }
+    expect(own(wiki, 'upload.wikimedia.org', 'cdn.anders.de')).toEqual({ 'upload.wikimedia.org': 'certificate', 'cdn.anders.de': null })
+    // a hoster's shared certificate names its customers, not the page's servers
+    expect(own({ ...wiki, certificate: { ...certificate, subject: 'sni.hoster.example' } }, 'upload.wikimedia.org')).toEqual({ 'upload.wikimedia.org': null })
+    expect(own({ ...wiki, certificate: { validTo: 0, issuer: 'x', names: certificate.names } }, 'upload.wikimedia.org')).toEqual({ 'upload.wikimedia.org': null })
+  })
+
+  test('a name like the page’s, as a whole word', () => {
+    expect(own({ finalUrl: 'https://www.kuketz-blog.de/' }, 'media.kuketz.de')).toEqual({ 'media.kuketz.de': 'name' })
+    expect(own({ finalUrl: 'https://www.chefkoch.de/' }, 'img.chefkoch-cdn.de')).toEqual({ 'img.chefkoch-cdn.de': 'name' })
+    expect(own({ finalUrl: 'https://www.bild.de/' }, 'a.bildstatic.de')).toEqual({ 'a.bildstatic.de': 'name' })
+    // a part of a word, a common word or a short name is no tie
+    expect(own({ finalUrl: 'https://www.otto.de/' }, 'cdn.ottonova.de')).toEqual({ 'cdn.ottonova.de': null })
+    expect(own({ finalUrl: 'https://mein-shop.de/' }, 'shop-cdn.com', 'cdn.shopify.com')).toEqual({ 'shop-cdn.com': null, 'cdn.shopify.com': null })
+    expect(own({ finalUrl: 'https://ab.de/' }, 'ab-cdn.de')).toEqual({ 'ab-cdn.de': null })
+  })
+
+  test('a known service never belongs to the page, whatever names it', () => {
+    expect(own({ finalUrl: 'https://www.google.de/', own: ['google-analytics.com'] }, 'www.google-analytics.com')).toEqual({ 'www.google-analytics.com': null })
+  })
+
+  test('their cookies are yellow, not red, and say why', () => {
+    const r = cookies({ ...base, own: ['ztat.net'], cookies: [{ name: 'x', domain: 'ztat.net', expires: -1, secure: true, httpOnly: true }] })
+    expect(r).toMatchObject({ level: 'yellow', cookies: [{ thirdParty: true, own: 'option' }] })
+  })
+})
+
 describe('services', () => {
   test('the most specific host wins', () => {
     expect(serviceOfHost('maps.googleapis.com')?.name).toBe('Google Maps')

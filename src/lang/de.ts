@@ -1,4 +1,4 @@
-import type { FormFinding, HttpRedirect, LegalKind, Level, ResourceFinding, Result } from '../checks.ts'
+import type { FormFinding, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
 import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE } from '../scan.ts'
 import { plural } from './plural.ts'
 
@@ -8,6 +8,7 @@ import { plural } from './plural.ts'
 const de = {
   usage: (langs: string) => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <datei> …]
         [--baseline <datei>] [--auth <benutzer:passwort>] [--user-agent <kennung>]
+        [--own <host> …]
 spurlos mcp [--lang ${langs}] [--user-agent <kennung>]
 
 Ruft die Seite wie ein neuer Besucher auf, der nichts anklickt, und zeigt,
@@ -31,6 +32,9 @@ Mehrere Adressen prüft spurlos nacheinander, mit je einem Bericht.
                 besser über SPURLOS_AUTH, dann steht das Passwort nicht in
                 der Shell-Historie
   --user-agent  eigene Browserkennung für alle Aufrufe
+  --own         Server, die zur Seite gehören, etwa ihr CDN, samt
+                Subdomains: --own cdn-firma.net; mehrmals oder mit Komma.
+                Sie sind dann gelb statt rot
   --help        diese Hilfe
 
 spurlos mcp startet einen MCP-Server über stdio: Ein KI-Assistent kann
@@ -62,6 +66,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
       : reason
     }`,
   authFormat: '--auth und SPURLOS_AUTH brauchen benutzer:passwort.',
+  invalidOwn: (value: string) => `--own braucht einen Hostnamen wie cdn.firma.de, nicht ${value}.`,
   authOverHttp: 'Die Adresse ist http://, das Passwort geht unverschlüsselt an den Server.',
   cannotRead: (file: string, reason: string) => `${file} ließ sich nicht lesen: ${reason}`,
   notBaseline: (file: string) => `${file} ist keine Ausgabe von spurlos --json.`,
@@ -104,6 +109,13 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   consentFound: (names: string) => `Cookie-Banner erkannt: ${names}.`,
   consentButTrackers: 'Die Tracker oben laden trotzdem schon, bevor jemand im Banner etwas wählt.',
   consentNone: 'Keinen bekannten Cookie-Banner erkannt.',
+  ownBy: {
+    option: 'gehört laut --own zur Seite',
+    certificate: 'gehört laut Zertifikat zur Seite',
+    name: 'gehört dem Namen nach zur Seite',
+  } satisfies Record<OwnReason, string>,
+  ownNote:
+    'Gelb statt rot, wo ein Server zur Seite zu gehören scheint. Die IP-Adresse geht trotzdem an einen anderen Host; betreibt ihn ein Dienstleister, erfährt auch der sie. Eigene Server nennst du mit --own.',
 
   cookiesNone: 'nichts gesetzt',
   cookies: (c: number, s: number) => `${plural(c, 'Cookie', 'Cookies')}, ${plural(s, 'Eintrag', 'Einträge')} im Browser-Speicher`,

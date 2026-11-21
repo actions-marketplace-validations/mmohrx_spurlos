@@ -69,8 +69,11 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       ]
       return {
         value: `${r.hosts.length}`,
-        items: r.hosts.map(h => item(key.host(h.host), hostLevel(h), h.host, h.service ? `${h.service.name} (${t.requests(h.requests)})` : t.requests(h.requests))),
-        notes: [t.thirdParty, ...consent, ...hints.filter(n => n !== null)],
+        items: r.hosts.map(h => {
+          const about = h.service ? h.service.name : h.own ? t.ownBy[h.own] : undefined
+          return item(key.host(h.host), hostLevel(h), h.host, about ? `${about} (${t.requests(h.requests)})` : t.requests(h.requests))
+        }),
+        notes: [t.thirdParty, ...(r.hosts.some(h => h.own) ? [t.ownNote] : []), ...consent, ...hints.filter(n => n !== null)],
       }
     }
 
@@ -79,7 +82,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       const items = [
         ...r.cookies.map(c => {
           const about = [
-            c.thirdParty ? t.cookieForeign : t.cookieOwn,
+            c.own ? t.ownBy[c.own] : c.thirdParty ? t.cookieForeign : t.cookieOwn,
             c.service?.name ?? t.unknown,
             lifetime(t, c.expires, now),
             ...(c.missing.length ? [t.cookieMissing(c.missing)] : []),

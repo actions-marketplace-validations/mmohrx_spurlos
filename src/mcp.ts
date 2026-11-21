@@ -3,7 +3,7 @@ import type { Readable, Writable } from 'node:stream'
 import { runChecks } from './checks.ts'
 import { LANGS, MESSAGES, type Lang } from './lang/index.ts'
 import { clean, json, text } from './report.ts'
-import { scan, toUrl, VERSION, type Scan } from './scan.ts'
+import { ownHost, scan, toUrl, VERSION, type Scan, type ScanOptions } from './scan.ts'
 
 /**
  * A Model Context Protocol server over stdio, so an AI assistant can run spurlos itself: one JSON-RPC message
@@ -34,6 +34,13 @@ const TOOL = {
         enum: ['text', 'json'],
         description: 'text (default): the report with every finding. json: the full result, including every request the page made.',
       },
+      own: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          'Host names that belong to the site though on another domain, such as its CDN (cdn-company.net), subdomains included. ' +
+          'Their requests and cookies are yellow instead of red. Only when the user says these servers are theirs.',
+      },
     },
     required: ['url'],
     additionalProperties: false,
@@ -50,7 +57,7 @@ export type Context = {
   /** --user-agent, for every scan */
   userAgent?: string
   /** for tests: opens a URL; spurlos' own scan otherwise */
-  scan?: (url: string) => Promise<Scan>
+  scan?: (url: string, options: ScanOptions) => Promise<Scan>
 }
 
 /**
@@ -90,10 +97,18 @@ async function call(params: Record<string, unknown>, context: Context) {
   if (typeof args.url !== 'string') return reply(say.urlMissing, true)
   const url = toUrl(args.url)
   if (!url) return reply(clean(say.invalidUrl(args.url)), true)
+  const own: string[] = []
+  if (args.own !== undefined) {
+    for (const value of Array.isArray(args.own) ? args.own : [args.own]) {
+      const host = typeof value === 'string' ? ownHost(value) : undefined
+      if (!host) return reply(clean(say.invalidOwn(JSON.stringify(value))), true)
+      own.push(host)
+    }
+  }
 
   try {
-    const open = context.scan ?? (u => scan(u, context.userAgent ? { userAgent: context.userAgent } : {}))
-    const s = await inTurn(() => open(url))
+    const options: ScanOptions = { ...(context.userAgent ? { userAgent: context.userAgent } : {}), ...(own.length ? { own } : {}) }
+    const s = await inTurn(() => (context.scan ?? scan)(url, options))
     const results = runChecks(s)
     const report = args.format === 'json' ? json(s, results, lang) : text(s, results, lang, { verbose: true, width: 100 })
     // in either format, so the model can pass it on

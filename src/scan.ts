@@ -1,5 +1,6 @@
+import { X509Certificate } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright'
+import { chromium, type Browser, type BrowserContext, type CDPSession, type Page } from 'playwright'
 import { legalLinks } from './checks.ts'
 
 // src/ and dist/ both sit next to package.json
@@ -68,6 +69,17 @@ export function toUrl(arg: string): string | undefined {
   }
 }
 
+/** A host name given with --own, as the browser writes it: cdn-firma.net, *.cdn.de as cdn.de; undefined if it is none. */
+export function ownHost(value: string): string | undefined {
+  const bare = value.trim().replace(/^\*?\./, '')
+  if (!/^[^\s/:?#@]+\.[^\s/:?#@.]+$/.test(bare)) return undefined
+  try {
+    return new URL(`https://${bare}`).hostname
+  } catch {
+    return undefined
+  }
+}
+
 /** what a Visit's error says when the server sent nothing at all; the report translates it */
 export const NO_RESPONSE = 'no response'
 /** why a scan stops at a 401: the page wants a login, or turned the one given down; the report translates both */
@@ -87,8 +99,13 @@ export type Scan = {
   storage: StorageEntry[]
   /** response headers of the page itself, names in lower case */
   headers: Record<string, string>
-  /** the page's TLS certificate; missing for http pages (and for pages the tests serve themselves) */
-  certificate?: { validTo: number; issuer: string }
+  /**
+   * the page's TLS certificate; missing for http pages (and for pages the tests serve themselves). names: the host
+   * names it covers (*.example.com), subject: its holder (CN), both where Chromium hands the certificate out
+   */
+  certificate?: { validTo: number; issuer: string; names?: string[]; subject?: string }
+  /** hosts the user named as the page's own with --own, subdomains included */
+  own?: string[]
   /** the server asked for the page over http://, to see whether it sends visitors on to https; missing when the page is http */
   http?: Visit
   links: Link[]
@@ -124,6 +141,26 @@ export type ScanOptions = {
   auth?: { username: string; password: string }
   /** keep a picture of what a visitor sees first, for the HTML and PDF report */
   screenshot?: boolean
+  /** hosts that belong to the page, though on another site (its CDN), subdomains included */
+  own?: string[]
+}
+
+/**
+ * The host names and holder of the certificate Chromium got for the page, from the connection it already has: no
+ * request of its own. Nothing where Chromium has none to give (the tests' pages) or the certificate cannot be read.
+ */
+async function certificateNames(cdp: CDPSession | undefined, url: string): Promise<{ names?: string[]; subject?: string }> {
+  if (!cdp) return {}
+  try {
+    const { tableNames } = await cdp.send('Network.getCertificate', { origin: new URL(url).origin })
+    if (!tableNames[0]) return {}
+    const cert = new X509Certificate(Buffer.from(tableNames[0], 'base64'))
+    const names = (cert.subjectAltName ?? '').split(', ').filter(n => n.startsWith('DNS:')).map(n => n.slice(4).toLowerCase())
+    const subject = /^CN=(.+)$/m.exec(cert.subject)?.[1]?.toLowerCase()
+    return { names, ...(subject ? { subject } : {}) }
+  } catch {
+    return {}
+  }
 }
 
 /**
@@ -182,6 +219,11 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
 
     const page = await context.newPage()
     if (!options.userAgent) await plainBrands(context, page, userAgent, chrome)
+    // Chromium hands out the page's certificate later only with the network domain on from the start
+    const cdp = await context.newCDPSession(page).then(
+      async s => (await s.send('Network.enable'), s),
+      () => undefined,
+    )
     const response = await page.goto(url, { waitUntil: 'load' })
     if (!response) throw new Error(NO_RESPONSE)
     // the login page is not the site: say so instead of checking it
@@ -242,6 +284,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const headers = await response.allHeaders()
     const tls = await response.securityDetails()
     const finalUrl = page.url()
+    const names = tls?.validTo && finalUrl.startsWith('https:') ? await certificateNames(cdp, finalUrl) : {}
     const visitor = await documentsOnly(browser, url, options)
 
     const result: Scan = {
@@ -259,7 +302,8 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       userAgent,
       sandbox,
     }
-    if (tls?.validTo) result.certificate = { validTo: tls.validTo, issuer: tls.issuer ?? '' }
+    if (tls?.validTo) result.certificate = { validTo: tls.validTo, issuer: tls.issuer ?? '', ...names }
+    if (options.own?.length) result.own = options.own
     if (metaCsp) result.metaCsp = metaCsp
     if (metaReferrer) result.metaReferrer = metaReferrer
     if (generator) result.generator = generator

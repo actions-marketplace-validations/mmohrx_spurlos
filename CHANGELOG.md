@@ -17,6 +17,7 @@
 - Eingebundene Dateien: Skripte, die nicht laufen (`type="text/plain"`, wie Cookie-Banner sie zurückhalten, oder `nomodule`), zählen nicht; Adressen im Bericht ohne Query, in der etwa API-Schlüssel stehen.
 - `src/services.json` kennt rund 130 Dienste statt 25, mit neuen Kategorien (`analytics`, `consent`, `social`, `chat`, `payment`) und `paths` für Dienste auf der eigenen Seite.
 - HTTPS: Antwortet http:// mit einem Fehler (4xx, 5xx), oft wegen eines Bot-Schutzes, ist das gelb statt rot; in `--json` als `http: "refused"`.
+- Eigene Server auf anderen Domains (etwa `wikimedia.org` bei Wikipedia) sind gelb statt rot, ihre Cookies auch: mit `--own <host>`, laut Zertifikat der Seite oder dem Namen nach. Der Bericht nennt den Grund, `--json` ihn als `own`. Auch im MCP-Werkzeug (`own`) und in der Action (`own`).
 - Links, Formulare und eingebundene Dateien im Shadow DOM zählen mit; vorher fehlten etwa Impressum und Datenschutz in Footern aus Web Components.
 
 - README: Umgebungsvariablen auf einen Blick, Wartezeiten, keine Telemetrie, Basic Auth mit Docker.

@@ -40,3 +40,10 @@ test('a login applies to one origin only', () => {
 test('every address is checked before the first scan', () => {
   expect(cli('shop.example', 'http://')).toMatchObject({ status: 2, stderr: expect.stringContaining('http:// ist keine gültige Adresse.') })
 })
+
+test('--own takes host names only', () => {
+  for (const value of ['https://cdn.firma.de', 'cdn', 'cdn.firma.de/bilder']) {
+    expect(cli('shop.example', '--own', value)).toMatchObject({ status: 2, stderr: expect.stringContaining('--own braucht einen Hostnamen') })
+  }
+  expect(cli('shop.example', '--own', 'ztat.net,cdn')).toMatchObject({ status: 2, stderr: expect.stringContaining('nicht cdn.') })
+})

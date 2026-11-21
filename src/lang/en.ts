@@ -6,6 +6,7 @@ import { plural } from './plural.ts'
 const en: Messages = {
   usage: langs => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <file> …]
         [--baseline <file>] [--auth <user:password>] [--user-agent <string>]
+        [--own <host> …]
 spurlos mcp [--lang ${langs}] [--user-agent <string>]
 
 Opens the site like a new visitor who clicks nothing, and shows which
@@ -29,6 +30,9 @@ Several addresses are checked one after the other, with a report each.
                 better through SPURLOS_AUTH, then the password stays out of
                 the shell history
   --user-agent  your own user agent for every request
+  --own         servers that belong to the site, such as its CDN, with
+                their subdomains: --own cdn-company.net; repeated or
+                comma-separated. They are then yellow, not red
   --help        this help
 
 spurlos mcp starts an MCP server over stdio: it lets an AI assistant
@@ -59,6 +63,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
       : reason
     }`,
   authFormat: '--auth and SPURLOS_AUTH take user:password.',
+  invalidOwn: value => `--own takes a host name like cdn.company.com, not ${value}.`,
   authOverHttp: 'The address is http://, the password goes to the server unencrypted.',
   cannotRead: (file, reason) => `${file} could not be read: ${reason}`,
   notBaseline: file => `${file} is not an output of spurlos --json.`,
@@ -101,6 +106,13 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   consentFound: names => `Cookie banner found: ${names}.`,
   consentButTrackers: 'The trackers above still load before anyone chooses anything in the banner.',
   consentNone: 'No known cookie banner found.',
+  ownBy: {
+    option: 'belongs to the site per --own',
+    certificate: 'belongs to the site per its certificate',
+    name: 'belongs to the site by its name',
+  },
+  ownNote:
+    'Yellow, not red, where a server seems to belong to the site. The IP address still goes to another host; if a provider runs it, the provider learns it too. Name your own servers with --own.',
 
   cookiesNone: 'nothing set',
   cookies: (c, s) => `${plural(c, 'cookie', 'cookies')}, ${plural(s, 'entry', 'entries')} in browser storage`,

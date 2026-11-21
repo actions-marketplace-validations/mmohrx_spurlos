@@ -58,6 +58,7 @@ npx spurlos <url>
 | `--baseline <datei>` | mit einer früheren Ausgabe von `--json` vergleichen, siehe [In der CI](#in-der-ci) |
 | `--auth <benutzer:passwort>` | Anmeldung per HTTP Basic Auth, etwa für eine Staging-Seite. Besser über `SPURLOS_AUTH`, siehe [Seiten hinter einer Anmeldung](#seiten-hinter-einer-anmeldung) |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
+| `--own <host>` | Server, die zur Seite gehören, obwohl sie auf einer anderen Domain liegen, etwa ihr CDN: `--own cdn-firma.net`, samt Subdomains; mehrmals oder mit Komma. Siehe [Eigene Server auf anderen Domains](#eigene-server-auf-anderen-domains) |
 | `--help`, `-h` | Hilfe |
 
 Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Wo es einen gängigen Weg gibt, nennt der Bericht ihn gleich mit, etwa Schriften selbst auszuliefern oder einen Beispielwert für einen fehlenden Header. Das sind technische Hinweise, keine Rechtsberatung. Im Terminal ist der Bericht farbig. Mit `-o`, in einer Pipe oder mit `NO_COLOR` bleibt es reiner Text. `--html` und `--pdf` gehen auch über die Ausgabe (`--pdf > bericht.pdf`), ein PDF schreibt spurlos aber nicht ins Terminal. Mit Docker landet eine Datei von `-o` im Container; dort leitest du besser um: `docker run --rm ghcr.io/mmohrx/spurlos firma.de --pdf > bericht.pdf`.
@@ -77,8 +78,8 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 
 | Prüfung | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner und keinem Captcha gehört |
-| Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies und solche, in denen der Cookie-Banner die Wahl speichert | eigene Cookies oder Einträge, die spurlos nicht kennt oder die zu einem Dienst wie einem Chat oder Zahlungsanbieter gehören; ein Cookie ohne `Secure` auf einer https-Seite; ein Sitzungs-Cookie ohne `HttpOnly` | Cookie einer fremden Domain oder eines bekannten Trackers |
+| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem; dazu Server, die zur Seite zu gehören scheinen (`--own`, Zertifikat, Name) | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner, keinem Captcha und nicht zur Seite gehört |
+| Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies und solche, in denen der Cookie-Banner die Wahl speichert | eigene Cookies oder Einträge, die spurlos nicht kennt oder die zu einem Dienst wie einem Chat oder Zahlungsanbieter gehören; ein Cookie ohne `Secure` auf einer https-Seite; ein Sitzungs-Cookie ohne `HttpOnly` | Cookie einer fremden Domain, die nicht zur Seite zu gehören scheint, oder eines bekannten Trackers |
 | Impressum und Datenschutz | beide verlinkt und erreichbar | – | ein Link fehlt oder die Seite antwortet mit einem Fehler |
 | HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS (oder `max-age=0`), über http antwortet nichts oder nur ein Fehler (4xx, 5xx, oft ein Bot-Schutz), Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
 | Sicherheits-Header | alle gesetzt | einer oder mehrere fehlen; die CSP lässt Skripte durch | – |
@@ -97,6 +98,16 @@ Bekannte Sitzungs- und Sicherheits-Cookies sind zum Beispiel `XSRF-TOKEN` und `<
 Cookie-Banner erkennt spurlos an ihren Servern, an ihren Dateien auf der eigenen Seite (so auch Borlabs Cookie, Complianz oder Real Cookie Banner unter WordPress), an ihren Cookies und an ihren Einträgen im Browser-Speicher (Kategorie `consent`). Die Prüfung „Fremde Server“ nennt, welcher geladen wird, und sagt, wenn bekannte Tracker trotzdem schon vor jeder Wahl im Banner laden. Ob ein Banner nötig ist oder richtig eingestellt, beurteilt spurlos nicht.
 
 Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
+
+### Eigene Server auf anderen Domains
+
+Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, Wikipedia etwa von `wikimedia.org`. Solche Server sind gelb statt rot, wenn spurlos sie der Seite zuordnen kann, und der Bericht sagt, warum:
+
+- **laut --own:** Du nennst sie selbst, `--own cdn-firma.net`. Das ist eindeutig und der richtige Weg für die eigene Seite.
+- **laut Zertifikat:** Das TLS-Zertifikat der Seite nennt auch diese Domain, wie das von `wikipedia.org` die Domain `wikimedia.org`. spurlos liest es aus der Verbindung, die Chromium ohnehin hat, und glaubt ihm nur, wenn sein Inhaber (CN) die Seite selbst ist, denn Sammelzertifikate von Hostern nennen fremde Kunden.
+- **dem Namen nach:** Die Domain trägt den Namen der Seite als ganzes Wort, `media.kuketz.de` bei `kuketz-blog.de`, `img.chefkoch-cdn.de` bei `chefkoch.de` oder `bildstatic.de` bei `bild.de`. Teile eines Worts zählen nicht (`ottonova.de` gehört nicht zu `otto.de`), kurze Namen und Allerweltswörter wie `shop` oder `blog` auch nicht. Das ist eine Vermutung, prüfe sie.
+
+Ein bekannter Dienst aus `src/services.json` gehört nie zur Seite, auch nicht mit `--own`. Das gilt ebenso für Cookies dieser Domains. Gelb bleibt es, weil die IP-Adresse trotzdem an einen anderen Host geht; betreibt ihn ein Dienstleister, erfährt auch der sie.
 
 ## Wie spurlos aufruft
 
@@ -122,7 +133,7 @@ Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt, und a
 
 ## Für KI-Assistenten (MCP)
 
-`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`) und `format` (`text` oder `json`). Er läuft auf deinem Rechner, wie die CLI: Der Assistent startet ihn selbst und spricht über stdin und stdout mit ihm. Einen offenen Port gibt es nicht, deshalb braucht er auch kein Token.
+`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`), `format` (`text` oder `json`) und `own` (eine Liste von Hostnamen wie bei `--own`). Er läuft auf deinem Rechner, wie die CLI: Der Assistent startet ihn selbst und spricht über stdin und stdout mit ihm. Einen offenen Port gibt es nicht, deshalb braucht er auch kein Token.
 
 In Claude Code:
 
@@ -158,9 +169,9 @@ Verlangt die Seite eine Anmeldung und es gibt keine oder die falsche, prüft spu
 npx spurlos https://staging.firma.de || echo "neue Spuren"
 ```
 
-Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn sich eine Seite nicht prüfen ließ oder der Aufruf falsch war (unbekannte Option, ungültige URL, unbekannte Sprache, mehr als eines von `--json`, `--html`, `--pdf`, eines davon mit mehreren `-o`, eine Baseline, die sich nicht lesen lässt, eine Anmeldung für Adressen auf verschiedenen Servern) oder sich eine Datei von `-o` nicht schreiben ließ. Auch eine fehlende oder abgelehnte Anmeldung endet mit `2`. Bei mehreren Adressen gilt der schlechteste Fall; die Berichte der Seiten, die sich prüfen ließen, schreibt spurlos trotzdem.
+Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn sich eine Seite nicht prüfen ließ oder der Aufruf falsch war (unbekannte Option, ungültige URL, unbekannte Sprache, mehr als eines von `--json`, `--html`, `--pdf`, eines davon mit mehreren `-o`, eine Baseline, die sich nicht lesen lässt, eine Anmeldung für Adressen auf verschiedenen Servern, etwas anderes als ein Hostname bei `--own`) oder sich eine Datei von `-o` nicht schreiben ließ. Auch eine fehlende oder abgelehnte Anmeldung endet mit `2`. Bei mehreren Adressen gilt der schlechteste Fall; die Berichte der Seiten, die sich prüfen ließen, schreibt spurlos trotzdem.
 
-Mit `--json` kommt das vollständige Ergebnis als JSON: `scan` enthält die Rohdaten (alle Anfragen, Cookies, Speicher, Header, Zertifikat, Links, Formulare, eingebundene Dateien), `results` je Prüfung ein Objekt mit `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `resources`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) und den Befunden, `note` den Hinweis auf die fehlende Rechtsberatung. Bei mehreren Adressen ist es eine Liste solcher Objekte. Die roten Prüfungen etwa:
+Mit `--json` kommt das vollständige Ergebnis als JSON: `scan` enthält die Rohdaten (alle Anfragen, Cookies, Speicher, Header, Zertifikat samt den Namen darin, Links, Formulare, eingebundene Dateien, die Hosts von `--own`), `results` je Prüfung ein Objekt mit `check` (`third-party`, `cookies`, `legal`, `https`, `headers`, `resources`, `forms`, `disclosure`), `level` (`green`, `yellow`, `red`) und den Befunden, `note` den Hinweis auf die fehlende Rechtsberatung. Server und Cookies, die zur Seite zu gehören scheinen, tragen `own` mit dem Grund (`option`, `certificate`, `name`). Bei mehreren Adressen ist es eine Liste solcher Objekte. Die roten Prüfungen etwa:
 
 ```
 npx spurlos https://staging.firma.de --json | jq -r '.results[] | select(.level == "red") | .check'
@@ -210,6 +221,7 @@ Die Action installiert spurlos und Chromium aus ihrem eigenen Stand, prüft und 
 | `baseline` | eine frühere Ausgabe von `--json` im Repository |
 | `lang` | `de` oder `en`; ohne Angabe gelten dieselben Regeln wie in der CLI |
 | `auth` | `benutzer:passwort` für HTTP Basic Auth, am besten aus einem Secret: `${{ secrets.STAGING_AUTH }}` |
+| `own` | eigene Server auf anderen Domains wie bei `--own`, getrennt durch Leerzeichen oder Zeilenumbrüche |
 | `user-agent` | eigene Browserkennung für alle Aufrufe |
 | `args` | weitere Optionen, etwa `--verbose`, getrennt an Leerzeichen; ohne `--json`, `--html` und `--pdf`, die Dateien gehen nach ihrer Endung |
 
