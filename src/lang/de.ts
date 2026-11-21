@@ -29,7 +29,9 @@ welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
 spurlos mcp startet einen MCP-Server über stdio: Ein KI-Assistent kann
 damit selbst Seiten prüfen lassen, Einrichtung im README.
 
-Exit-Code: 0 ohne roten Befund, 1 mit rotem Befund, 2 bei einem Fehler.`,
+Exit-Code: 0 ohne roten Befund, 1 mit rotem Befund, 2 bei einem Fehler.
+
+Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   disclaimer: 'Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.',
   openedAs: (url: string) => `aufgerufen als ${url}`,
   unknownLang: (from: string, value: string, langs: string) => `${from} kennt nur ${langs}, nicht ${value}.`,

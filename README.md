@@ -58,6 +58,17 @@ npx spurlos <url>
 
 Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Im Terminal ist der Bericht farbig. Mit `-o`, in einer Pipe oder mit `NO_COLOR` bleibt es reiner Text. `--html` und `--pdf` gehen auch über die Ausgabe (`--pdf > bericht.pdf`), ein PDF schreibt spurlos aber nicht ins Terminal. Mit Docker landet eine Datei von `-o` im Container; dort leitest du besser um: `docker run --rm ghcr.io/mmohrx/spurlos firma.de --pdf > bericht.pdf`.
 
+| Umgebungsvariable | |
+|---|---|
+| `SPURLOS_LANG` | Sprache des Berichts, wenn `--lang` fehlt |
+| `SPURLOS_AUTH` | Anmeldung als `benutzer:passwort`, wenn `--auth` fehlt, siehe [Seiten hinter einer Anmeldung](#seiten-hinter-einer-anmeldung) |
+| `SPURLOS_NO_SANDBOX` | `1` startet Chromium gleich ohne Sandbox und ohne Hinweis darauf; das Docker-Image setzt das, dort ist der Container die Grenze |
+| `NO_COLOR` | keine Farben, auch im Terminal |
+
+Die Seite selbst darf bis zu 30 Sekunden zum Laden brauchen. Danach wartet spurlos bis zu 10 Sekunden, bis sie nichts mehr nachlädt; lädt sie dann noch, sagt der Bericht das. Impressum, Datenschutzerklärung und die Anfrage über http bekommen je 15 Sekunden.
+
+spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Angefragt wird nur die Seite, die du prüfst, samt allem, was sie selbst nachlädt.
+
 ## Ampel
 
 | Prüfung | 🟢 | 🟡 | 🔴 |
@@ -126,7 +137,7 @@ Interne Seiten und Staging-Seiten vor dem Livegang stecken oft hinter HTTP Basic
 SPURLOS_AUTH='team:geheim' npx spurlos https://staging.firma.de
 ```
 
-`--auth team:geheim` geht auch und hat Vorrang. Das Passwort geht nur an genau die angegebene Adresse (Schema, Host, Port). Fremde Server, die die Seite lädt, bekommen es nie, auch wenn sie nach einer Anmeldung fragen, und Impressum oder Datenschutz nur, wenn sie unter derselben Adresse liegen. Leitet `firma.de` auf `www.firma.de` weiter, gib gleich `www.firma.de` an. Die Prüfung, ob http auf https weiterleitet, läuft ohne Anmeldung. Ist die Adresse selbst `http://`, geht das Passwort unverschlüsselt; spurlos weist auf stderr darauf hin.
+`--auth team:geheim` geht auch und hat Vorrang. Mit Docker gibt `-e SPURLOS_AUTH` die Variable weiter, ohne dass das Passwort im Befehl steht: `docker run --rm -e SPURLOS_AUTH ghcr.io/mmohrx/spurlos https://staging.firma.de`. Das Passwort geht nur an genau die angegebene Adresse (Schema, Host, Port). Fremde Server, die die Seite lädt, bekommen es nie, auch wenn sie nach einer Anmeldung fragen, und Impressum oder Datenschutz nur, wenn sie unter derselben Adresse liegen. Leitet `firma.de` auf `www.firma.de` weiter, gib gleich `www.firma.de` an. Die Prüfung, ob http auf https weiterleitet, läuft ohne Anmeldung. Ist die Adresse selbst `http://`, geht das Passwort unverschlüsselt; spurlos weist auf stderr darauf hin.
 
 Verlangt die Seite eine Anmeldung und es gibt keine oder die falsche, prüft spurlos nicht die Fehlerseite, sondern endet mit Exit-Code `2` und sagt, woran es lag.
 
@@ -169,6 +180,10 @@ node src/cli.ts <url>
 ## Mitmachen
 
 Fehlt ein Dienst, stimmt eine Ampel nicht oder hast du eine Idee: In [`CONTRIBUTING.md`](CONTRIBUTING.md) steht, wie du beiträgst. Sicherheitslücken bitte nicht als Issue, sondern wie in [`SECURITY.md`](SECURITY.md) beschrieben melden.
+
+## Unterstützen
+
+spurlos ist ein Hobbyprojekt. Wenn es dir hilft, kannst du es auf [Ko-fi](https://ko-fi.com/mmohrx) oder über [GitHub Sponsors](https://github.com/sponsors/mmohrx) unterstützen. Die Hilfe (`spurlos --help`) verlinkt in der letzten Zeile auch dorthin; die Berichte nicht, die gehören dir.
 
 ## Lizenz
 

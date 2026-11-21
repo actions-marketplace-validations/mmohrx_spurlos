@@ -27,7 +27,9 @@ third-party servers it contacts and which cookies it sets.
 spurlos mcp starts an MCP server over stdio: it lets an AI assistant
 check sites itself, setup in the README.
 
-Exit code: 0 without a red finding, 1 with a red finding, 2 on an error.`,
+Exit code: 0 without a red finding, 1 with a red finding, 2 on an error.
+
+Does spurlos help you? https://ko-fi.com/mmohrx`,
   disclaimer: 'Technical pre-check – not legal advice, and no statement on whether the site complies with the GDPR.',
   openedAs: url => `opened as ${url}`,
   unknownLang: (from, value, langs) => `${from} only knows ${langs}, not ${value}.`,

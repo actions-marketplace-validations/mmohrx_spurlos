@@ -1,5 +1,10 @@
 # Changelog
 
+## Unveröffentlicht
+
+- README: Umgebungsvariablen auf einen Blick, Wartezeiten, keine Telemetrie, Basic Auth mit Docker.
+- Links zum Unterstützen (Ko-fi, GitHub Sponsors) im README, in der Hilfe, in `package.json` und als Button auf GitHub.
+
 ## 0.3.0 – 2026-11-21
 
 - `--html`: der Bericht als eigenständige HTML-Seite mit Logo, ohne JavaScript und ohne Nachladen, zum Weiterschicken.

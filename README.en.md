@@ -58,6 +58,17 @@ npx spurlos <url> --lang en
 
 The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. In a terminal the report is colored; with `-o`, in a pipe or with `NO_COLOR` set, it stays plain text. `--html` and `--pdf` go to the output too (`--pdf > report.pdf`), but spurlos does not write a PDF into the terminal. With Docker a file of `-o` stays in the container; redirect instead: `docker run --rm ghcr.io/mmohrx/spurlos example.com --pdf > report.pdf`.
 
+| Environment variable | |
+|---|---|
+| `SPURLOS_LANG` | language of the report when `--lang` is missing |
+| `SPURLOS_AUTH` | login as `user:password` when `--auth` is missing, see [Sites behind a login](#sites-behind-a-login) |
+| `SPURLOS_NO_SANDBOX` | `1` starts Chromium without a sandbox right away, and without a note about it; the Docker image sets it, there the container is the boundary |
+| `NO_COLOR` | no colors, even in a terminal |
+
+The page itself may take up to 30 seconds to load. After that spurlos waits up to 10 seconds for it to stop loading more; if it still does, the report says so. Impressum, privacy policy and the request over http get 15 seconds each.
+
+spurlos itself does not phone home: no telemetry, no statistics. It requests only the page you check, plus whatever that page loads itself.
+
 ## Lights
 
 | Check | 🟢 | 🟡 | 🔴 |
@@ -126,7 +137,7 @@ Internal sites and staging sites before launch often sit behind HTTP basic auth.
 SPURLOS_AUTH='team:secret' npx spurlos https://staging.company.com
 ```
 
-`--auth team:secret` works too and takes precedence. The password goes only to exactly the address given (scheme, host, port). Third-party servers the page loads never get it, even when they ask for a login, and Impressum or privacy pages only when they live at the same address. If `company.com` redirects to `www.company.com`, give `www.company.com` right away. The check whether http redirects to https runs without the login. If the address itself is `http://`, the password goes unencrypted; spurlos points that out on stderr.
+`--auth team:secret` works too and takes precedence. With Docker, `-e SPURLOS_AUTH` passes the variable on without the password in the command: `docker run --rm -e SPURLOS_AUTH ghcr.io/mmohrx/spurlos https://staging.company.com`. The password goes only to exactly the address given (scheme, host, port). Third-party servers the page loads never get it, even when they ask for a login, and Impressum or privacy pages only when they live at the same address. If `company.com` redirects to `www.company.com`, give `www.company.com` right away. The check whether http redirects to https runs without the login. If the address itself is `http://`, the password goes unencrypted; spurlos points that out on stderr.
 
 If the page asks for a login and there is none or the wrong one, spurlos does not check the error page but ends with exit code `2` and says why.
 
@@ -169,6 +180,10 @@ node src/cli.ts <url>
 ## Contributing
 
 A service is missing, a light seems wrong, or you have an idea: [`CONTRIBUTING.md`](CONTRIBUTING.md) explains how to contribute (in German; issues and pull requests in English are welcome). Please report security holes not as an issue but as described in [`SECURITY.md`](SECURITY.md).
+
+## Support
+
+spurlos is a hobby project. If it helps you, you can support it on [Ko-fi](https://ko-fi.com/mmohrx) or through [GitHub Sponsors](https://github.com/sponsors/mmohrx). The help (`spurlos --help`) links there in its last line too; the reports do not, they are yours.
 
 ## License
 

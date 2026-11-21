@@ -21,6 +21,10 @@
     "type": "git",
     "url": "git+https://github.com/mmohrx/spurlos.git"
   },
+  "funding": [
+    "https://github.com/sponsors/mmohrx",
+    "https://ko-fi.com/mmohrx"
+  ],
   "bugs": {
     "url": "https://github.com/mmohrx/spurlos/issues"
   },
