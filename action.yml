@@ -5,7 +5,7 @@ branding:
   icon: search
   color: green
 
-# Runs spurlos from the action's own checkout, at the ref the workflow names (mmohrx/spurlos@v1):
+# Runs spurlos from the action's own checkout, at the ref the workflow names (mmohrx/spurlos@main or a release tag):
 # no npm package needed, and the dependencies come from the lockfile.
 inputs:
   url:
