@@ -62,6 +62,7 @@ describe('scan', { timeout: 30_000 }, () => {
 
     expect(pick(results, 'https')).toMatchObject({ level: 'red', hsts: false, http: 'no-redirect' })
     expect(pick(results, 'headers').missing).toHaveLength(5)
+    expect(pick(results, 'third-party').consent).toEqual(['Usercentrics'])
     expect(pick(results, 'forms').forms.map(f => f.problem)).toEqual(['unencrypted', 'third-party'])
     expect(pick(results, 'disclosure').findings.map(d => `${d.name}: ${d.value}`)).toEqual([
       'server: Apache/2.4.41 (Ubuntu)',
@@ -80,6 +81,10 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(report).toContain('🟡 localStorage: theme – unbekannt')
     expect(report).toContain('Datenschutzerklärung: kein Link auf der Seite gefunden')
     expect(report).toContain('http://shop.example/newsletter – sendet unverschlüsselt über http')
+    expect(report).toContain('Cookie-Banner erkannt: Usercentrics.')
+    expect(report).toContain('Die Tracker oben laden trotzdem schon')
+    expect(report).toContain('Schriften lassen sich vom eigenen Server ausliefern')
+    expect(report).toContain('Referrer-Policy fehlt – etwa strict-origin-when-cross-origin')
     // the summary comes first, the worst checks lead, and without color the text holds no escape codes
     const lines = report.split('\n')
     expect(lines.slice(0, 3)).toContainEqual(expect.stringMatching(/^\d+ Mängel · \d+ Hinweise?$/))

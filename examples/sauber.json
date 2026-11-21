@@ -68,7 +68,8 @@
     {
       "check": "third-party",
       "level": "green",
-      "hosts": []
+      "hosts": [],
+      "consent": []
     },
     {
       "check": "cookies",

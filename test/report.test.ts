@@ -57,7 +57,7 @@ test('the logo for the help: the lights in color only when asked', () => {
 })
 
 const page = (finalUrl: string, extra: Partial<Scan> = {}) => ({ url: finalUrl, finalUrl, settled: true, ...extra }) as Scan
-const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })) })
+const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })), consent: [] })
 
 test('new findings since the baseline are marked, gone ones listed', () => {
   const now = [third('a.example', 'b.example')]

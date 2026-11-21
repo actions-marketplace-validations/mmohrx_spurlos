@@ -1,13 +1,23 @@
 spurlos 0.3.0  https://shop.example/tracked.html
 5 problems · 2 notes
 
-🔴 Third-party servers              4
+🔴 Third-party servers              5
+  ├─ 🔴 app.usercentrics.eu – Usercentrics (1 request)
   ├─ 🔴 cdn.unbekannt.example – 1 request
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 request)
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 request)
   └─ 🔴 www.youtube.com – YouTube (1 request)
      → Each of them learns the visitor's IP address on opening the page, before
        any click.
+     → Cookie banner found: Usercentrics.
+     → The trackers above still load before anyone chooses anything in the
+       banner.
+     → Fonts can be served from the own server, then no request goes out for
+       them.
+     → Videos, maps, chats and social media posts can be embedded so that they
+       only load after a click.
+     → Trackers can be embedded so that they only load once someone agrees in
+       the cookie banner.
 
 🔴 Cookies and storage              2 cookies, 1 entry in browser storage
   ├─ 🟡 Cookie session (shop.example) – first-party, unknown, until the session ends, without Secure
@@ -23,18 +33,18 @@ spurlos 0.3.0  https://shop.example/tracked.html
 
 🔴 HTTPS                            with problems
   ├─ 🔴 http:// serves the page without redirecting to https://.
-  └─ 🟡 No HSTS header (Strict-Transport-Security): browsers do not remember to use https only.
+  └─ 🟡 No HSTS header (Strict-Transport-Security): browsers do not remember to use https only. – e.g. Strict-Transport-Security: max-age=31536000
 
 🔴 Forms                            2
   ├─ 🔴 POST http://shop.example/newsletter – sends unencrypted over http
   └─ 🟡 POST https://formspree.io/f/abc – sends to a third-party server
 
 🟡 Security headers                 5 of 5 missing
-  ├─ 🟡 Content-Security-Policy missing
-  ├─ 🟡 X-Frame-Options missing
-  ├─ 🟡 X-Content-Type-Options missing
-  ├─ 🟡 Referrer-Policy missing
-  └─ 🟡 Permissions-Policy missing
+  ├─ 🟡 Content-Security-Policy missing – try it as Content-Security-Policy-Report-Only first
+  ├─ 🟡 X-Frame-Options missing – e.g. SAMEORIGIN, or frame-ancestors in the CSP
+  ├─ 🟡 X-Content-Type-Options missing – value: nosniff
+  ├─ 🟡 Referrer-Policy missing – e.g. strict-origin-when-cross-origin
+  └─ 🟡 Permissions-Policy missing – e.g. camera=(), microphone=(), geolocation=()
 
 🟡 Software details                 3 entries with a version number
   ├─ 🟡 Header server: Apache/2.4.41 (Ubuntu)

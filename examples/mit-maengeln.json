@@ -25,6 +25,11 @@
         "type": "script"
       },
       {
+        "url": "https://app.usercentrics.eu/browser-ui/latest/loader.js",
+        "host": "app.usercentrics.eu",
+        "type": "script"
+      },
+      {
         "url": "https://cdn.unbekannt.example/bild.png",
         "host": "cdn.unbekannt.example",
         "type": "image"
@@ -46,7 +51,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829818369.036599,
+        "expires": 1829818382.954792,
         "secure": false,
         "httpOnly": false
       }
@@ -58,7 +63,7 @@
       }
     ],
     "headers": {
-      "content-length": "750",
+      "content-length": "832",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -101,6 +106,24 @@
       "level": "red",
       "hosts": [
         {
+          "host": "app.usercentrics.eu",
+          "service": {
+            "name": "Usercentrics",
+            "category": "consent",
+            "hosts": [
+              "usercentrics.eu",
+              "usercentrics.com"
+            ],
+            "storage": [
+              "uc_settings",
+              "uc_ui_version",
+              "uc_user_interaction",
+              "ucData"
+            ]
+          },
+          "requests": 1
+        },
+        {
           "host": "cdn.unbekannt.example",
           "requests": 1
         },
@@ -141,6 +164,9 @@
           },
           "requests": 1
         }
+      ],
+      "consent": [
+        "Usercentrics"
       ]
     },
     {
@@ -161,7 +187,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829818369.036599,
+          "expires": 1829818382.954792,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,

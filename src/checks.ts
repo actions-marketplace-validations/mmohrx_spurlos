@@ -3,8 +3,11 @@ import knownServices from './services.json' with { type: 'json' }
 import type { Cookie, Form, Link, Scan, Visit } from './scan.ts'
 
 export type Level = 'green' | 'yellow' | 'red'
-/** httpOnly: its cookies hold a session and should be out of reach of JavaScript */
-export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; storage?: string[]; httpOnly?: boolean }
+/**
+ * httpOnly: its cookies hold a session and should be out of reach of JavaScript.
+ * paths: parts of a file's path that give the service away where it is hosted on the site itself (Borlabs Cookie).
+ */
+export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; storage?: string[]; paths?: string[]; httpOnly?: boolean }
 
 export type ThirdParty = { host: string; service: Service | undefined; requests: number }
 /** missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie */
@@ -19,7 +22,7 @@ export type HttpRedirect = 'redirects' | 'no-redirect' | 'unreachable'
 export type FormFinding = Form & { problem?: 'unencrypted' | 'third-party' }
 
 export type Result =
-  | { check: 'third-party'; level: Level; hosts: ThirdParty[] }
+  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[] }
   | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
   | { check: 'https'; level: Level; https: boolean; certDaysLeft?: number; http?: HttpRedirect; hsts: boolean }
@@ -51,8 +54,12 @@ export function serviceOfHost(host: string): Service | undefined {
   return byHost.find(({ h }) => host === h || host.endsWith('.' + h))?.s
 }
 
-/** Session and security cookies of common frameworks and proxies: needed to run the site, not to follow anyone. */
-const isNecessary = (s: Service | undefined) => s?.category === 'necessary'
+/**
+ * Session and security cookies of common frameworks and proxies, and where a cookie banner keeps the visitor's choice:
+ * needed to run the site, not to follow anyone.
+ */
+const isNecessary = (s: Service | undefined) => s?.category === 'necessary' || s?.category === 'consent'
+const isTracker = (s: Service | undefined) => s?.category === 'tracking'
 
 // names in services.json are prefixes (_ga also covers GA4's _ga_ABC123),
 // or with a leading * suffixes (*-session covers Laravel's <app>-session)
@@ -67,6 +74,25 @@ export function serviceOfStorage(key: string): Service | undefined {
   return services.find(s => s.storage?.some(matches(key)))
 }
 
+/**
+ * For files the site hosts itself: a pattern ending in / is a directory anywhere in the path (Borlabs Cookie lives
+ * under /wp-content/plugins/borlabs-cookie/), any other the end of the path (/klaro.js, not /klaro.json).
+ */
+export function serviceOfPath(url: string): Service | undefined {
+  const path = new URL(url).pathname
+  return services.find(s => s.paths?.some(p => (p.endsWith('/') ? path.includes(p) : path.endsWith(p))))
+}
+
+/** The cookie banners the page loads, by their servers, files, cookies and storage entries. */
+export function consentManagers(scan: Scan): string[] {
+  const found = [
+    ...scan.requests.flatMap(r => [serviceOfHost(r.host), serviceOfPath(r.url)]),
+    ...scan.cookies.map(c => serviceOfCookie(c.name)),
+    ...scan.storage.map(e => serviceOfStorage(e.key)),
+  ]
+  return [...new Set(found.filter(s => s?.category === 'consent').map(s => s?.name ?? ''))]
+}
+
 /** Every request to another site than the page's own counts: it hands the visitor's IP to someone else. */
 export function thirdParty(scan: Scan): Result {
   const own = ownSites(scan)
@@ -75,7 +101,7 @@ export function thirdParty(scan: Scan): Result {
   const hosts = [...counts]
     .map(([host, requests]) => ({ host, service: serviceOfHost(host), requests }))
     .sort((a, b) => a.host.localeCompare(b.host))
-  return { check: 'third-party', level: hosts.length ? 'red' : 'green', hosts }
+  return { check: 'third-party', level: hosts.length ? 'red' : 'green', hosts, consent: consentManagers(scan) }
 }
 
 const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.status >= 200 && v.status < 300
@@ -83,11 +109,11 @@ const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.statu
 // The level of each single finding; a check's level is the worst of its findings.
 
 /**
- * A third-party cookie or a known tracker's is red; a known session or security cookie green, unless it lacks
- * Secure or HttpOnly; any other yellow.
+ * A third-party cookie or a known tracker's is red; a known session, security or consent cookie green, unless it
+ * lacks Secure or HttpOnly; any other yellow, a chat's or a payment provider's too.
  */
 export const cookieLevel = (c: CookieFinding): Level =>
-  c.thirdParty || (c.service && !isNecessary(c.service)) ? 'red' : isNecessary(c.service) && !c.missing.length ? 'green' : 'yellow'
+  c.thirdParty || isTracker(c.service) ? 'red' : isNecessary(c.service) && !c.missing.length ? 'green' : 'yellow'
 /** a version number tells an attacker which known holes to try; the bare name of the software is only a hint */
 export const disclosureLevel = (d: Disclosure): Level => (d.version ? 'yellow' : 'green')
 /** what a framework keeps there to run is green; anything else an app stores wants a look */
@@ -99,9 +125,9 @@ export const httpLevel = (h: HttpRedirect): Level => (h === 'no-redirect' ? 'red
 export const formLevel = (f: FormFinding): Level => (f.problem === 'unencrypted' ? 'red' : f.problem ? 'yellow' : 'green')
 
 /**
- * Cookies and storage present before any click. A third-party cookie or a known tracker's is red; known session and
- * security cookies (Laravel's XSRF-TOKEN, PHPSESSID, Cloudflare's __cf_bm …) are green; any other own cookie or
- * storage entry is yellow, as it may be needed to run the site and wants a look.
+ * Cookies and storage present before any click. A third-party cookie or a known tracker's is red; known session,
+ * security and consent cookies (Laravel's XSRF-TOKEN, PHPSESSID, Cloudflare's __cf_bm …) are green; any other own
+ * cookie or storage entry is yellow, as it may be needed to run the site and wants a look.
  */
 export function cookies(scan: Scan): Result {
   const own = ownSites(scan)

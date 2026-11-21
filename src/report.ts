@@ -26,6 +26,9 @@ const item = (key: string, level: Level, label: string, detail?: string): Item =
 /** one page's report; compare: how it differs from the same page in the baseline file, whose results are before */
 export type Report = { scan: Scan; results: Result[]; compare?: { file: string; comparison: Comparison; before: Result[] } }
 
+/** the categories of services.json whose embeds can wait for a click */
+const EMBEDS = ['video', 'maps', 'social', 'chat']
+
 /** a check as the report shows it, its keys numbered as findings() numbers them, so --baseline finds each one */
 function section(t: Messages, r: Result, now: number): Section {
   const s = unkeyed(t, r, now)
@@ -51,13 +54,23 @@ function goneLabels(t: Messages, compare: NonNullable<Report['compare']>, now: n
 
 function unkeyed(t: Messages, r: Result, now: number): Section {
   switch (r.check) {
-    case 'third-party':
-      if (!r.hosts.length) return { value: t.none, items: [], notes: [t.thirdPartyNone] }
+    case 'third-party': {
+      const categories = new Set(r.hosts.map(h => h.service?.category))
+      const trackers = categories.has('tracking')
+      const consent = r.consent.length ? [t.consentFound(r.consent.join(', ')), ...(trackers ? [t.consentButTrackers] : [])] : trackers ? [t.consentNone] : []
+      if (!r.hosts.length) return { value: t.none, items: [], notes: [t.thirdPartyNone, ...consent] }
+      const hints = [
+        categories.has('fonts') ? t.thirdPartyHint.fonts : null,
+        categories.has('cdn') ? t.thirdPartyHint.cdn : null,
+        EMBEDS.some(c => categories.has(c)) ? t.thirdPartyHint.embed : null,
+        trackers ? t.thirdPartyHint.tracking : null,
+      ]
       return {
         value: `${r.hosts.length}`,
         items: r.hosts.map(h => item(key.host(h.host), 'red', h.host, h.service ? `${h.service.name} (${t.requests(h.requests)})` : t.requests(h.requests))),
-        notes: [t.thirdParty],
+        notes: [t.thirdParty, ...consent, ...hints.filter(n => n !== null)],
       }
+    }
 
     case 'cookies': {
       if (!r.cookies.length && !r.storage.length) return { value: t.cookiesNone, items: [], notes: [] }
@@ -98,14 +111,16 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           ? null
           : item(key.https('cert'), certLevel(r.certDaysLeft), r.certDaysLeft < 0 ? t.certExpired : t.certDays(r.certDaysLeft) + (r.certDaysLeft < 14 ? t.certRenew : '')),
         r.http ? item(key.https('http'), httpLevel(r.http), t.http[r.http]) : null,
-        r.https && !r.hsts ? item(key.https('hsts'), 'yellow', t.noHsts) : null,
+        r.https && !r.hsts ? item(key.https('hsts'), 'yellow', t.noHsts, t.hstsExample) : null,
       ]
       return { value: t.https[r.level], items: items.filter(i => i !== null), notes: [] }
     }
 
-    case 'headers':
+    case 'headers': {
+      const examples: Record<string, string | undefined> = t.headerExample
       if (!r.missing.length) return { value: t.headersOk, items: [], notes: [] }
-      return { value: t.headersMissing(r.missing.length, r.checked), items: r.missing.map(m => item(key.header(m), 'yellow', t.headerMissing(m))), notes: [] }
+      return { value: t.headersMissing(r.missing.length, r.checked), items: r.missing.map(m => item(key.header(m), 'yellow', t.headerMissing(m), examples[m])), notes: [] }
+    }
 
     case 'disclosure': {
       if (!r.findings.length) return { value: t.none, items: [], notes: [t.disclosureNone] }

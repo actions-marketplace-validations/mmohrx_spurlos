@@ -1,13 +1,23 @@
 spurlos 0.3.0  https://shop.example/tracked.html
 5 Mängel · 2 Hinweise
 
-🔴 Fremde Server              4
+🔴 Fremde Server              5
+  ├─ 🔴 app.usercentrics.eu – Usercentrics (1 Anfrage)
   ├─ 🔴 cdn.unbekannt.example – 1 Anfrage
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 Anfrage)
   └─ 🔴 www.youtube.com – YouTube (1 Anfrage)
      → Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor
        er etwas anklickt.
+     → Cookie-Banner erkannt: Usercentrics.
+     → Die Tracker oben laden trotzdem schon, bevor jemand im Banner etwas
+       wählt.
+     → Schriften lassen sich vom eigenen Server ausliefern, dann geht dafür
+       keine Anfrage nach außen.
+     → Videos, Karten, Chats und Beiträge aus sozialen Netzwerken lassen sich so
+       einbinden, dass sie erst nach einem Klick laden.
+     → Tracker lassen sich so einbinden, dass sie erst laden, wenn jemand im
+       Cookie-Banner zustimmt.
 
 🔴 Cookies und Speicher       2 Cookies, 1 Eintrag im Browser-Speicher
   ├─ 🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure
@@ -23,18 +33,18 @@ spurlos 0.3.0  https://shop.example/tracked.html
 
 🔴 HTTPS                      mit Mängeln
   ├─ 🔴 http:// liefert die Seite ohne Weiterleitung auf https:// aus.
-  └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen.
+  └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen. – etwa Strict-Transport-Security: max-age=31536000
 
 🔴 Formulare                  2
   ├─ 🔴 POST http://shop.example/newsletter – sendet unverschlüsselt über http
   └─ 🟡 POST https://formspree.io/f/abc – sendet an einen fremden Server
 
 🟡 Sicherheits-Header         5 von 5 fehlen
-  ├─ 🟡 Content-Security-Policy fehlt
-  ├─ 🟡 X-Frame-Options fehlt
-  ├─ 🟡 X-Content-Type-Options fehlt
-  ├─ 🟡 Referrer-Policy fehlt
-  └─ 🟡 Permissions-Policy fehlt
+  ├─ 🟡 Content-Security-Policy fehlt – erst als Content-Security-Policy-Report-Only ausprobieren
+  ├─ 🟡 X-Frame-Options fehlt – etwa SAMEORIGIN, oder frame-ancestors in der CSP
+  ├─ 🟡 X-Content-Type-Options fehlt – Wert: nosniff
+  ├─ 🟡 Referrer-Policy fehlt – etwa strict-origin-when-cross-origin
+  └─ 🟡 Permissions-Policy fehlt – etwa camera=(), microphone=(), geolocation=()
 
 🟡 Verratene Details          3 Angaben mit Versionsnummer
   ├─ 🟡 Header server: Apache/2.4.41 (Ubuntu)

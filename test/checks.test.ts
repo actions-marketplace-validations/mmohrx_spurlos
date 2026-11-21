@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
-  compare, cookies, disclosure, findings, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  compare, consentManagers, cookies, disclosure, findings, forms, headers, https, legal, legalLinks, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, type Result,
 } from '../src/checks.ts'
 import type { Scan } from '../src/scan.ts'
@@ -216,8 +216,34 @@ describe('headers', () => {
   })
 })
 
+describe('cookie banners', () => {
+  test('found by their server, a file on the own site, a cookie or a storage entry', () => {
+    expect(consentManagers({ ...base, requests: [req('consent.cookiebot.com')] })).toEqual(['Cookiebot'])
+    const borlabs = { url: 'https://www.firma.de/wp-content/plugins/borlabs-cookie/assets/borlabs.js', host: 'www.firma.de', type: 'script' }
+    expect(consentManagers({ ...base, requests: [borlabs] })).toEqual(['Borlabs Cookie'])
+    expect(consentManagers({ ...base, cookies: [{ name: 'OptanonConsent', domain: 'www.firma.de', expires: -1, secure: true, httpOnly: false }] })).toEqual(['OneTrust'])
+    expect(consentManagers({ ...base, storage: [{ area: 'localStorage', key: 'uc_settings' }] })).toEqual(['Usercentrics'])
+    expect(consentManagers({ ...base, requests: [req('fonts.gstatic.com')] })).toEqual([])
+    // a file name counts at the end of the path only
+    const klaro = (path: string) => consentManagers({ ...base, requests: [{ url: `https://www.firma.de${path}`, host: 'www.firma.de', type: 'script' }] })
+    expect(klaro('/js/klaro.js')).toEqual(['Klaro'])
+    expect(klaro('/js/klaro.json')).toEqual([])
+  })
+
+  test('the third-party check names them', () => {
+    expect(thirdParty({ ...base, requests: [req('app.usercentrics.eu'), req('app.usercentrics.eu')] })).toMatchObject({ level: 'red', consent: ['Usercentrics'] })
+  })
+
+  test("the banner's own cookie is green, a chat's yellow, a tracker's red", () => {
+    const c = (name: string) => ({ name, domain: 'www.firma.de', expires: -1, secure: true, httpOnly: false })
+    expect(cookies({ ...base, cookies: [c('CookieConsent'), c('euconsent-v2')] }).level).toBe('green')
+    expect(cookies({ ...base, cookies: [c('intercom-id-abc')] }).level).toBe('yellow')
+    expect(cookies({ ...base, cookies: [c('_ttp')] }).level).toBe('red')
+  })
+})
+
 describe('compare', () => {
-  const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })) })
+  const third = (...hosts: string[]): Result => ({ check: 'third-party', level: hosts.length ? 'red' : 'green', hosts: hosts.map(host => ({ host, service: undefined, requests: 1 })), consent: [] })
   const disc = (version: boolean): Result => ({ check: 'disclosure', level: version ? 'yellow' : 'green', findings: [{ source: 'header', name: 'server', value: version ? 'nginx/1.2' : 'nginx', version }] })
 
   test('findings carry a key that stays the same across scans', () => {
@@ -229,6 +255,11 @@ describe('compare', () => {
     expect(findings(form('http://www.firma.de/suche')).map(f => f.key)).toEqual(['form get https://www.firma.de/suche', 'form get http://www.firma.de/suche'])
     const twice = form('https://www.firma.de/suche')
     expect(findings(twice).map(f => f.key)).toEqual(['form get https://www.firma.de/suche', 'form get https://www.firma.de/suche #2'])
+  })
+
+  test('a known cookie prefix does not catch a site’s own cookie', () => {
+    expect(serviceOfCookie('ph_session_pref')).toBeUndefined()
+    expect(serviceOfCookie('ph_phc_abc123_posthog')?.name).toBe('PostHog')
   })
 
   test('new is what was not flagged before, or milder; gone what is no longer flagged', () => {

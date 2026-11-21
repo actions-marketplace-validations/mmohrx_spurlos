@@ -11,6 +11,7 @@
 
 - **which third-party servers** get requests, such as Google Fonts, Tag Manager, YouTube or a CDN. Each of them learns the visitor's IP address.
 - **which cookies and browser storage entries** are set before any consent, and whether known trackers or third-party cookies are among them.
+- which **cookie banner** loads, such as Usercentrics, Cookiebot or Borlabs, and whether trackers load before it anyway.
 - whether the **legal notice (Impressum) and privacy policy** are linked and open.
 - whether **HTTPS** is set up properly: certificate, redirect from http, HSTS.
 - which **security headers** are missing.
@@ -58,7 +59,7 @@ npx spurlos <url> --lang en
 | `--user-agent <string>` | your own user agent for every request |
 | `--help`, `-h` | help |
 
-The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. In a terminal the report is colored; with `-o`, in a pipe or with `NO_COLOR` set, it stays plain text. `--html` and `--pdf` go to the output too (`--pdf > report.pdf`), but spurlos does not write a PDF into the terminal. With Docker a file of `-o` stays in the container; redirect instead: `docker run --rm ghcr.io/mmohrx/spurlos example.com --pdf > report.pdf`.
+The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. Where there is a common fix, the report names it right away, such as serving fonts yourself or an example value for a missing header. These are technical hints, not legal advice. In a terminal the report is colored; with `-o`, in a pipe or with `NO_COLOR` set, it stays plain text. `--html` and `--pdf` go to the output too (`--pdf > report.pdf`), but spurlos does not write a PDF into the terminal. With Docker a file of `-o` stays in the container; redirect instead: `docker run --rm ghcr.io/mmohrx/spurlos example.com --pdf > report.pdf`.
 
 | Environment variable | |
 |---|---|
@@ -76,7 +77,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 | Check | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
 | Third-party servers | none | – | at least one request to another domain |
-| Cookies and storage | nothing set, or only known session and security cookies | first-party cookies or entries spurlos does not know; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a third-party cookie or one of a known tracker |
+| Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a third-party cookie or one of a known tracker |
 | Legal notice and privacy policy | both linked and reachable | – | a link is missing or the page answers with an error |
 | HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing answers on http, certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
 | Security headers | all set | one or more missing | – |
@@ -88,6 +89,8 @@ The headers checked are `Content-Security-Policy`, `X-Frame-Options` (or `frame-
 Every finding in the report has its own light, and the check gets the worst of them. That way you see which entry makes a check yellow or red.
 
 Known session and security cookies include `XSRF-TOKEN` and `<app>-session` from Laravel, `PHPSESSID`, `JSESSIONID`, `csrftoken` from Django and `__cf_bm` from Cloudflare. In browser storage, spurlos knows entries that frameworks create themselves, such as Vue Router's scroll positions (`vue-router:scroll`). The list is in `src/services.json` (category `necessary`).
+
+spurlos recognizes cookie banners by their servers, by their files on the site itself (so also Borlabs Cookie, Complianz or Real Cookie Banner on WordPress), by their cookies and by their browser storage entries (category `consent`). The check “Third-party servers” names which one loads, and says when known trackers load before any choice in the banner anyway. Whether a banner is needed or set up correctly, spurlos does not judge.
 
 Subdomains count as the site itself (`cdn.company.com` belongs to `www.company.com`), following the Public Suffix List (`company.co.uk`).
 
@@ -206,12 +209,12 @@ The action installs spurlos and Chromium from its own checkout, checks, and writ
 
 ## Adding known services
 
-Which hosts and cookies belong to which service is in [`src/services.json`](src/services.json). Hosts include their subdomains, cookie names match as a prefix (`_ga` also covers `_ga_ABC123`), with a leading `*` as a suffix (`*-session`). If a service is missing, a pull request is welcome.
+Which hosts and cookies belong to which service is in [`src/services.json`](src/services.json). Hosts include their subdomains, cookie names match as a prefix (`_ga` also covers `_ga_ABC123`), with a leading `*` as a suffix (`*-session`). `paths` holds parts of file paths by which spurlos recognizes a service on the site itself too: ending in `/`, a directory anywhere in the path (`/wp-content/plugins/borlabs-cookie/`), otherwise the end of the path (`/klaro.js`). If a service is missing, a pull request is welcome.
 
 ## What spurlos does not do
 
 - It does not actively look for holes. It only evaluates what a normal visit to the page returns anyway; it never requests addresses like `/.env`, `/.git/` or `/phpinfo.php`. So you can run it against any site without probing it.
-- It does not click the cookie banner. What it checks is the state before the visitor decides anything.
+- It does not click the cookie banner. What it checks is the state before the visitor decides anything; spurlos names which banner loads, but not whether it is set up correctly.
 - It does not read the legal notice or privacy policy, it only checks that they are linked and reachable.
 - It is not legal advice. A green report does not mean a site complies with the GDPR, and a red one does not mean it doesn't.
 
