@@ -190,7 +190,7 @@ npx spurlos https://www.firma.de --json -o spurlos-baseline.json   # einmal, dan
 npx spurlos https://www.firma.de --baseline spurlos-baseline.json
 ```
 
-Der Bericht markiert dann jeden Befund, der neu ist oder schlechter als vorher, mit `[neu]` und listet, was weggefallen ist. Exit-Code `1` gibt es nur noch bei einem neuen roten Befund. Mit `--json` steht der Vergleich unter `compare` (`baseline`, `new`, `gone`, je Befund `key` und `level`). Die Seiten findet spurlos in der Baseline über ihre Adresse; prüfst du eine einzige Seite gegen eine Baseline mit einer einzigen, gehören die beiden zusammen. Eine Seite, die die Baseline nicht kennt, hat nur neue Befunde.
+Der Bericht markiert dann jeden Befund, der neu ist oder schlechter als vorher, mit `[neu]` und listet, was weggefallen ist. Exit-Code `1` gibt es nur noch bei einem neuen roten Befund. Mit `--json` steht der Vergleich unter `compare` (`baseline`, `new`, `gone`, je Befund `key` und `level`). Die Seiten findet spurlos in der Baseline über ihre Adresse; prüfst du eine einzige Seite gegen eine Baseline mit einer einzigen, gehören die beiden zusammen. Eine Seite, die die Baseline nicht kennt, hat nur neue Befunde. Die Server eines bekannten Dienstes zählen dabei als ein Befund, mit dem Eintrag aus `src/services.json` als Schlüssel (`third-party nmrodam.com`): Manche Dienste nutzen bei jedem Aufruf eine neue Subdomain, und das ist nichts Neues.
 
 ### GitHub Action
 

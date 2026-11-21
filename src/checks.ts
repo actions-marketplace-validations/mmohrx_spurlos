@@ -69,6 +69,14 @@ export function serviceOfHost(host: string): Service | undefined {
 }
 
 /**
+ * The host a finding goes by from one scan to the next: for a known service the entry in services.json it matches, as
+ * some pick a new subdomain on every visit (Nielsen's <random>.nuid.nmrodam.com); any other host stands for itself.
+ */
+export function hostKey(host: string): string {
+  return byHost.find(({ h }) => host === h || host.endsWith('.' + h))?.h ?? host
+}
+
+/**
  * Session and security cookies of common frameworks and proxies, and where a cookie banner keeps the visitor's choice:
  * needed to run the site, not to follow anyone.
  */
@@ -420,7 +428,8 @@ export function runChecks(scan: Scan, now = Date.now()): Result[] {
  * --baseline compares by it.
  */
 export const key = {
-  host: (host: string) => `third-party ${host}`,
+  /** hosts of a known service share one key: see hostKey */
+  host: (host: string) => `third-party ${hostKey(host)}`,
   cookie: (c: { name: string; domain: string }) => `cookie ${c.name} ${c.domain}`,
   storage: (e: { area: string; key: string }) => `storage ${e.area} ${e.key}`,
   legal: (kind: LegalKind) => `legal ${kind}`,
@@ -468,7 +477,10 @@ export function findings(r: Result): Finding[] {
 function unnumbered(r: Result): Finding[] {
   switch (r.check) {
     case 'third-party':
-      return list(r.hosts).map(h => ({ key: key.host(h.host), level: hostLevel(h) }))
+      // the hosts of one service are one finding, at their worst
+      const byKey = new Map<string, Level[]>()
+      for (const h of list(r.hosts)) byKey.set(key.host(h.host), [...(byKey.get(key.host(h.host)) ?? []), hostLevel(h)])
+      return [...byKey].map(([k, levels]) => ({ key: k, level: worst(levels) }))
     case 'cookies':
       return [
         ...list(r.cookies).map(c => ({ key: key.cookie(c), level: cookieLevel({ ...c, missing: list(c.missing) }) })),

@@ -421,6 +421,16 @@ describe('compare', () => {
     expect(file('https://cdn.jsdelivr.net/x.js?ver=1')).toEqual(file('https://cdn.jsdelivr.net/x.js?ver=2'))
   })
 
+  test('the hosts of a known service are one finding: a new random subdomain is nothing new', () => {
+    expect(findings(third('abc.nuid.nmrodam.com', 'secure-eu.nmrodam.com', 'cdn.anders.example'))).toEqual([
+      { key: 'third-party nmrodam.com', level: 'red' },
+      { key: 'third-party cdn.anders.example', level: 'red' },
+    ])
+    expect(compare([third('xyz.nuid.nmrodam.com')], [third('abc.nuid.nmrodam.com')])).toEqual({ fresh: [], gone: [] })
+    // a host no service claims stands for itself
+    expect(compare([third('b.anders.example')], [third('a.anders.example')]).fresh).toEqual([{ key: 'third-party b.anders.example', level: 'red' }])
+  })
+
   test('two findings with the same key both count', () => {
     const form = (action: string): Result => forms({ ...base, forms: [{ action: 'https://www.firma.de/suche', method: 'get' }, { action, method: 'get' }] })
     expect(findings(form('http://www.firma.de/suche')).map(f => f.key)).toEqual(['form get https://www.firma.de/suche', 'form get http://www.firma.de/suche'])

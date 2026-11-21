@@ -190,7 +190,7 @@ npx spurlos https://www.company.com --json -o spurlos-baseline.json   # once, th
 npx spurlos https://www.company.com --baseline spurlos-baseline.json
 ```
 
-The report then marks every finding that is new or worse than before with `[new]` and lists what has gone. Exit code `1` comes only with a new red finding. With `--json` the comparison is under `compare` (`baseline`, `new`, `gone`, each finding with `key` and `level`). spurlos finds the pages in the baseline by their address; checking a single page against a baseline of a single page, the two belong together. A page the baseline does not know has only new findings.
+The report then marks every finding that is new or worse than before with `[new]` and lists what has gone. Exit code `1` comes only with a new red finding. With `--json` the comparison is under `compare` (`baseline`, `new`, `gone`, each finding with `key` and `level`). spurlos finds the pages in the baseline by their address; checking a single page against a baseline of a single page, the two belong together. A page the baseline does not know has only new findings. The servers of a known service count as one finding, keyed by their entry in `src/services.json` (`third-party nmrodam.com`): some services pick a new subdomain on every visit, and that is nothing new.
 
 ### GitHub Action
 
