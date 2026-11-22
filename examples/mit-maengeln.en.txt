@@ -1,17 +1,22 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-13 requests on load, 3.4 kB; 7 of them with 1 kB to other domains
+14 requests on load, 3.8 kB; 8 of them with 1 kB to other domains
 7 problems · 5 notes
 
-🔴 Third-party servers              7
+🔴 Third-party servers              8
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
   ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 request)
   ├─ 🔴 cdn.unbekannt.example – 1 request
+  ├─ 🔴 connect.facebook.net – Meta Pixel (1 request, only after the first move)
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 request)
   ├─ 🔴 fp.unbekannt.example – 1 request
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 request)
   └─ 🔴 www.youtube.com – YouTube (1 request)
      → Each of them learns the visitor's IP address on opening the page, before
        any click.
+     → “Only after the first move” came when spurlos moved the mouse and
+       scrolled, without clicking. Optimizers such as WP Rocket hold scripts
+       back until then; every real visitor sets them off, long before choosing
+       anything in the cookie banner.
      → Cookie banner found: Usercentrics.
      → The trackers above still load before anyone chooses anything in the
        banner.
@@ -25,10 +30,11 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → Trackers can be embedded so that they only load once someone agrees in
        the cookie banner.
 
-🔴 Cookies and storage              3 cookies, 1 entry in browser storage
+🔴 Cookies and storage              4 cookies, 1 entry in browser storage
   ├─ 🟡 Cookie session (shop.example) – first-party, unknown, until the session ends, without Secure
   ├─ 🔴 Cookie _ga (shop.example) – first-party, Google Analytics, 400 days (longer than 13 months), without Secure
   ├─ 🟡 Cookie prefs (shop.example) – first-party, unknown, 400 days (longer than 13 months), SameSite=None
+  ├─ 🔴 Cookie _fbp (shop.example) – first-party, Meta Pixel, 90 days, only after the first move
   └─ 🟡 localStorage: theme – unknown
      → Set on the first visit, before any click.
      → Secure: the cookie also travels over unencrypted http. HttpOnly: scripts
@@ -39,6 +45,10 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → SameSite=None: the browser sends the cookie along even when other sites
        embed the site or send requests to it. If it does not need that,
        SameSite=Lax is the better choice.
+     → “Only after the first move” came when spurlos moved the mouse and
+       scrolled, without clicking. Optimizers such as WP Rocket hold scripts
+       back until then; every real visitor sets them off, long before choosing
+       anything in the cookie banner.
 
 🔴 Fingerprinting                   3
   ├─ 🔴 https://fp.unbekannt.example/fp.js – reads back a canvas with text, third-party
@@ -55,12 +65,13 @@ spurlos 0.4.0  https://shop.example/tracked.html
   ├─ 🔴 http:// serves the page without redirecting to https://.
   └─ 🟡 No HSTS header (Strict-Transport-Security): browsers do not remember to use https only. – e.g. Strict-Transport-Security: max-age=31536000
 
-🔴 Embedded files                   6
+🔴 Embedded files                   7
   ├─ 🟡 script https://www.googletagmanager.com/gtag/js?… – from a third-party server, without integrity
   ├─ 🟡 script https://app.usercentrics.eu/browser-ui/latest/loader.js – from a third-party server, without integrity
   ├─ 🔴 script http://shop.example/alt.js – over http on an https page
   ├─ 🟡 script https://cdn.jsdelivr.net/npm/slider.js – from a third-party server, without integrity
   ├─ 🟡 script https://fp.unbekannt.example/fp.js – from a third-party server, without integrity
+  ├─ 🟡 script https://connect.facebook.net/en_US/fbevents.js – from a third-party server, without integrity
   └─ 🟡 stylesheet https://fonts.googleapis.com/css2?… – from a third-party server, without integrity
      → On an https page the browser blocks scripts, stylesheets and frames over
        http, and loads images and videos over https or not at all.

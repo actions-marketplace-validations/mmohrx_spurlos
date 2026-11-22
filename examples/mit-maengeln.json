@@ -8,7 +8,7 @@
         "url": "https://shop.example/tracked.html",
         "host": "shop.example",
         "type": "document",
-        "bytes": 2102
+        "bytes": 2489
       },
       {
         "url": "https://fonts.googleapis.com/css2?family=Inter",
@@ -59,15 +59,15 @@
         "bytes": 24
       },
       {
+        "url": "http://shop.example/alt.js",
+        "host": "shop.example",
+        "type": "script"
+      },
+      {
         "url": "https://shop.example/deko.png",
         "host": "shop.example",
         "type": "image",
         "bytes": 24
-      },
-      {
-        "url": "http://shop.example/alt.js",
-        "host": "shop.example",
-        "type": "script"
       },
       {
         "url": "https://www.youtube.com/embed/abc",
@@ -79,6 +79,13 @@
         "url": "https://shop.example/sw.js",
         "host": "shop.example",
         "type": "script"
+      },
+      {
+        "url": "https://connect.facebook.net/en_US/fbevents.js",
+        "host": "connect.facebook.net",
+        "type": "script",
+        "bytes": 17,
+        "afterMove": true
       }
     ],
     "cookies": [
@@ -93,7 +100,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829903717.12516,
+        "expires": 1829904471.436077,
         "secure": false,
         "httpOnly": false,
         "sameSite": "Lax"
@@ -101,10 +108,19 @@
       {
         "name": "prefs",
         "domain": "shop.example",
-        "expires": 1829903717.125205,
+        "expires": 1829904471.436148,
         "secure": true,
         "httpOnly": false,
         "sameSite": "None"
+      },
+      {
+        "name": "_fbp",
+        "domain": "shop.example",
+        "expires": 1803120472.066469,
+        "secure": true,
+        "httpOnly": false,
+        "sameSite": "Lax",
+        "afterMove": true
       }
     ],
     "storage": [
@@ -114,7 +130,7 @@
       }
     ],
     "headers": {
-      "content-length": "1948",
+      "content-length": "2335",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -171,6 +187,11 @@
       {
         "tag": "script",
         "url": "https://fp.unbekannt.example/fp.js",
+        "integrity": false
+      },
+      {
+        "tag": "script",
+        "url": "https://connect.facebook.net/en_US/fbevents.js",
         "integrity": false
       },
       {
@@ -293,6 +314,22 @@
           "requests": 1
         },
         {
+          "host": "connect.facebook.net",
+          "service": {
+            "name": "Meta Pixel",
+            "category": "tracking",
+            "hosts": [
+              "connect.facebook.net"
+            ],
+            "cookies": [
+              "_fbp",
+              "_fbc"
+            ]
+          },
+          "requests": 1,
+          "afterMove": true
+        },
+        {
           "host": "fonts.googleapis.com",
           "service": {
             "name": "Google Fonts",
@@ -365,7 +402,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829903717.12516,
+          "expires": 1829904471.436077,
           "secure": false,
           "httpOnly": false,
           "sameSite": "Lax",
@@ -391,13 +428,35 @@
         {
           "name": "prefs",
           "domain": "shop.example",
-          "expires": 1829903717.125205,
+          "expires": 1829904471.436148,
           "secure": true,
           "httpOnly": false,
           "sameSite": "None",
           "thirdParty": false,
           "missing": [],
           "long": true
+        },
+        {
+          "name": "_fbp",
+          "domain": "shop.example",
+          "expires": 1803120472.066469,
+          "secure": true,
+          "httpOnly": false,
+          "sameSite": "Lax",
+          "afterMove": true,
+          "thirdParty": false,
+          "service": {
+            "name": "Meta Pixel",
+            "category": "tracking",
+            "hosts": [
+              "connect.facebook.net"
+            ],
+            "cookies": [
+              "_fbp",
+              "_fbc"
+            ]
+          },
+          "missing": []
         }
       ],
       "storage": [
@@ -527,6 +586,12 @@
         {
           "tag": "script",
           "url": "https://fp.unbekannt.example/fp.js",
+          "integrity": false,
+          "problem": "no-integrity"
+        },
+        {
+          "tag": "script",
+          "url": "https://connect.facebook.net/en_US/fbevents.js",
           "integrity": false,
           "problem": "no-integrity"
         },

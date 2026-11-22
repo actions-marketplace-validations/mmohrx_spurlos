@@ -74,7 +74,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
         value: `${r.hosts.length}`,
         items: r.hosts.map(h => {
           const about = [h.service?.name, h.own ? t.ownBy[h.own] : undefined].filter(Boolean).join(', ') || undefined
-          const count = h.preconnect ? t.preconnectOnly : t.requests(h.requests)
+          const count = h.preconnect ? t.preconnectOnly : t.requests(h.requests) + (h.afterMove ? `, ${t.afterMove}` : '')
           return item(key.host(h.host), hostLevel(h), h.host, about ? `${about} (${count})` : count)
         }),
         notes: [
@@ -82,6 +82,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           ...(r.platform && r.hosts.some(h => h.own === 'platform') ? [t.platformNote(r.platform)] : []),
           ...(r.hosts.some(h => h.own && h.own !== 'platform') ? [t.ownNote] : []),
           ...(r.hosts.some(h => h.preconnect) ? [t.preconnectNote] : []),
+          ...(r.hosts.some(h => h.afterMove) ? [t.afterMoveNote] : []),
           ...selfHosted,
           ...consent,
           ...hints.filter(n => n !== null),
@@ -97,6 +98,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
             c.own ? t.ownBy[c.own] : c.thirdParty ? t.cookieForeign : t.cookieOwn,
             c.service?.name ?? t.unknown,
             lifetime(t, c.expires, now) + (c.long ? ` (${t.cookieLong})` : ''),
+            ...(c.afterMove ? [t.afterMove] : []),
             ...(c.missing.length ? [t.cookieMissing(c.missing)] : []),
             // a third-party cookie needs it to be sent at all
             ...(c.sameSite === 'None' && !c.thirdParty ? ['SameSite=None'] : []),
@@ -110,7 +112,8 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       const missing = r.cookies.some(c => c.missing.length) ? t.cookieMissingNote : null
       const long = r.cookies.some(c => c.long) ? t.cookieLongNote : null
       const sameSite = r.cookies.some(c => c.sameSite === 'None' && !c.thirdParty) ? t.cookieSameSiteNote : null
-      return { value: t.cookies(r.cookies.length, r.storage.length), items, notes: [t.cookiesBefore, note, missing, long, sameSite].filter(n => n !== null) }
+      const moved = r.cookies.some(c => c.afterMove) ? t.afterMoveNote : null
+      return { value: t.cookies(r.cookies.length, r.storage.length), items, notes: [t.cookiesBefore, note, missing, long, sameSite, moved].filter(n => n !== null) }
     }
 
     case 'legal':

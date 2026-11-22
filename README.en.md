@@ -34,7 +34,7 @@ On the left a page with problems, on the right a clean one:
 
 The full reports for both pages, as text in German and English and as JSON, are in [`examples/`](examples/), along with an HTML page each. Both pages come from the tests and run offline as `https://shop.example`; `pnpm examples` regenerates everything.
 
-spurlos uses a real browser (Chromium via Playwright), so it also finds requests and cookies that only JavaScript creates. It opens the legal notice, the privacy policy and the http address separately; those visits do not count towards the page's requests and cookies. Whether http redirects to https is asked of the server directly rather than through the browser, since Chromium switches to https on its own.
+spurlos uses a real browser (Chromium via Playwright), so it also finds requests and cookies that only JavaScript creates. After loading, it moves the mouse once and scrolls a little, without clicking, as many sites hold scripts back until the first move; the report marks what comes only then. It opens the legal notice, the privacy policy and the http address separately; those visits do not count towards the page's requests and cookies. Whether http redirects to https is asked of the server directly rather than through the browser, since Chromium switches to https on its own.
 
 Which user agent spurlos visits the site with and how it handles bot protection and logins is in [docs/en/how-it-works.md](docs/en/how-it-works.md).
 
@@ -78,7 +78,7 @@ The summary comes first, then the checks, red ones first. Red and yellow checks 
 | `SPURLOS_NO_SANDBOX` | `1` starts Chromium without a sandbox right away, and without a note about it; the Docker image sets it, there the container is the boundary |
 | `NO_COLOR` | no colors, even in a terminal |
 
-The page itself may take up to 30 seconds to load. After that spurlos waits up to 10 seconds for it to stop loading more; if it still does, the report says so. Impressum, privacy policy and the request over http get 15 seconds each.
+The page itself may take up to 30 seconds to load. After that spurlos waits up to 10 seconds for it to stop loading more, and after the first move of the mouse up to 5 seconds again; if it still does, the report says so. Impressum, privacy policy and the request over http get 15 seconds each.
 
 spurlos itself does not phone home: no telemetry, no statistics. It requests only the page you check, plus whatever that page loads itself.
 

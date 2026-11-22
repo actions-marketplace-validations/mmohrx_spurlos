@@ -4,7 +4,7 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 
 ## Grundsätze
 
-- Nur passive Prüfungen: die Seite aufrufen, Impressum und Datenschutz über ihre Links öffnen, http:// einmal anfragen. Keine Abfragen geratener Pfade wie `/.env`, `/.git/` oder `/wp-admin`, kein Ausfüllen von Formularen, keine Last.
+- Nur passive Prüfungen: die Seite aufrufen, einmal die Maus bewegen und scrollen (nie klicken), Impressum und Datenschutz über ihre Links öffnen, http:// einmal anfragen. Keine Abfragen geratener Pfade wie `/.env`, `/.git/` oder `/wp-admin`, kein Ausfüllen von Formularen, keine Last.
 - Der Browser gibt sich nicht als Mensch aus: `spurlos/<version>` steht in der Browserkennung, `navigator.webdriver` bleibt `true`.
 - Keine Rechtsaussagen. Der Bericht sagt, was technisch passiert, nicht ob die Seite DSGVO-konform ist; der Hinweis „keine Rechtsberatung“ bleibt am Ende jedes Berichts.
 - Keine neuen Abhängigkeiten ohne guten Grund. Farben im Terminal kommen aus `node:util`.

@@ -113,6 +113,8 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   thirdPartyNone: 'Beim Aufruf ging keine Anfrage an einen anderen Server.',
   thirdParty: 'Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor er etwas anklickt.',
   requests: (n: number) => plural(n, 'Anfrage', 'Anfragen'),
+  afterMove: 'erst nach der ersten Bewegung',
+  afterMoveNote: '„Erst nach der ersten Bewegung“ kam, als spurlos die Maus bewegte und scrollte, ohne zu klicken. Optimierungen wie WP Rocket halten Skripte bis dahin zurück; jeder echte Besucher löst sie aus, lange bevor er im Cookie-Banner etwas wählt.',
   preconnectOnly: 'nur preconnect, keine Anfrage',
   preconnectNote: 'Mit preconnect baut der Browser die Verbindung schon vorab auf; der Server erfährt die IP-Adresse dabei, auch wenn keine Anfrage folgt. Wird er nicht gebraucht, gehört der Hinweis weg.',
   thirdPartyHint: {

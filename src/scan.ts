@@ -57,11 +57,13 @@ export function browserAgent(chromeVersion: string, platform = process.platform,
 
 /**
  * type: as Playwright names it (script, image, fetch …), websocket for a WebSocket and webrtc for a STUN or TURN
- * server, which Playwright does not report as requests; url is then the server's address as the page gave it. bytes: what went over the wire for the answer, headers and encoded body; missing where none came
+ * server, which Playwright does not report as requests; url is then the server's address as the page gave it.
+ * bytes: what went over the wire for the answer, headers and encoded body; missing where none came.
+ * afterMove: it came only once spurlos moved the mouse and scrolled, as scripts held back until then do
  */
-export type Request = { url: string; host: string; type: string; bytes?: number }
+export type Request = { url: string; host: string; type: string; bytes?: number; afterMove?: true }
 /** expires: in seconds since 1970, -1 for a session cookie; sameSite: missing in a scan of an older spurlos */
-export type Cookie = { name: string; domain: string; expires: number; secure: boolean; httpOnly: boolean; sameSite?: 'Strict' | 'Lax' | 'None' }
+export type Cookie = { name: string; domain: string; expires: number; secure: boolean; httpOnly: boolean; sameSite?: 'Strict' | 'Lax' | 'None'; afterMove?: true }
 export type StorageEntry = { area: 'localStorage' | 'sessionStorage'; key: string }
 export type Link = { text: string; href: string }
 export type Form = { action: string; method: string }
@@ -413,16 +415,26 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       .waitForLoadState('networkidle', { timeout: options.settleMs ?? 10_000 })
       .then(() => true, () => false)
 
-    const cookies = (await context.cookies()).map(c => ({
+    // what a visitor sees first, cookie banner included; a page that cannot be pictured still gets its report
+    const screenshot = options.screenshot ? await page.screenshot({ type: 'jpeg', quality: 70 }).then(b => b.toString('base64'), () => undefined) : undefined
+
+    // A visitor moves the mouse and scrolls before any click. Optimizers such as WP Rocket hold scripts back until
+    // then, trackers among them: spurlos does the same, clicks nothing, and marks what comes only now.
+    const cookieKey = (c: { name: string; domain: string }) => `${c.name} ${c.domain}`
+    const early = new Set((await context.cookies()).map(cookieKey))
+    const before = requests.length
+    const quiet = await firstMove(page, requests, options.settleMs ?? 10_000)
+    for (const r of requests.slice(before)) r.afterMove = true
+
+    const cookies = (await context.cookies()).map((c): Cookie => ({
       name: c.name,
       domain: c.domain.replace(/^\./, ''),
       expires: c.expires,
       secure: c.secure,
       httpOnly: c.httpOnly,
       sameSite: c.sameSite,
+      ...(early.has(cookieKey(c)) ? {} : { afterMove: true as const }),
     }))
-    // what a visitor sees first, cookie banner included; a page that cannot be pictured still gets its report
-    const screenshot = options.screenshot ? await page.screenshot({ type: 'jpeg', quality: 70 }).then(b => b.toString('base64'), () => undefined) : undefined
     const { storage, links, forms, resources, metaCsp, metaReferrer, generator, accessibility, preconnect, width } = await page.evaluate(() => {
       const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
@@ -494,7 +506,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const result: Scan = {
       url,
       finalUrl,
-      settled,
+      settled: settled && quiet,
       requests,
       cookies,
       storage,
@@ -531,6 +543,33 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
   } finally {
     await browser.close()
   }
+}
+
+/**
+ * Moves the mouse over the page and scrolls a little, without a click, as a visitor does before deciding anything;
+ * then waits until no request has come for a second, at most half the settle time. Back at the top afterwards, so the
+ * page is read as it was first shown. False when requests kept coming.
+ */
+async function firstMove(page: Page, requests: Request[], settleMs: number): Promise<boolean> {
+  try {
+    await page.mouse.move(120, 120)
+    await page.mouse.move(360, 280, { steps: 5 })
+    await page.mouse.wheel(0, 400)
+  } catch {
+    // a page that will not be moved over still gets its report
+  }
+  const end = Date.now() + settleMs / 2
+  let count = requests.length
+  let since = Date.now()
+  while (Date.now() < end) {
+    await page.waitForTimeout(250)
+    if (requests.length !== count) {
+      count = requests.length
+      since = Date.now()
+    } else if (Date.now() - since >= 1000) break
+  }
+  await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {})
+  return Date.now() < end
 }
 
 /** A second, separate browser for opening single URLs: only the documents load, nothing of it counts towards the scan. */

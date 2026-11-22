@@ -18,8 +18,11 @@ export type Service = { name: string; category: string; hosts: string[]; cookies
  * on doctolib.de).
  */
 export type OwnReason = 'option' | 'certificate' | 'name' | 'platform'
-/** preconnect: no request went to it, the page only opened a connection ahead (<link rel="preconnect">, Link header) */
-export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason; preconnect?: true }
+/**
+ * preconnect: no request went to it, the page only opened a connection ahead (<link rel="preconnect">, Link header) ·
+ * afterMove: every request to it came only once spurlos moved the mouse and scrolled
+ */
+export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason; preconnect?: true; afterMove?: true }
 /**
  * missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie ·
  * own: set on another site's domain that seems to belong to the page · long: it lives longer than 13 months
@@ -224,6 +227,8 @@ export function thirdParty(scan: Scan): Result {
   const own = ownSites(scan)
   const owner = ownership(scan)
   const counts = new Map<string, number>()
+  // hosts with a request before the first move
+  const early = new Set<string>()
   const byPath = new Map<string, Service>()
   const selfHosted = new Set<string>()
   for (const r of scan.requests) {
@@ -234,6 +239,7 @@ export function thirdParty(scan: Scan): Result {
       continue
     }
     counts.set(r.host, (counts.get(r.host) ?? 0) + 1)
+    if (!r.afterMove) early.add(r.host)
     if (service && !byPath.has(r.host)) byPath.set(r.host, service)
   }
   // a connection opened ahead hands over the IP as well, in the TLS handshake, though no request follows
@@ -245,7 +251,7 @@ export function thirdParty(scan: Scan): Result {
   const hosts = [...counts, ...[...ahead].map(h => [h, 0] as const)]
     .map(([host, requests]): ThirdParty => {
       const reason = owner(host)
-      return { host, service: serviceOfHost(host) ?? byPath.get(host), requests, ...(reason ? { own: reason } : {}), ...(requests ? {} : { preconnect: true as const }) }
+      return { host, service: serviceOfHost(host) ?? byPath.get(host), requests, ...(reason ? { own: reason } : {}), ...(requests ? {} : { preconnect: true as const }), ...(requests && !early.has(host) ? { afterMove: true as const } : {}) }
     })
     .sort((a, b) => a.host.localeCompare(b.host))
   const platform = platformOf(scan)

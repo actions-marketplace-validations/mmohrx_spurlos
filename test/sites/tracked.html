@@ -17,6 +17,13 @@
     const c = document.createElement('canvas'), x = c.getContext('2d')
     x.fillText('\u{1F3F3}\uFE0F\u200D\u26A7\uFE0F', 0, 0)
     x.getImageData(0, 0, c.width, c.height)
+    // held back until the first move, as WP Rocket does with "Delay JavaScript execution"
+    addEventListener('mousemove', () => {
+      const pixel = document.createElement('script')
+      pixel.src = 'https://connect.facebook.net/en_US/fbevents.js'
+      document.head.append(pixel)
+      document.cookie = '_fbp=fb.1.123.456; max-age=7776000; path=/; Secure'
+    }, { once: true })
     // asked right on load, before any click
     navigator.geolocation.getCurrentPosition(() => {}, () => {})
     Notification.requestPermission().catch(() => {})

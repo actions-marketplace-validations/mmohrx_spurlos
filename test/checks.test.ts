@@ -164,6 +164,16 @@ describe('thirdParty', () => {
     expect(r).toMatchObject({ level: 'green', hosts: [] })
   })
 
+  test('a host is marked as coming after the first move only when every request to it did', () => {
+    const at = (host: string, afterMove: boolean) => ({ ...req(host), ...(afterMove ? { afterMove: true as const } : {}) })
+    const r = thirdParty({ ...base, requests: [at('connect.facebook.net', true), at('cdn.anders.de', false), at('cdn.anders.de', true)] })
+    if (r.check !== 'third-party') throw new Error()
+    expect(r.hosts.map(h => [h.host, h.afterMove])).toEqual([
+      ['cdn.anders.de', undefined],
+      ['connect.facebook.net', true],
+    ])
+  })
+
   test('other sites are red and counted per host', () => {
     const r = thirdParty({ ...base, requests: [req('fonts.gstatic.com'), req('fonts.gstatic.com'), req('cdn.anders.de')] })
     expect(r.level).toBe('red')

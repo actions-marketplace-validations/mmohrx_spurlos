@@ -95,7 +95,7 @@ describe('scan', { timeout: 30_000 }, () => {
 
     const cookies = pick(results, 'cookies')
     expect(cookies.level).toBe('red')
-    expect(cookies.cookies.map(c => c.name).sort()).toEqual(['_ga', 'prefs', 'session'])
+    expect(cookies.cookies.map(c => c.name).sort()).toEqual(['_fbp', '_ga', 'prefs', 'session'])
     expect(cookies.storage).toEqual([{ area: 'localStorage', key: 'theme', service: undefined }])
 
     const legal = pick(results, 'legal')
@@ -151,11 +151,16 @@ describe('scan', { timeout: 30_000 }, () => {
     })
     // the table of fixed width sticks out of the window
     expect(pick(results, 'mobile')).toMatchObject({ level: 'yellow', problems: ['overflow'], mobile: false })
+    // the pixel and its cookie come only with the first move of the mouse, which spurlos makes without clicking
+    expect(third.hosts.find(h => h.host === 'connect.facebook.net')).toMatchObject({ requests: 1, afterMove: true })
+    expect(third.hosts.find(h => h.host === 'fonts.googleapis.com')?.afterMove).toBeUndefined()
+    expect(cookies.cookies.find(c => c.name === '_fbp')).toMatchObject({ afterMove: true, service: { name: 'Meta Pixel' } })
     // set without Secure on an https page
     expect(pick(results, 'cookies').cookies.find(c => c.name === 'session')?.missing).toEqual(['Secure'])
 
     const report = text(s, results, 'de')
     expect(report).toContain('Google Fonts')
+    expect(report).toContain('connect.facebook.net – Meta Pixel (1 Anfrage, erst nach der ersten Bewegung)')
     expect(report).toMatch(/^beim Aufruf \d+ Anfragen, [\d,]+ kB; davon \d+ mit [\d,]+ kB an andere Domains$/m)
     expect(report).toContain('🔴 https://fp.unbekannt.example/fp.js – liest ein Canvas mit Text aus, fremd')
     expect(report).toContain('🟡 https://shop.example/tracked.html – fragt nach dem Standort, eigen')

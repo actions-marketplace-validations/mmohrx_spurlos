@@ -110,6 +110,8 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   thirdPartyNone: 'Opening the page sent no request to another server.',
   thirdParty: "Each of them learns the visitor's IP address on opening the page, before any click.",
   requests: n => plural(n, 'request', 'requests'),
+  afterMove: 'only after the first move',
+  afterMoveNote: '“Only after the first move” came when spurlos moved the mouse and scrolled, without clicking. Optimizers such as WP Rocket hold scripts back until then; every real visitor sets them off, long before choosing anything in the cookie banner.',
   preconnectOnly: 'only preconnect, no request',
   preconnectNote: 'With preconnect, the browser sets up the connection in advance; the server learns the IP address then, even if no request follows. If it is not needed, the hint should go.',
   thirdPartyHint: {

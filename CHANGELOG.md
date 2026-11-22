@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- Nach dem Laden bewegt spurlos einmal die Maus und scrollt, ohne zu klicken: Viele Seiten halten Skripte, auch Tracker, bis zur ersten Bewegung zurück (etwa WP Rocket), und spurlos sah sie bisher nicht. Was erst dann kommt, markiert der Bericht mit „erst nach der ersten Bewegung“, `--json` mit `afterMove: true`.
 - Cookies: Eines, das länger als 13 Monate gilt, ist mindestens gelb (`long: true` in `--json`); `SameSite=None` bei eigenen Cookies nennt der Bericht, ohne dass sich die Ampel ändert. In `--json` hat jedes Cookie `sameSite`.
 - `--mobile`: die Seite als Smartphone aufrufen (Bildschirm eines Pixel 7, Touch, Kennung von Chrome auf Android mit `spurlos/<version>`); im MCP-Werkzeug `mobile`. Manche Seiten laden dort andere Tracker und Cookie-Banner.
 - Neue Prüfung „Mobil“ (`mobile`): kein Viewport mit `width=device-width` und eine Seite, die breiter ist als das Fenster, je gelb.

@@ -34,7 +34,7 @@ Links eine Seite mit Mängeln, rechts eine saubere:
 
 Die vollständigen Berichte beider Seiten, als Text auf Deutsch und Englisch und als JSON, liegen in [`examples/`](examples/), dazu je eine HTML-Seite. Beide Seiten stammen aus den Tests und laufen offline unter `https://shop.example`; `pnpm examples` erzeugt alles neu.
 
-spurlos nutzt einen echten Browser (Chromium über Playwright). Es findet also auch Anfragen und Cookies, die erst per JavaScript entstehen. Impressum, Datenschutzerklärung und die http-Adresse ruft es getrennt davon auf; diese Aufrufe zählen nicht zu den Anfragen und Cookies der Seite. Ob http auf https weiterleitet, fragt es direkt beim Server und nicht über den Browser nach, denn Chromium wechselt von sich aus auf https.
+spurlos nutzt einen echten Browser (Chromium über Playwright). Es findet also auch Anfragen und Cookies, die erst per JavaScript entstehen. Nach dem Laden bewegt es einmal die Maus und scrollt ein Stück, ohne zu klicken, denn viele Seiten halten Skripte bis zur ersten Bewegung zurück; was erst dann kommt, markiert der Bericht. Impressum, Datenschutzerklärung und die http-Adresse ruft es getrennt davon auf; diese Aufrufe zählen nicht zu den Anfragen und Cookies der Seite. Ob http auf https weiterleitet, fragt es direkt beim Server und nicht über den Browser nach, denn Chromium wechselt von sich aus auf https.
 
 Mit welcher Browserkennung spurlos die Seite aufruft und wie es mit Bot-Schutz und Anmeldungen umgeht, steht in [docs/de/how-it-works.md](docs/de/how-it-works.md).
 
@@ -78,7 +78,7 @@ Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und ge
 | `SPURLOS_NO_SANDBOX` | `1` startet Chromium gleich ohne Sandbox und ohne Hinweis darauf; das Docker-Image setzt das, dort ist der Container die Grenze |
 | `NO_COLOR` | keine Farben, auch im Terminal |
 
-Die Seite selbst darf bis zu 30 Sekunden zum Laden brauchen. Danach wartet spurlos bis zu 10 Sekunden, bis sie nichts mehr nachlädt; lädt sie dann noch, sagt der Bericht das. Impressum, Datenschutzerklärung und die Anfrage über http bekommen je 15 Sekunden.
+Die Seite selbst darf bis zu 30 Sekunden zum Laden brauchen. Danach wartet spurlos bis zu 10 Sekunden, bis sie nichts mehr nachlädt, und nach der ersten Bewegung der Maus noch einmal bis zu 5 Sekunden; lädt sie dann noch, sagt der Bericht das. Impressum, Datenschutzerklärung und die Anfrage über http bekommen je 15 Sekunden.
 
 spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Angefragt wird nur die Seite, die du prüfst, samt allem, was sie selbst nachlädt.
 
