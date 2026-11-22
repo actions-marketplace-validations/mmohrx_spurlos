@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 0.5.0 – 2026-11-22
 
 - Neue Prüfung „Datenschutzerklärung“ (`policy`): spurlos liest den Text der Datenschutzerklärung und sucht darin nach den bekannten Diensten, die vor dem ersten Klick laden; jeder, den er nicht nennt, ist gelb. Lässt sie sich nicht als Text lesen (PDF, per JavaScript geladen), bleibt es offen. In `services.json` neu `aliases` für andere Namen (`Facebook` für Meta Pixel). In `--json` unter `scan.policy` nur die Adresse und die genannten Dienste, nicht der Text.
 - Weitergegebene Daten: Steht der Wert des Cookies eines fremden Servers in der Adresse einer Anfrage an einen dritten, ist das rot (Cookie-Sync, Werbe-Server tauschen ihre IDs aus); in `--json` als `what: "id"` mit dem Cookie unter `param` und `from`, an der Anfrage als `id:<cookie>@<domain>` unter `carries`.
