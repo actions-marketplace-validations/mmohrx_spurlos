@@ -53,7 +53,10 @@ export function browserAgent(chromeVersion: string, platform = process.platform)
   return `Mozilla/5.0 (${(PLATFORM[platform] ?? LINUX).ua}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36 spurlos/${VERSION}`
 }
 
-/** bytes: what went over the wire for the answer, headers and encoded body; missing where none came */
+/**
+ * type: as Playwright names it (script, image, fetch …), websocket for a WebSocket, which Playwright does not report as a
+ * request. bytes: what went over the wire for the answer, headers and encoded body; missing where none came
+ */
 export type Request = { url: string; host: string; type: string; bytes?: number }
 export type Cookie = { name: string; domain: string; expires: number; secure: boolean; httpOnly: boolean }
 export type StorageEntry = { area: 'localStorage' | 'sessionStorage'; key: string }
@@ -334,6 +337,11 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     await context.addInitScript(watchApis, BINDING)
 
     const page = await context.newPage()
+    // a WebSocket hands the visitor's IP to its server as any request does, but Playwright reports it apart
+    page.on('websocket', ws => {
+      const u = new URL(ws.url())
+      requests.push({ url: ws.url(), host: u.hostname, type: 'websocket' })
+    })
     if (!options.userAgent) await plainBrands(context, page, userAgent, chrome)
     // Chromium hands out the page's certificate later only with the network domain on from the start
     const cdp = await context.newCDPSession(page).then(

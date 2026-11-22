@@ -16,6 +16,8 @@ Cookie-Banner erkennt spurlos an ihren Servern, an ihren Dateien auf der eigenen
 
 Auch andere Dienste erkennt spurlos an ihren Pfaden, etwa Matomo (`/matomo.php`) oder Sentry (`/envelope/`). Laufen sie auf der eigenen Seite oder einer Subdomain, ändert das keine Ampel, denn die IP-Adresse bleibt bei der Seite; die Prüfung „Fremde Server“ nennt sie trotzdem („Auf eigenen Servern erkannt“), in `--json` unter `selfHosted`. Einen fremden Host, dessen Name nichts verrät, benennt spurlos so ebenfalls. Dienste, die erst nach einer Zustimmung laden, sieht spurlos nicht: Es prüft nur, was ohne Klick passiert.
 
+Als Anfrage zählt auch eine WebSocket-Verbindung (`ws://`, `wss://`), etwa eines Chats: Ihr Server erfährt die IP-Adresse genauso. In `--json` steht sie unter den Anfragen mit `type: "websocket"`.
+
 Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
 
 ## Fingerprinting

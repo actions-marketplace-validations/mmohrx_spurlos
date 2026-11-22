@@ -16,6 +16,8 @@ spurlos recognizes cookie banners by their servers, by their files on the site i
 
 spurlos recognizes other services by their paths too, such as Matomo (`/matomo.php`) or Sentry (`/envelope/`). Running on the site itself or a subdomain, they change no light, as the IP address stays with the site; the check “Third-party servers” still names them (“Found on the site’s own servers”), in `--json` under `selfHosted`. A third-party host whose name gives nothing away gets named this way too. Services that only load after consent stay unseen: spurlos only checks what happens without a click.
 
+A WebSocket connection (`ws://`, `wss://`), such as a chat's, counts as a request too: its server learns the IP address all the same. In `--json` it is among the requests with `type: "websocket"`.
+
 Subdomains count as the site itself (`cdn.company.com` belongs to `www.company.com`), following the Public Suffix List (`company.co.uk`).
 
 ## Fingerprinting

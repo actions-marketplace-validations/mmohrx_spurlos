@@ -183,6 +183,12 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(english).not.toMatch(/[äöüß„]/)
   })
 
+  test('a WebSocket counts as a request to its server, though Playwright reports it apart', async () => {
+    const s = await scan(`${SITE}/socket.html`, { setup: offline, fetch: redirects })
+    expect(s.requests).toContainEqual({ url: 'ws://127.0.0.1:9/chat', host: '127.0.0.1', type: 'websocket' })
+    expect(pick(runChecks(s), 'third-party')).toMatchObject({ level: 'red', hosts: [{ host: '127.0.0.1', requests: 1 }] })
+  })
+
   test('a screenshot only when asked for', async () => {
     expect((await scan(`${SITE}/`, { setup: offline, fetch: redirects })).screenshot).toBeUndefined()
     const s = await scan(`${SITE}/`, { setup: offline, fetch: redirects, screenshot: true })

@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Seite mit Chat über WebSocket</title>
+</head>
+<body>
+  <h1>Seite mit Chat über WebSocket</h1>
+  <!-- a port where nothing listens, on this machine: the test stays off the network, the browser still tries -->
+  <script>new WebSocket('ws://127.0.0.1:9/chat')</script>
+  <a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a>
+</body>
+</html>
