@@ -38,7 +38,7 @@ pnpm typecheck
 pnpm test       # läuft ohne Netz gegen test/sites
 ```
 
-- Eine neue Prüfung bekommt einen Fall in `test/sites/` und eine Zeile in der Ampel-Tabelle im README (beide Sprachen) und, wo nötig, die genaue Regel in `docs/de/checks.md` und `docs/en/checks.md`.
+- Eine neue Prüfung bekommt einen Fall in `test/sites/` (Dateien fremder Server unter `test/sites/fremd/<host>/`, etwa ein Skript, das Fingerprinting betreibt) und eine Zeile in der Ampel-Tabelle im README (beide Sprachen) und, wo nötig, die genaue Regel in `docs/de/checks.md` und `docs/en/checks.md`.
 - Jede Meldung gibt es in jeder Sprache, je eine Datei in [`src/lang/`](src/lang/).
 - Eine neue Sprache: `src/lang/de.ts` kopieren, z. B. nach `fr.ts`, als `const fr: Messages` typisieren, übersetzen und in `MESSAGES` in `src/lang/index.ts` eintragen. `pnpm typecheck` zeigt jeden Text, der noch fehlt. Danach `--lang` im README ergänzen und `pnpm examples` laufen lassen.
 - Ändert sich der Bericht, `pnpm examples` laufen lassen und `examples/` mit committen.

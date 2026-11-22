@@ -1,5 +1,5 @@
 import {
-  certLevel, cookieLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
+  certLevel, cookieLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
   type Comparison, type Level, type Result,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
@@ -149,6 +149,19 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
         // shortened: a query is noise here and may hold an API key; --json keeps the full address
         items: r.findings.map(f => item(key.resource(f), resourceLevel(f), `${f.tag} ${withoutQuery(f.url)}${withoutQuery(f.url) === f.url ? '' : '?…'}`, t.resource[f.problem])),
         notes: [...(has('insecure') ? [t.resourcesInsecure] : []), ...(has('no-integrity') ? [t.resourcesIntegrity] : [])],
+      }
+    }
+
+    case 'fingerprinting': {
+      if (!r.findings.length) return { value: t.none, items: [], notes: [t.fingerprintNone] }
+      return {
+        value: `${r.findings.length}`,
+        items: r.findings.map(f => {
+          const about = [t.fingerprintApi[f.api], f.own ? t.ownBy[f.own] : f.thirdParty ? t.cookieForeign : t.cookieOwn, f.service?.name].filter(Boolean).join(', ')
+          const script = withoutQuery(f.script)
+          return item(key.fingerprint(f), fingerprintLevel(f), `${script}${script === f.script ? '' : '?…'}`, about)
+        }),
+        notes: [t.fingerprintWhy, ...(r.findings.some(f => fingerprintLevel(f) === 'yellow') ? [t.fingerprintYellow] : [])],
       }
     }
 

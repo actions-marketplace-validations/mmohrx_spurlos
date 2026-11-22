@@ -61,6 +61,7 @@
         "integrity": false
       }
     ],
+    "fingerprinting": [],
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0",
     "sandbox": true,
     "metaCsp": "default-src 'self'",
@@ -84,6 +85,11 @@
       "level": "green",
       "cookies": [],
       "storage": []
+    },
+    {
+      "check": "fingerprinting",
+      "level": "green",
+      "findings": []
     },
     {
       "check": "legal",

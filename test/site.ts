@@ -17,13 +17,16 @@ const HARDENED = {
 export const seen: { url: string; ua: string | undefined; ch: string | undefined }[] = []
 
 /**
- * Serves test/sites under SITE (clean.html as the start page, /impressum as impressum.html, blocked.html with 403) and
- * answers every other host with an empty 200 – so no test touches the network.
+ * Serves test/sites under SITE (clean.html as the start page, /impressum as impressum.html, blocked.html with 403),
+ * test/sites/fremd/<host>/ under other hosts, and answers anything else with an empty 200 – so no test touches the network.
  */
 export async function offline(context: BrowserContext) {
   await context.route('**/*', async route => {
     const u = new URL(route.request().url())
-    if (u.origin !== SITE) return route.fulfill({ status: 200, body: '' })
+    if (u.origin !== SITE) {
+      const foreign = fileURLToPath(new URL(`fremd/${u.hostname}${u.pathname}`, sites))
+      return u.pathname !== '/' && existsSync(foreign) ? route.fulfill({ status: 200, path: foreign }) : route.fulfill({ status: 200, body: '' })
+    }
     const h = route.request().headers()
     seen.push({ url: u.href, ua: h['user-agent'], ch: h['sec-ch-ua'] })
     const name = u.pathname === '/' ? 'clean.html' : u.pathname.slice(1)

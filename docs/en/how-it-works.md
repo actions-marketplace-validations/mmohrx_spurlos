@@ -8,7 +8,7 @@ spurlos opens the page itself as a regular Chrome and adds its name to the user 
 Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0
 ```
 
-“HeadlessChrome” is left out on purpose, in the client hints (`sec-ch-ua`) too. Many cookie banners and trackers do not load at all for visits they take for bots. spurlos would then report a clean page while real visitors get tracked. It does not hide, though: its name is in every user agent, and `navigator.webdriver` stays `true`.
+“HeadlessChrome” is left out on purpose, in the client hints (`sec-ch-ua`) too. Many cookie banners and trackers do not load at all for visits they take for bots. spurlos would then report a clean page while real visitors get tracked. It does not hide, though: its name is in every user agent, and `navigator.webdriver` stays `true`. To notice fingerprinting, spurlos replaces a few functions of canvas, WebGL and audio with its own, which call the original, and adds the function `__spurlos`; the page can see both.
 
 spurlos asks with the same user agent whether http redirects to https: some servers answer a bot there differently from a browser (DuckDuckGo serves a bot the page over http and redirects a browser). The legal notice and the privacy policy are requested openly as a bot, since they are not about trackers hiding from bots:
 

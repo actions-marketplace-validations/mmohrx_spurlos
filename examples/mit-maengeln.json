@@ -35,6 +35,11 @@
         "type": "script"
       },
       {
+        "url": "https://fp.unbekannt.example/fp.js",
+        "host": "fp.unbekannt.example",
+        "type": "script"
+      },
+      {
         "url": "https://cdn.unbekannt.example/bild.png",
         "host": "cdn.unbekannt.example",
         "type": "image"
@@ -61,7 +66,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829840940.059991,
+        "expires": 1829902668.934739,
         "secure": false,
         "httpOnly": false
       }
@@ -73,7 +78,7 @@
       }
     ],
     "headers": {
-      "content-length": "1091",
+      "content-length": "1451",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -128,6 +133,11 @@
         "integrity": false
       },
       {
+        "tag": "script",
+        "url": "https://fp.unbekannt.example/fp.js",
+        "integrity": false
+      },
+      {
         "tag": "stylesheet",
         "url": "https://fonts.googleapis.com/css2?family=Inter",
         "integrity": false
@@ -141,6 +151,20 @@
         "tag": "img",
         "url": "https://cdn.unbekannt.example/bild.png",
         "integrity": false
+      }
+    ],
+    "fingerprinting": [
+      {
+        "api": "canvas",
+        "script": "https://fp.unbekannt.example/fp.js"
+      },
+      {
+        "api": "webgl",
+        "script": "https://fp.unbekannt.example/fp.js"
+      },
+      {
+        "api": "audio",
+        "script": "https://fp.unbekannt.example/fp.js"
       }
     ],
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0",
@@ -205,6 +229,10 @@
           "requests": 1
         },
         {
+          "host": "fp.unbekannt.example",
+          "requests": 1
+        },
+        {
           "host": "www.googletagmanager.com",
           "service": {
             "name": "Google Tag Manager",
@@ -260,7 +288,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829840940.059991,
+          "expires": 1829902668.934739,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,
@@ -286,6 +314,30 @@
         {
           "area": "localStorage",
           "key": "theme"
+        }
+      ]
+    },
+    {
+      "check": "fingerprinting",
+      "level": "red",
+      "findings": [
+        {
+          "api": "canvas",
+          "script": "https://fp.unbekannt.example/fp.js",
+          "host": "fp.unbekannt.example",
+          "thirdParty": true
+        },
+        {
+          "api": "webgl",
+          "script": "https://fp.unbekannt.example/fp.js",
+          "host": "fp.unbekannt.example",
+          "thirdParty": true
+        },
+        {
+          "api": "audio",
+          "script": "https://fp.unbekannt.example/fp.js",
+          "host": "fp.unbekannt.example",
+          "thirdParty": true
         }
       ]
     },
@@ -355,6 +407,12 @@
         {
           "tag": "script",
           "url": "https://cdn.jsdelivr.net/npm/slider.js",
+          "integrity": false,
+          "problem": "no-integrity"
+        },
+        {
+          "tag": "script",
+          "url": "https://fp.unbekannt.example/fp.js",
           "integrity": false,
           "problem": "no-integrity"
         },

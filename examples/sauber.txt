@@ -1,10 +1,14 @@
 spurlos 0.4.0  https://shop.example/
-8 in Ordnung
+9 in Ordnung
 
 🟢 Fremde Server              keine
   → Beim Aufruf ging keine Anfrage an einen anderen Server.
 
 🟢 Cookies und Speicher       nichts gesetzt
+
+🟢 Fingerprinting             keine
+  → Kein Skript las Canvas, Grafikkarte oder Audio so aus, wie es Fingerprinting
+    tut.
 
 🟢 Impressum und Datenschutz  beide verlinkt und erreichbar
   ├─ 🟢 Impressum: „Impressum“ → https://shop.example/impressum – erreichbar

@@ -1,11 +1,12 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-6 Mängel · 2 Hinweise
+7 Mängel · 2 Hinweise
 
-🔴 Fremde Server              6
+🔴 Fremde Server              7
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
   ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 Anfrage)
   ├─ 🔴 cdn.unbekannt.example – 1 Anfrage
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
+  ├─ 🔴 fp.unbekannt.example – 1 Anfrage
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 Anfrage)
   └─ 🔴 www.youtube.com – YouTube (1 Anfrage)
      → Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor
@@ -32,6 +33,13 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → Secure: Das Cookie geht auch über unverschlüsseltes http. HttpOnly:
        Skripte auf der Seite können die Sitzung auslesen.
 
+🔴 Fingerprinting             3
+  ├─ 🔴 https://fp.unbekannt.example/fp.js – liest ein Canvas mit Text aus, fremd
+  ├─ 🔴 https://fp.unbekannt.example/fp.js – liest die Grafikkarte über WebGL aus, fremd
+  └─ 🔴 https://fp.unbekannt.example/fp.js – rechnet Audio im OfflineAudioContext, fremd
+     → Aus solchen Werten lässt sich ein Merkmal bilden, das den Browser auch
+       ohne Cookie wiedererkennt, noch bevor jemand etwas anklickt.
+
 🔴 Impressum und Datenschutz  nicht vollständig
   ├─ 🔴 Impressum: „Impressum“ → https://shop.example/rechtliches – antwortet mit Status 404
   └─ 🔴 Datenschutzerklärung: kein Link auf der Seite gefunden
@@ -40,11 +48,12 @@ spurlos 0.4.0  https://shop.example/tracked.html
   ├─ 🔴 http:// liefert die Seite ohne Weiterleitung auf https:// aus.
   └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen. – etwa Strict-Transport-Security: max-age=31536000
 
-🔴 Eingebundene Dateien       5
+🔴 Eingebundene Dateien       6
   ├─ 🟡 script https://www.googletagmanager.com/gtag/js?… – von einem fremden Server, ohne integrity
   ├─ 🟡 script https://app.usercentrics.eu/browser-ui/latest/loader.js – von einem fremden Server, ohne integrity
   ├─ 🔴 script http://shop.example/alt.js – über http auf einer https-Seite
   ├─ 🟡 script https://cdn.jsdelivr.net/npm/slider.js – von einem fremden Server, ohne integrity
+  ├─ 🟡 script https://fp.unbekannt.example/fp.js – von einem fremden Server, ohne integrity
   └─ 🟡 stylesheet https://fonts.googleapis.com/css2?… – von einem fremden Server, ohne integrity
      → Skripte, Stylesheets und Frames über http blockiert der Browser auf einer
        https-Seite, Bilder und Videos lädt er über https oder gar nicht.

@@ -19,7 +19,7 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 
 ## Tests
 
-- `pnpm test` läuft ohne Netz: `test/site.ts` liefert `test/sites/` unter `https://shop.example` aus und beantwortet jeden anderen Host leer. Neue Tests nutzen dasselbe, nie echte Websites.
+- `pnpm test` läuft ohne Netz: `test/site.ts` liefert `test/sites/` unter `https://shop.example` aus, `test/sites/fremd/<host>/` unter anderen Hosts, und beantwortet alles andere leer. Neue Tests nutzen dasselbe, nie echte Websites.
 - Vor jedem Commit: `pnpm typecheck && pnpm test`.
 - Ändert sich der Bericht, danach `pnpm examples` und `examples/` mit committen, damit README-Bild und Beispielberichte zum Code passen.
 

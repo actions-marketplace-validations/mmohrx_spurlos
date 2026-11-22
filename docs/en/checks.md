@@ -18,6 +18,16 @@ spurlos recognizes other services by their paths too, such as Matomo (`/matomo.p
 
 Subdomains count as the site itself (`cdn.company.com` belongs to `www.company.com`), following the Public Suffix List (`company.co.uk`).
 
+## Fingerprinting
+
+While loading, spurlos watches for three ways of measuring the browser, in the page and in every frame:
+
+- **Canvas:** a script reads back a canvas (`toDataURL`, `toBlob`, `convertToBlob` or `getImageData` over at least 16 × 16 pixels) that is at least 16 × 16 pixels in size and on which it first wrote, in one call, text with at least ten different characters. The rule comes from the study by Englehardt and Narayanan (2016). Emoji tests such as WordPress's write fewer characters and so do not count.
+- **WebGL:** a script asks for the vendor or model of the graphics card (`UNMASKED_VENDOR_WEBGL`, `UNMASKED_RENDERER_WEBGL`).
+- **Audio:** a script renders audio in an `OfflineAudioContext`; browsers do not play sound without a click anyway.
+
+Which script it was, spurlos reads from the stack trace; for code right in the HTML it is the address of the page or frame. A script on another domain makes the finding red. It is yellow for a script of the site itself, a captcha (category `captcha`) and a server that seems to belong to the site (see below), as bot and fraud detection read the same values. Fonts a script probes by measuring text, and other traits such as screen size or time zone, spurlos does not detect, as nearly every page reads those for its layout.
+
 ## Own servers on other domains
 
 Many sites load images and scripts from a second domain of their own, Wikipedia for example from `wikimedia.org`. Such servers are yellow instead of red when spurlos can tie them to the site, and the report says why:

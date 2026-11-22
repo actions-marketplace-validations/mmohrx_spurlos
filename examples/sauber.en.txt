@@ -1,10 +1,14 @@
 spurlos 0.4.0  https://shop.example/
-8 fine
+9 fine
 
 🟢 Third-party servers              none
   → Opening the page sent no request to another server.
 
 🟢 Cookies and storage              nothing set
+
+🟢 Fingerprinting                   none
+  → No script read out canvas, graphics card or audio the way fingerprinting
+    does.
 
 🟢 Legal notice and privacy policy  both linked and reachable
   ├─ 🟢 Legal notice (Impressum): “Impressum” → https://shop.example/impressum – reachable

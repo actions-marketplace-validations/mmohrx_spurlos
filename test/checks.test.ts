@@ -1,12 +1,52 @@
 import { describe, expect, test } from 'vitest'
 import {
-  compare, consentManagers, cookies, disclosure, findings, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  compare, consentManagers, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import type { Scan, Visit } from '../src/scan.ts'
 
-const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], userAgent: 'test', sandbox: true }
+const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], fingerprinting: [], userAgent: 'test', sandbox: true }
 const req = (host: string) => ({ url: `https://${host}/x`, host, type: 'script' })
+
+describe('fingerprinting', () => {
+  const fp = (api: 'canvas' | 'webgl' | 'audio', script: string) => ({ api, script })
+
+  test('a foreign script is red, the page\'s own, a captcha and a server of the page yellow', () => {
+    const r = fingerprinting({
+      ...base,
+      own: ['cdn-firma.net'],
+      fingerprinting: [
+        fp('canvas', 'https://fp.anders.de/fp.js'),
+        fp('webgl', 'https://www.firma.de/app.js'),
+        fp('audio', 'https://www.recaptcha.net/recaptcha/api.js'),
+        fp('canvas', 'https://cdn-firma.net/x.js'),
+        fp('canvas', 'about:blank'),
+      ],
+    })
+    if (r.check !== 'fingerprinting') throw new Error()
+    expect(r.level).toBe('red')
+    expect(r.findings.map(f => [f.host, f.thirdParty, f.own])).toEqual([
+      ['fp.anders.de', true, undefined],
+      ['www.firma.de', false, undefined],
+      ['www.recaptcha.net', true, undefined],
+      ['cdn-firma.net', true, 'option'],
+      ['', false, undefined],
+    ])
+    expect(findings(r).map(f => `${f.level} ${f.key}`)).toEqual([
+      'red fingerprinting canvas fp.anders.de',
+      'yellow fingerprinting webgl www.firma.de',
+      'yellow fingerprinting audio recaptcha.net',
+      'yellow fingerprinting canvas cdn-firma.net',
+      'yellow fingerprinting canvas ',
+    ])
+  })
+
+  test('nothing read out is green, also for a scan from an older spurlos without the list', () => {
+    expect(fingerprinting(base).level).toBe('green')
+    const { fingerprinting: _, ...old } = base
+    expect(fingerprinting(old as Scan).level).toBe('green')
+  })
+})
 
 describe('thirdParty', () => {
   test('subdomains of the own site are not third parties', () => {

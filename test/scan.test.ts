@@ -18,6 +18,7 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(Object.fromEntries(results.map(r => [r.check, r.level]))).toEqual({
       'third-party': 'green',
       cookies: 'green',
+      fingerprinting: 'green',
       legal: 'green',
       https: 'green',
       headers: 'green',
@@ -118,11 +119,17 @@ describe('scan', { timeout: 30_000 }, () => {
       'x-powered-by: PHP/8.1.2',
       'generator: WordPress 6.2',
     ])
+    // the foreign script reads canvas, audio and, where Chromium has WebGL, the graphics card; the inline emoji test is none
+    const fp = pick(results, 'fingerprinting')
+    expect(fp.level).toBe('red')
+    expect(fp.findings.map(f => f.api)).toEqual(expect.arrayContaining(['canvas', 'audio']))
+    expect(new Set(fp.findings.map(f => f.script))).toEqual(new Set(['https://fp.unbekannt.example/fp.js']))
     // set without Secure on an https page
     expect(pick(results, 'cookies').cookies.find(c => c.name === 'session')?.missing).toEqual(['Secure'])
 
     const report = text(s, results, 'de')
     expect(report).toContain('Google Fonts')
+    expect(report).toContain('🔴 https://fp.unbekannt.example/fp.js – liest ein Canvas mit Text aus, fremd')
     // each finding carries its own light, so the reader sees which one makes the check red or yellow
     expect(report).toContain('🔴 Cookie _ga (shop.example) – eigen, Google Analytics')
     expect(report).toContain('🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure')

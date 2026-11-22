@@ -18,6 +18,16 @@ Auch andere Dienste erkennt spurlos an ihren Pfaden, etwa Matomo (`/matomo.php`)
 
 Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
 
+## Fingerprinting
+
+spurlos achtet beim Aufruf auf drei Arten, den Browser zu vermessen, in der Seite und in jedem Frame:
+
+- **Canvas:** Ein Skript liest ein Canvas zurück (`toDataURL`, `toBlob`, `convertToBlob` oder `getImageData` über mindestens 16 × 16 Pixel), das mindestens 16 × 16 Pixel groß ist und auf das es zuvor in einem Aufruf Text mit mindestens zehn verschiedenen Zeichen geschrieben hat. Die Regel stammt aus der Studie von Englehardt und Narayanan (2016). Emoji-Tests wie der von WordPress schreiben weniger Zeichen und zählen deshalb nicht.
+- **WebGL:** Ein Skript fragt Hersteller oder Modell der Grafikkarte ab (`UNMASKED_VENDOR_WEBGL`, `UNMASKED_RENDERER_WEBGL`).
+- **Audio:** Ein Skript rechnet Audio in einem `OfflineAudioContext`; Abspielen ohne Klick lassen Browser ohnehin nicht zu.
+
+Welches Skript es war, liest spurlos aus dem Stacktrace; bei Code direkt im HTML ist es die Adresse der Seite oder des Frames. Ist das Skript auf einer fremden Domain, ist der Befund rot. Gelb ist er bei einem eigenen Skript, einem Captcha (Kategorie `captcha`) und einem Server, der zur Seite zu gehören scheint (siehe unten), denn Bot- und Betrugserkennung lesen dieselben Werte. Schriften, die ein Skript über die Breite von Text abtastet, und andere Merkmale wie Bildschirmgröße oder Zeitzone erkennt spurlos nicht, denn die liest fast jede Seite für ihr Layout.
+
 ## Eigene Server auf anderen Domains
 
 Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, Wikipedia etwa von `wikimedia.org`. Solche Server sind gelb statt rot, wenn spurlos sie der Seite zuordnen kann, und der Bericht sagt, warum:

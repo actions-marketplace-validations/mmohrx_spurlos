@@ -1,3 +1,4 @@
+import type { FingerprintApi } from '../scan.ts'
 import type { FormFinding, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
 import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED } from '../scan.ts'
 import { plural } from './plural.ts'
@@ -80,6 +81,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   title: {
     'third-party': 'Fremde Server',
     cookies: 'Cookies und Speicher',
+    fingerprinting: 'Fingerprinting',
     legal: 'Impressum und Datenschutz',
     https: 'HTTPS',
     headers: 'Sicherheits-Header',
@@ -139,6 +141,14 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   disclosure: (versions: number) => (versions ? `${plural(versions, 'Angabe', 'Angaben')} mit Versionsnummer` : 'nur Namen, keine Versionen'),
   disclosureWhy: 'Mit der Versionsnummer lässt sich gezielt nach bekannten Lücken suchen.',
   disclosureHint: 'Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off in PHP oder server_tokens off in nginx.',
+  fingerprintNone: 'Kein Skript las Canvas, Grafikkarte oder Audio so aus, wie es Fingerprinting tut.',
+  fingerprintApi: {
+    canvas: 'liest ein Canvas mit Text aus',
+    webgl: 'liest die Grafikkarte über WebGL aus',
+    audio: 'rechnet Audio im OfflineAudioContext',
+  } satisfies Record<FingerprintApi, string>,
+  fingerprintWhy: 'Aus solchen Werten lässt sich ein Merkmal bilden, das den Browser auch ohne Cookie wiedererkennt, noch bevor jemand etwas anklickt.',
+  fingerprintYellow: 'Gelb bei Captchas und eigenen Skripten: Bot- und Betrugserkennung lesen solche Werte auch. Prüfe, wozu das Skript sie braucht.',
   cookiesNecessary: 'Nur bekannte Einträge, wie sie Frameworks und Proxys für den Betrieb setzen.',
 
   legal: (level: Level): string => ({ green: 'beide verlinkt und erreichbar', yellow: 'beide verlinkt, nicht alles prüfbar', red: 'nicht vollständig' })[level],

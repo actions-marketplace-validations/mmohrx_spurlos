@@ -1,6 +1,6 @@
 import { getDomain, getDomainWithoutSuffix } from 'tldts'
 import knownServices from './services.json' with { type: 'json' }
-import type { Cookie, Form, Link, Resource, Scan, Visit } from './scan.ts'
+import type { Cookie, Fingerprint, Form, Link, Resource, Scan, Visit } from './scan.ts'
 
 export type Level = 'green' | 'yellow' | 'red'
 /**
@@ -37,6 +37,8 @@ export type HttpRedirect = 'redirects' | 'no-redirect' | 'unreachable' | 'refuse
 export type FormFinding = Form & { problem?: 'unencrypted' | 'third-party' }
 /** insecure: loaded over http on an https page · no-integrity: a script or stylesheet of another site without integrity="…" */
 export type ResourceFinding = Resource & { problem: 'insecure' | 'no-integrity' }
+/** host: the script's, empty for a frame without one (about:blank); thirdParty: on another site than the page */
+export type FingerprintFinding = Fingerprint & { host: string; thirdParty: boolean; service: Service | undefined; own?: OwnReason }
 
 export type Result =
   | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string }
@@ -47,6 +49,7 @@ export type Result =
   | { check: 'forms'; level: Level; forms: FormFinding[] }
   | { check: 'disclosure'; level: Level; findings: Disclosure[] }
   | { check: 'resources'; level: Level; findings: ResourceFinding[] }
+  | { check: 'fingerprinting'; level: Level; findings: FingerprintFinding[] }
 
 /** worst first */
 export const SEVERITY: Level[] = ['red', 'yellow', 'green']
@@ -242,6 +245,12 @@ export const formLevel = (f: FormFinding): Level => (f.problem === 'unencrypted'
 /** over http the browser blocks scripts, stylesheets and frames, and upgrades or drops images and media: red, yellow */
 export const resourceLevel = (r: ResourceFinding): Level =>
   r.problem === 'insecure' && ['script', 'stylesheet', 'iframe'].includes(r.tag) ? 'red' : 'yellow'
+/**
+ * Fingerprinting by another site is red, as it follows the visitor without a cookie; a captcha does it to tell people
+ * from bots, and the page's own scripts may do it to catch fraud: yellow, they want a look.
+ */
+export const fingerprintLevel = (f: FingerprintFinding): Level =>
+  f.thirdParty && !f.own && f.service?.category !== 'captcha' ? 'red' : 'yellow'
 
 /**
  * Cookies and storage present before any click. A third-party cookie or a known tracker's is red; known session,
@@ -440,8 +449,26 @@ export function resources(scan: Scan): Result {
   return { check: 'resources', level: worst(findings.map(resourceLevel)), findings }
 }
 
+/** Scripts that read out canvas, graphics card or audio stack before any click, as scan.ts notes them. */
+export function fingerprinting(scan: Scan): Result {
+  const own = ownSites(scan)
+  const owner = ownership(scan)
+  const findings = list(scan.fingerprinting).map((f): FingerprintFinding => {
+    let host = ''
+    try {
+      host = new URL(f.script).hostname
+    } catch {
+      // no address: the frame's own code
+    }
+    const thirdParty = host !== '' && !own.has(site(host))
+    const reason = thirdParty ? owner(host) : undefined
+    return { ...f, host, thirdParty, service: host ? serviceOfHost(host) : undefined, ...(reason ? { own: reason } : {}) }
+  })
+  return { check: 'fingerprinting', level: worst(findings.map(fingerprintLevel)), findings }
+}
+
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan)]
+  return [thirdParty(scan), cookies(scan), fingerprinting(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan)]
 }
 
 /**
@@ -459,6 +486,8 @@ export const key = {
   csp: (weakness: string) => `csp ${weakness}`,
   form: (f: { method: string; action: string }) => `form ${f.method} ${f.action}`,
   disclosure: (d: { name: string }) => `disclosure ${d.name}`,
+  /** by host, not by script: a fingerprinting service may serve its script under a new path on every visit */
+  fingerprint: (f: { api: string; host: string }) => `fingerprinting ${f.api} ${hostKey(f.host)}`,
   // without the query: a cache buster like ?ver=6.4.2 changes with every update, the file stays the same
   resource: (r: { problem: string; url: string }) => `resource ${r.problem} ${withoutQuery(r.url)}`,
 }
@@ -520,6 +549,8 @@ function unnumbered(r: Result): Finding[] {
       return [...list(r.missing).map(h => ({ key: key.header(h), level: 'yellow' as const })), ...list(r.weak).map(w => ({ key: key.csp(w), level: 'yellow' as const }))]
     case 'resources':
       return list(r.findings).map(f => ({ key: key.resource(f), level: resourceLevel(f) }))
+    case 'fingerprinting':
+      return list(r.findings).map(f => ({ key: key.fingerprint(f), level: fingerprintLevel(f) }))
     case 'forms':
       return list(r.forms).map(f => ({ key: key.form(f), level: formLevel(f) }))
     case 'disclosure':

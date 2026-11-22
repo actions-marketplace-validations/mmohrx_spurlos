@@ -1,5 +1,9 @@
 # Changelog
 
+## Unveröffentlicht
+
+- Neue Prüfung „Fingerprinting“ (`fingerprinting`): Skripte, die vor jedem Klick ein Canvas mit Text, die Grafikkarte über WebGL oder Audio im `OfflineAudioContext` auslesen. Rot bei einem fremden Skript, gelb bei einem eigenen, einem Captcha oder einem Server, der zur Seite zu gehören scheint. In `--json` unter `scan.fingerprinting` die Rohdaten.
+
 ## 0.4.0 – 2026-11-21
 
 - Doku: Das README gibt den Überblick, die Einzelheiten zur Ampel, zur CI und dazu, wie spurlos aufruft, stehen in `docs/`.

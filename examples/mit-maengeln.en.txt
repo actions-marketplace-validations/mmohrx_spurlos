@@ -1,11 +1,12 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-6 problems · 2 notes
+7 problems · 2 notes
 
-🔴 Third-party servers              6
+🔴 Third-party servers              7
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
   ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 request)
   ├─ 🔴 cdn.unbekannt.example – 1 request
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 request)
+  ├─ 🔴 fp.unbekannt.example – 1 request
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 request)
   └─ 🔴 www.youtube.com – YouTube (1 request)
      → Each of them learns the visitor's IP address on opening the page, before
@@ -31,6 +32,13 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → Secure: the cookie also travels over unencrypted http. HttpOnly: scripts
        on the page can read the session.
 
+🔴 Fingerprinting                   3
+  ├─ 🔴 https://fp.unbekannt.example/fp.js – reads back a canvas with text, third-party
+  ├─ 🔴 https://fp.unbekannt.example/fp.js – reads the graphics card via WebGL, third-party
+  └─ 🔴 https://fp.unbekannt.example/fp.js – renders audio in an OfflineAudioContext, third-party
+     → Such values make up a trait that recognizes the browser without any
+       cookie, before anyone clicks anything.
+
 🔴 Legal notice and privacy policy  incomplete
   ├─ 🔴 Legal notice (Impressum): “Impressum” → https://shop.example/rechtliches – answers with status 404
   └─ 🔴 Privacy policy: no link found on the page
@@ -39,11 +47,12 @@ spurlos 0.4.0  https://shop.example/tracked.html
   ├─ 🔴 http:// serves the page without redirecting to https://.
   └─ 🟡 No HSTS header (Strict-Transport-Security): browsers do not remember to use https only. – e.g. Strict-Transport-Security: max-age=31536000
 
-🔴 Embedded files                   5
+🔴 Embedded files                   6
   ├─ 🟡 script https://www.googletagmanager.com/gtag/js?… – from a third-party server, without integrity
   ├─ 🟡 script https://app.usercentrics.eu/browser-ui/latest/loader.js – from a third-party server, without integrity
   ├─ 🔴 script http://shop.example/alt.js – over http on an https page
   ├─ 🟡 script https://cdn.jsdelivr.net/npm/slider.js – from a third-party server, without integrity
+  ├─ 🟡 script https://fp.unbekannt.example/fp.js – from a third-party server, without integrity
   └─ 🟡 stylesheet https://fonts.googleapis.com/css2?… – from a third-party server, without integrity
      → On an https page the browser blocks scripts, stylesheets and frames over
        http, and loads images and videos over https or not at all.

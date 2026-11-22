@@ -60,6 +60,75 @@ export type Link = { text: string; href: string }
 export type Form = { action: string; method: string }
 /** a file the page embeds by its markup; tag: script, stylesheet, iframe, img, video, audio or source */
 export type Resource = { tag: string; url: string; integrity: boolean }
+/** what a fingerprinting script reads out: a canvas with text drawn on it, the graphics card by WebGL, the audio stack */
+export type FingerprintApi = 'canvas' | 'webgl' | 'audio'
+/** script: the address of the script that read it, the frame's own for inline code */
+export type Fingerprint = { api: FingerprintApi; script: string }
+
+/** the name of the function the init script reports to; the page can see it, as it sees navigator.webdriver */
+const FINGERPRINT_BINDING = '__spurlos'
+
+/**
+ * Runs in every frame before the page's own scripts and notes the reads that serve fingerprinting, once per API and
+ * script: a canvas read back after text with at least ten different characters went on it, at least 16 × 16 pixels
+ * (the rule of Englehardt and Narayanan, 2016: emoji tests such as WordPress's draw fewer); the graphics card's
+ * unmasked vendor or renderer from WebGL; an OfflineAudioContext rendered. Never breaks the page: each wrapper calls
+ * the original whatever happens.
+ */
+function watchFingerprinting(binding: string) {
+  const sent = new Set<string>()
+  const report = (api: string) => {
+    // the innermost frame with an address is the script that called; the wrappers here have none
+    const script = /https?:\/\/[^\s()]+?(?=:\d+:\d+)/.exec(new Error().stack ?? '')?.[0] ?? location.href
+    if (sent.has(`${api} ${script}`)) return
+    sent.add(`${api} ${script}`)
+    const send = (window as unknown as Record<string, unknown>)[binding]
+    if (typeof send === 'function') Promise.resolve(send(api, script)).catch(() => {})
+  }
+  const wrap = (proto: object | undefined, name: string, before: (self: any, args: any[]) => void) => {
+    const original = proto && Object.getOwnPropertyDescriptor(proto, name)
+    if (!proto || !original || typeof original.value !== 'function') return
+    const fn = original.value as (...args: unknown[]) => unknown
+    Object.defineProperty(proto, name, {
+      ...original,
+      value: function (this: unknown, ...args: unknown[]) {
+        try {
+          before(this, args)
+        } catch {
+          // the page goes first
+        }
+        return fn.apply(this, args)
+      },
+    })
+  }
+  const w = window as any
+  // the most different characters one call drew on a canvas
+  const drawn = new WeakMap<object, number>()
+  const readBack = (canvas: { width: number; height: number } | null) => {
+    if (canvas && canvas.width >= 16 && canvas.height >= 16 && (drawn.get(canvas) ?? 0) >= 10) report('canvas')
+  }
+  for (const proto of [w.CanvasRenderingContext2D?.prototype, w.OffscreenCanvasRenderingContext2D?.prototype]) {
+    for (const name of ['fillText', 'strokeText']) {
+      wrap(proto, name, (ctx, [text]) => {
+        const distinct = new Set(String(text)).size
+        if (distinct > (drawn.get(ctx.canvas) ?? 0)) drawn.set(ctx.canvas, distinct)
+      })
+    }
+    wrap(proto, 'getImageData', (ctx, [, , sw, sh]) => {
+      if (Math.abs(sw) >= 16 && Math.abs(sh) >= 16) readBack(ctx.canvas)
+    })
+  }
+  wrap(w.HTMLCanvasElement?.prototype, 'toDataURL', readBack)
+  wrap(w.HTMLCanvasElement?.prototype, 'toBlob', readBack)
+  wrap(w.OffscreenCanvas?.prototype, 'convertToBlob', readBack)
+  // UNMASKED_VENDOR_WEBGL, UNMASKED_RENDERER_WEBGL of WEBGL_debug_renderer_info
+  for (const proto of [w.WebGLRenderingContext?.prototype, w.WebGL2RenderingContext?.prototype]) {
+    wrap(proto, 'getParameter', (_, [p]) => {
+      if (p === 0x9245 || p === 0x9246) report('webgl')
+    })
+  }
+  wrap(w.OfflineAudioContext?.prototype, 'startRendering', () => report('audio'))
+}
 /** What a user typed, as a URL to open: https:// unless they wrote http:// or https://; undefined if it is none. */
 export function toUrl(arg: string): string | undefined {
   try {
@@ -116,6 +185,8 @@ export type Scan = {
   forms: Form[]
   /** scripts, stylesheets, frames, images and media the markup embeds, with their absolute address */
   resources: Resource[]
+  /** what scripts read out that serves to recognize the browser without a cookie, once per API and script */
+  fingerprinting: Fingerprint[]
   /** a Content-Security-Policy set in a <meta http-equiv> tag, the only way to one on hosts without own headers */
   metaCsp?: string
   /** a referrer policy set in <meta name="referrer"> */
@@ -218,6 +289,14 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const u = new URL(r.url())
       if (u.protocol === 'http:' || u.protocol === 'https:') requests.push({ url: r.url(), host: u.hostname, type: r.resourceType() })
     })
+    const fingerprinting: Fingerprint[] = []
+    // frames report on their own: the same read in two frames arrives twice
+    await context.exposeBinding(FINGERPRINT_BINDING, (_, api: unknown, script: unknown) => {
+      if ((api === 'canvas' || api === 'webgl' || api === 'audio') && typeof script === 'string' && !fingerprinting.some(f => f.api === api && f.script === script)) {
+        fingerprinting.push({ api, script })
+      }
+    })
+    await context.addInitScript(watchFingerprinting, FINGERPRINT_BINDING)
 
     const page = await context.newPage()
     if (!options.userAgent) await plainBrands(context, page, userAgent, chrome)
@@ -310,6 +389,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       legal: [],
       forms,
       resources,
+      fingerprinting,
       userAgent,
       sandbox,
     }
