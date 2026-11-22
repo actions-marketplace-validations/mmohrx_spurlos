@@ -8,8 +8,8 @@ beim Aufruf 2 Anfragen, 0,9 kB; keine an andere Domains
 🟢 Cookies und Speicher       nichts gesetzt
 
 🟢 Fingerprinting             keine
-  → Kein Skript las Canvas, Grafikkarte oder Audio so aus, wie es Fingerprinting
-    tut.
+  → Kein Skript las Canvas, Grafikkarte, Audio oder die IP-Adresse über WebRTC
+    so aus, wie es Fingerprinting tut.
 
 🟢 Browser-Zugriffe           keine
   → Kein Skript fragte nach Standort, Kamera, Mikrofon oder Benachrichtigungen,

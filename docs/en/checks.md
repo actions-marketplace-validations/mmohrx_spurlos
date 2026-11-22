@@ -16,17 +16,18 @@ spurlos recognizes cookie banners by their servers, by their files on the site i
 
 spurlos recognizes other services by their paths too, such as Matomo (`/matomo.php`) or Sentry (`/envelope/`). Running on the site itself or a subdomain, they change no light, as the IP address stays with the site; the check “Third-party servers” still names them (“Found on the site’s own servers”), in `--json` under `selfHosted`. A third-party host whose name gives nothing away gets named this way too. Services that only load after consent stay unseen: spurlos only checks what happens without a click.
 
-A WebSocket connection (`ws://`, `wss://`), such as a chat's, counts as a request too: its server learns the IP address all the same. In `--json` it is among the requests with `type: "websocket"`.
+A WebSocket connection (`ws://`, `wss://`), such as a chat's, counts as a request too: its server learns the IP address all the same. In `--json` it is among the requests with `type: "websocket"`. So do the STUN and TURN servers of a WebRTC connection (`type: "webrtc"`, see fingerprinting) and servers the page opens a connection to in advance with `<link rel="preconnect">` or in the `Link` header: they learn the IP address in the TLS handshake, even if no request follows. The report marks them “only preconnect”, `--json` with `preconnect: true` and `requests: 0`. `dns-prefetch` does not count, as the browser only asks the DNS resolver then.
 
 Subdomains count as the site itself (`cdn.company.com` belongs to `www.company.com`), following the Public Suffix List (`company.co.uk`).
 
 ## Fingerprinting
 
-While loading, spurlos watches for three ways of measuring the browser, in the page and in every frame:
+While loading, spurlos watches for four ways of measuring the browser, in the page and in every frame:
 
 - **Canvas:** a script reads back a canvas (`toDataURL`, `toBlob`, `convertToBlob` or `getImageData` over at least 16 × 16 pixels) that is at least 16 × 16 pixels in size and on which it first wrote, in one call, text with at least ten different characters. The rule comes from the study by Englehardt and Narayanan (2016). Emoji tests such as WordPress's write fewer characters and so do not count.
 - **WebGL:** a script asks for the vendor or model of the graphics card (`UNMASKED_VENDOR_WEBGL`, `UNMASKED_RENDERER_WEBGL`).
 - **Audio:** a script renders audio in an `OfflineAudioContext`; browsers do not play sound without a click anyway.
+- **WebRTC:** a script sets up an `RTCPeerConnection` and gathers its candidates (`setLocalDescription`). The browser then asks the connection's STUN and TURN servers for its own IP address; those servers count as third-party servers too.
 
 Which script it was, spurlos reads from the stack trace; for code right in the HTML it is the address of the page or frame. A script on another domain makes the finding red. It is yellow for a script of the site itself, a captcha (category `captcha`) and a server that seems to belong to the site (see below), as bot and fraud detection read the same values. Fonts a script probes by measuring text, and other traits such as screen size or time zone, spurlos does not detect, as nearly every page reads those for its layout.
 

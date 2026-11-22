@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Fingerprinting erkennt auch WebRTC: Ein Skript, das über STUN oder TURN die IP-Adresse erfragt, ist ein Befund, die STUN- und TURN-Server zählen als fremde Server (`type: "webrtc"`).
+- Fremde Server: Server, zu denen die Seite per `preconnect` (Markup oder `Link`-Header) vorab eine Verbindung aufbaut, zählen mit, auch ohne Anfrage („nur preconnect“, in `--json` `preconnect: true`).
 - Fremde Server: WebSocket-Verbindungen zählen als Anfragen; vorher fehlten sie, etwa die eines Chats, weil Playwright sie getrennt meldet. In `--json` mit `type: "websocket"`.
 - Neue Prüfung „Fingerprinting“ (`fingerprinting`): Skripte, die vor jedem Klick ein Canvas mit Text, die Grafikkarte über WebGL oder Audio im `OfflineAudioContext` auslesen. Rot bei einem fremden Skript, gelb bei einem eigenen, einem Captcha oder einem Server, der zur Seite zu gehören scheint. In `--json` unter `scan.fingerprinting` die Rohdaten.
 - Neue Prüfung „Browser-Zugriffe“ (`access`): Skripte, die beim Laden nach Benachrichtigungen, Push, Standort, Kamera oder Mikrofon fragen oder einen Service Worker registrieren. Benachrichtigungen und Push gelb, Standort, Kamera und Mikrofon rot bei einem fremden Skript, sonst gelb; ein Service Worker grün.

@@ -2,12 +2,20 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <title>Seite mit Chat über WebSocket</title>
+  <title>Seite mit Verbindungen außerhalb von http</title>
+  <!-- addresses on this machine where nothing listens: the test stays off the network, the browser still tries -->
+  <link rel="preconnect" href="https://127.0.0.2">
+  <link rel="dns-prefetch" href="https://127.0.0.4">
 </head>
 <body>
-  <h1>Seite mit Chat über WebSocket</h1>
-  <!-- a port where nothing listens, on this machine: the test stays off the network, the browser still tries -->
-  <script>new WebSocket('ws://127.0.0.1:9/chat')</script>
+  <h1>Seite mit Verbindungen außerhalb von http</h1>
+  <script>
+    new WebSocket('ws://127.0.0.1:9/chat')
+    // as scripts do to learn the visitor's IP: a data channel, an offer, and the candidates come from the STUN server
+    const peer = new RTCPeerConnection({ iceServers: [{ urls: ['stun:127.0.0.3:9'] }] })
+    peer.createDataChannel('')
+    peer.createOffer().then(offer => peer.setLocalDescription(offer)).catch(() => {})
+  </script>
   <a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a>
 </body>
 </html>

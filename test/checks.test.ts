@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import {
-  access, accessibility, blocksZoom, compare, load, consentManagers, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, accessibility, blocksZoom, compare, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
-import type { Scan, Visit } from '../src/scan.ts'
+import { iceHost, type Scan, type Visit } from '../src/scan.ts'
 
-const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], fingerprinting: [], access: [], accessibility: { lang: 'de', images: [], fields: [] }, userAgent: 'test', sandbox: true }
+const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], fingerprinting: [], access: [], accessibility: { lang: 'de', images: [], fields: [] }, preconnect: [], userAgent: 'test', sandbox: true }
 const req = (host: string) => ({ url: `https://${host}/x`, host, type: 'script' })
 
 describe('fingerprinting', () => {
@@ -108,6 +108,35 @@ describe('access', () => {
     ])
     expect(r.level).toBe('red')
     expect(access(base).level).toBe('green')
+  })
+})
+
+describe('preconnect', () => {
+  test('a connection opened ahead in markup or Link header counts as a host without requests; dns-prefetch does not', () => {
+    const scan = {
+      ...base,
+      preconnect: ['https://fonts.gstatic.com/'],
+      headers: { link: '</app.css>; rel=preload; as=style, <https://cdn.anders.de>; rel="preconnect"; crossorigin, <https://dns.anders.de>; rel=dns-prefetch' },
+      requests: [req('cdn.anders.de')],
+    }
+    expect(preconnects(scan)).toEqual(['https://fonts.gstatic.com/', 'https://cdn.anders.de/'])
+    const r = thirdParty(scan)
+    if (r.check !== 'third-party') throw new Error()
+    // a host asked anyway keeps its requests
+    expect(r.hosts.map(h => [h.host, h.requests, h.preconnect])).toEqual([
+      ['cdn.anders.de', 1, undefined],
+      ['fonts.gstatic.com', 0, true],
+    ])
+    expect(r.level).toBe('red')
+  })
+})
+
+describe('iceHost', () => {
+  test('the host of a STUN or TURN server', () => {
+    expect(iceHost('stun:stun.l.google.com:19302')).toBe('stun.l.google.com')
+    expect(iceHost('turns:user@turn.example.com:443?transport=tcp')).toBe('turn.example.com')
+    expect(iceHost('stun:[2001:db8::1]:3478')).toBe('[2001:db8::1]')
+    expect(iceHost('https://example.com')).toBeUndefined()
   })
 })
 

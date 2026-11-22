@@ -74,12 +74,14 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
         value: `${r.hosts.length}`,
         items: r.hosts.map(h => {
           const about = [h.service?.name, h.own ? t.ownBy[h.own] : undefined].filter(Boolean).join(', ') || undefined
-          return item(key.host(h.host), hostLevel(h), h.host, about ? `${about} (${t.requests(h.requests)})` : t.requests(h.requests))
+          const count = h.preconnect ? t.preconnectOnly : t.requests(h.requests)
+          return item(key.host(h.host), hostLevel(h), h.host, about ? `${about} (${count})` : count)
         }),
         notes: [
           t.thirdParty,
           ...(r.platform && r.hosts.some(h => h.own === 'platform') ? [t.platformNote(r.platform)] : []),
           ...(r.hosts.some(h => h.own && h.own !== 'platform') ? [t.ownNote] : []),
+          ...(r.hosts.some(h => h.preconnect) ? [t.preconnectNote] : []),
           ...selfHosted,
           ...consent,
           ...hints.filter(n => n !== null),

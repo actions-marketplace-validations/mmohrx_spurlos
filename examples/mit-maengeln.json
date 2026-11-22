@@ -92,7 +92,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829902725.058442,
+        "expires": 1829903220.980619,
         "secure": false,
         "httpOnly": false
       }
@@ -228,6 +228,7 @@
       "lang": "de",
       "viewport": "width=device-width, initial-scale=1, user-scalable=no"
     },
+    "preconnect": [],
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0",
     "sandbox": true,
     "generator": "WordPress 6.2",
@@ -349,7 +350,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829902725.058442,
+          "expires": 1829903220.980619,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,

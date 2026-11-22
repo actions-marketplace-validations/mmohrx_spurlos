@@ -183,10 +183,23 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(english).not.toMatch(/[äöüß„]/)
   })
 
-  test('a WebSocket counts as a request to its server, though Playwright reports it apart', async () => {
+  test('a WebSocket, a STUN server and a preconnect count as third parties, though no http request goes to them', async () => {
     const s = await scan(`${SITE}/socket.html`, { setup: offline, fetch: redirects })
     expect(s.requests).toContainEqual({ url: 'ws://127.0.0.1:9/chat', host: '127.0.0.1', type: 'websocket' })
-    expect(pick(runChecks(s), 'third-party')).toMatchObject({ level: 'red', hosts: [{ host: '127.0.0.1', requests: 1 }] })
+    expect(s.requests).toContainEqual({ url: 'stun:127.0.0.3:9', host: '127.0.0.3', type: 'webrtc' })
+    const results = runChecks(s)
+    // dns-prefetch only asks the resolver: no host
+    expect(pick(results, 'third-party')).toMatchObject({
+      level: 'red',
+      hosts: [
+        { host: '127.0.0.1', requests: 1 },
+        { host: '127.0.0.2', requests: 0, preconnect: true },
+        { host: '127.0.0.3', requests: 1 },
+      ],
+    })
+    // the page's own inline script: yellow
+    expect(pick(results, 'fingerprinting')).toMatchObject({ level: 'yellow', findings: [{ api: 'webrtc', script: `${SITE}/socket.html` }] })
+    expect(text(s, results, 'de')).toContain('127.0.0.2 – nur preconnect, keine Anfrage')
   })
 
   test('a screenshot only when asked for', async () => {

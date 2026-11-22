@@ -18,7 +18,8 @@ export type Service = { name: string; category: string; hosts: string[]; cookies
  * on doctolib.de).
  */
 export type OwnReason = 'option' | 'certificate' | 'name' | 'platform'
-export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason }
+/** preconnect: no request went to it, the page only opened a connection ahead (<link rel="preconnect">, Link header) */
+export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason; preconnect?: true }
 /**
  * missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie ·
  * own: set on another site's domain that seems to belong to the page
@@ -193,6 +194,25 @@ export const hostLevel = (h: ThirdParty): Level =>
   h.own || h.service?.category === 'consent' || h.service?.category === 'captcha' ? 'yellow' : 'red'
 
 /**
+ * Where the page opens connections ahead: <link rel="preconnect"> in the markup, and in the Link header, as
+ * <https://fonts.gstatic.com>; rel=preconnect. Absolute http(s) addresses; dns-prefetch only asks the resolver.
+ */
+export function preconnects(scan: Scan): string[] {
+  const out = [...list(scan.preconnect)]
+  for (const m of (scan.headers['link'] ?? '').matchAll(/<([^>]*)>([^,]*)/g)) {
+    const rel = /;\s*rel\s*=\s*"?([^";]*)/i.exec(m[2] ?? '')?.[1] ?? ''
+    if (!/(^|\s)preconnect(\s|$)/i.test(rel)) continue
+    try {
+      const u = new URL(m[1] ?? '', scan.finalUrl)
+      if (u.protocol === 'http:' || u.protocol === 'https:') out.push(u.href)
+    } catch {
+      // not an address
+    }
+  }
+  return out
+}
+
+/**
  * Every request to another site than the page's own counts. A host no name gives away may by the path asked for
  * (/matomo.php on an agency's server). selfHosted: known services the page runs on its own site, by their paths (a
  * Sentry or Matomo of its own); they change no light, as the IP stays with the site, but the reader learns of them.
@@ -213,10 +233,16 @@ export function thirdParty(scan: Scan): Result {
     counts.set(r.host, (counts.get(r.host) ?? 0) + 1)
     if (service && !byPath.has(r.host)) byPath.set(r.host, service)
   }
-  const hosts = [...counts]
+  // a connection opened ahead hands over the IP as well, in the TLS handshake, though no request follows
+  const ahead = new Set<string>()
+  for (const url of preconnects(scan)) {
+    const host = new URL(url).hostname
+    if (!own.has(site(host)) && !counts.has(host)) ahead.add(host)
+  }
+  const hosts = [...counts, ...[...ahead].map(h => [h, 0] as const)]
     .map(([host, requests]): ThirdParty => {
       const reason = owner(host)
-      return { host, service: serviceOfHost(host) ?? byPath.get(host), requests, ...(reason ? { own: reason } : {}) }
+      return { host, service: serviceOfHost(host) ?? byPath.get(host), requests, ...(reason ? { own: reason } : {}), ...(requests ? {} : { preconnect: true as const }) }
     })
     .sort((a, b) => a.host.localeCompare(b.host))
   const platform = platformOf(scan)
@@ -480,7 +506,7 @@ function callers(scan: Scan): (script: string) => Caller {
   }
 }
 
-/** Scripts that read out canvas, graphics card or audio stack before any click, as scan.ts notes them. */
+/** Scripts that read out canvas, graphics card, audio stack or the IP address by WebRTC before any click, as scan.ts notes them. */
 export function fingerprinting(scan: Scan): Result {
   const caller = callers(scan)
   const findings = list(scan.fingerprinting).map((f): FingerprintFinding => ({ ...f, ...caller(f.script) }))

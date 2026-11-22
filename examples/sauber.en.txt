@@ -8,8 +8,8 @@ spurlos 0.4.0  https://shop.example/
 🟢 Cookies and storage              nothing set
 
 🟢 Fingerprinting                   none
-  → No script read out canvas, graphics card or audio the way fingerprinting
-    does.
+  → No script read out canvas, graphics card, audio or the IP address via WebRTC
+    the way fingerprinting does.
 
 🟢 Browser access                   none
   → No script asked for location, camera, microphone or notifications, none

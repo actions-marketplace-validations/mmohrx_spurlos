@@ -54,8 +54,8 @@ export function browserAgent(chromeVersion: string, platform = process.platform)
 }
 
 /**
- * type: as Playwright names it (script, image, fetch …), websocket for a WebSocket, which Playwright does not report as a
- * request. bytes: what went over the wire for the answer, headers and encoded body; missing where none came
+ * type: as Playwright names it (script, image, fetch …), websocket for a WebSocket and webrtc for a STUN or TURN
+ * server, which Playwright does not report as requests; url is then the server's address as the page gave it. bytes: what went over the wire for the answer, headers and encoded body; missing where none came
  */
 export type Request = { url: string; host: string; type: string; bytes?: number }
 export type Cookie = { name: string; domain: string; expires: number; secure: boolean; httpOnly: boolean }
@@ -64,8 +64,11 @@ export type Link = { text: string; href: string }
 export type Form = { action: string; method: string }
 /** a file the page embeds by its markup; tag: script, stylesheet, iframe, img, video, audio or source */
 export type Resource = { tag: string; url: string; integrity: boolean }
-/** what a fingerprinting script reads out: a canvas with text drawn on it, the graphics card by WebGL, the audio stack */
-export type FingerprintApi = 'canvas' | 'webgl' | 'audio'
+/**
+ * what a fingerprinting script reads out: a canvas with text drawn on it, the graphics card by WebGL, the audio stack,
+ * the visitor's IP address by WebRTC
+ */
+export type FingerprintApi = 'canvas' | 'webgl' | 'audio' | 'webrtc'
 /** script: the address of the script that read it, the frame's own for inline code */
 export type Fingerprint = { api: FingerprintApi; script: string }
 /** what a script asks the browser for: a permission the visitor has to grant, or a service worker that stays */
@@ -76,8 +79,14 @@ export type Access = { api: AccessApi; script: string }
  * address) and form fields without a label (tag and name), both only where visible and not hidden from screen readers.
  */
 export type Accessibility = { lang?: string; viewport?: string; images: string[]; fields: string[] }
-const FINGERPRINT_APIS: readonly string[] = ['canvas', 'webgl', 'audio'] satisfies FingerprintApi[]
+const FINGERPRINT_APIS: readonly string[] = ['canvas', 'webgl', 'audio', 'webrtc'] satisfies FingerprintApi[]
 const ACCESS_APIS: readonly string[] = ['notifications', 'push', 'geolocation', 'camera', 'microphone', 'service-worker'] satisfies AccessApi[]
+
+/** The host of a STUN or TURN server: stun.example.com of stun:stun.example.com:3478?transport=udp. */
+export function iceHost(url: string): string | undefined {
+  const m = /^(?:stuns?|turns?):(?:[^@/]*@)?(\[[^\]]+\]|[^:?/]+)/i.exec(url.trim())
+  return m?.[1]?.toLowerCase()
+}
 
 /** the name of the function the init script reports to; the page can see it, as it sees navigator.webdriver */
 const BINDING = '__spurlos'
@@ -86,19 +95,21 @@ const BINDING = '__spurlos'
  * Runs in every frame before the page's own scripts and notes, once per API and script, the reads that serve
  * fingerprinting: a canvas read back after text with at least ten different characters went on it, at least 16 × 16
  * pixels (the rule of Englehardt and Narayanan, 2016: emoji tests such as WordPress's draw fewer); the graphics card's
- * unmasked vendor or renderer from WebGL; an OfflineAudioContext rendered. And what a script asks the browser for:
+ * unmasked vendor or renderer from WebGL; an OfflineAudioContext rendered; a WebRTC connection that gathers its
+ * candidates, which asks STUN and TURN servers for the visitor's IP, with those servers. And what a script asks the browser for:
  * notifications, push, location, camera, microphone, a service worker. Never breaks the page: each wrapper calls the
  * original whatever happens.
  */
 function watchApis(binding: string) {
   const sent = new Set<string>()
-  const report = (api: string) => {
+  const report = (api: string, servers: string[] = []) => {
     // the innermost frame with an address is the script that called; the wrappers here have none
     const script = /https?:\/\/[^\s()]+?(?=:\d+:\d+)/.exec(new Error().stack ?? '')?.[0] ?? location.href
-    if (sent.has(`${api} ${script}`)) return
-    sent.add(`${api} ${script}`)
+    const seen = `${api} ${script} ${servers.join(' ')}`
+    if (sent.has(seen)) return
+    sent.add(seen)
     const send = (window as unknown as Record<string, unknown>)[binding]
-    if (typeof send === 'function') Promise.resolve(send(api, script)).catch(() => {})
+    if (typeof send === 'function') Promise.resolve(send(api, script, servers)).catch(() => {})
   }
   const wrap = (proto: object | undefined, name: string, before: (self: any, args: any[]) => void) => {
     const original = proto && Object.getOwnPropertyDescriptor(proto, name)
@@ -143,6 +154,26 @@ function watchApis(binding: string) {
     })
   }
   wrap(w.OfflineAudioContext?.prototype, 'startRendering', () => report('audio'))
+  // the servers a connection was made with; it asks them once it gathers candidates, after setLocalDescription
+  const Peer = w.RTCPeerConnection
+  if (typeof Peer === 'function') {
+    const servers = new WeakMap<object, string[]>()
+    const Watched = new Proxy(Peer, {
+      construct(target, args, newTarget) {
+        const connection = Reflect.construct(target, args, newTarget)
+        try {
+          const urls = (args[0]?.iceServers ?? []).flatMap((s: any) => [s?.urls ?? s?.url ?? []].flat())
+          servers.set(connection, urls.filter((u: unknown): u is string => typeof u === 'string'))
+        } catch {
+          // the page goes first
+        }
+        return connection
+      },
+    })
+    if (w.webkitRTCPeerConnection === Peer) w.webkitRTCPeerConnection = Watched
+    w.RTCPeerConnection = Watched
+    wrap(Peer.prototype, 'setLocalDescription', connection => report('webrtc', servers.get(connection) ?? []))
+  }
 
   wrap(w.Notification, 'requestPermission', () => report('notifications'))
   wrap(w.PushManager?.prototype, 'subscribe', () => report('push'))
@@ -215,6 +246,8 @@ export type Scan = {
   /** what scripts asked the browser for before any click: permissions and service workers, once per API and script */
   access: Access[]
   accessibility: Accessibility
+  /** where <link rel="preconnect"> opens a connection ahead, absolute; the Link header the checks read themselves */
+  preconnect: string[]
   /** a Content-Security-Policy set in a <meta http-equiv> tag, the only way to one on hosts without own headers */
   metaCsp?: string
   /** a referrer policy set in <meta name="referrer"> */
@@ -329,8 +362,15 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const fingerprinting: Fingerprint[] = []
     const access: Access[] = []
     // frames report on their own: the same call in two frames arrives twice
-    await context.exposeBinding(BINDING, (_, api: unknown, script: unknown) => {
+    await context.exposeBinding(BINDING, (_, api: unknown, script: unknown, servers: unknown) => {
       if (typeof api !== 'string' || typeof script !== 'string') return
+      // STUN and TURN servers learn the visitor's IP as any other server, though not over http
+      if (api === 'webrtc' && Array.isArray(servers)) {
+        for (const server of servers) {
+          const host = typeof server === 'string' ? iceHost(server) : undefined
+          if (host) requests.push({ url: server, host, type: 'webrtc' })
+        }
+      }
       const list = FINGERPRINT_APIS.includes(api) ? fingerprinting : ACCESS_APIS.includes(api) ? access : undefined
       if (list && !list.some(f => f.api === api && f.script === script)) list.push({ api, script } as Fingerprint & Access)
     })
@@ -368,7 +408,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     }))
     // what a visitor sees first, cookie banner included; a page that cannot be pictured still gets its report
     const screenshot = options.screenshot ? await page.screenshot({ type: 'jpeg', quality: 70 }).then(b => b.toString('base64'), () => undefined) : undefined
-    const { storage, links, forms, resources, metaCsp, metaReferrer, generator, accessibility } = await page.evaluate(() => {
+    const { storage, links, forms, resources, metaCsp, metaReferrer, generator, accessibility, preconnect } = await page.evaluate(() => {
       const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
         const s = window[area]
@@ -402,8 +442,11 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
         return !el.hasAttribute('nomodule') && (type === '' || type === 'module' || /^(text|application)\/(x-)?(java|ecma)script$/.test(type))
       }
       for (const el of all('script[src]')) if (runs(el)) embed('script', el, (el as HTMLScriptElement).src)
+      const preconnect: string[] = []
       for (const el of all('link[href]')) {
-        if (/(^|\s)stylesheet(\s|$)/i.test(el.getAttribute('rel') ?? '')) embed('stylesheet', el, (el as HTMLLinkElement).href)
+        const rel = el.getAttribute('rel') ?? ''
+        if (/(^|\s)stylesheet(\s|$)/i.test(rel)) embed('stylesheet', el, (el as HTMLLinkElement).href)
+        if (/(^|\s)preconnect(\s|$)/i.test(rel) && /^https?:/.test((el as HTMLLinkElement).href)) preconnect.push((el as HTMLLinkElement).href)
       }
       for (const tag of ['iframe', 'img', 'video', 'audio', 'source'] as const) {
         for (const el of all(`${tag}[src]`)) embed(tag, el, (el as HTMLImageElement).src)
@@ -423,7 +466,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const lang = document.documentElement.getAttribute('lang')
       const viewport = document.querySelector('meta[name="viewport" i]')?.getAttribute('content')
       const accessibility: Accessibility = { images, fields, ...(lang !== null ? { lang } : {}), ...(viewport != null ? { viewport } : {}) }
-      return { storage, links, forms, resources, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator, accessibility }
+      return { storage, links, forms, resources, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator, accessibility, preconnect }
     })
 
     const headers = await response.allHeaders()
@@ -448,6 +491,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       fingerprinting,
       access,
       accessibility,
+      preconnect,
       userAgent,
       sandbox,
     }

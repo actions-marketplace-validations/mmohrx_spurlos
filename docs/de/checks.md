@@ -16,17 +16,18 @@ Cookie-Banner erkennt spurlos an ihren Servern, an ihren Dateien auf der eigenen
 
 Auch andere Dienste erkennt spurlos an ihren Pfaden, etwa Matomo (`/matomo.php`) oder Sentry (`/envelope/`). Laufen sie auf der eigenen Seite oder einer Subdomain, ändert das keine Ampel, denn die IP-Adresse bleibt bei der Seite; die Prüfung „Fremde Server“ nennt sie trotzdem („Auf eigenen Servern erkannt“), in `--json` unter `selfHosted`. Einen fremden Host, dessen Name nichts verrät, benennt spurlos so ebenfalls. Dienste, die erst nach einer Zustimmung laden, sieht spurlos nicht: Es prüft nur, was ohne Klick passiert.
 
-Als Anfrage zählt auch eine WebSocket-Verbindung (`ws://`, `wss://`), etwa eines Chats: Ihr Server erfährt die IP-Adresse genauso. In `--json` steht sie unter den Anfragen mit `type: "websocket"`.
+Als Anfrage zählt auch eine WebSocket-Verbindung (`ws://`, `wss://`), etwa eines Chats: Ihr Server erfährt die IP-Adresse genauso. In `--json` steht sie unter den Anfragen mit `type: "websocket"`. Ebenso zählen die STUN- und TURN-Server einer WebRTC-Verbindung (`type: "webrtc"`, siehe Fingerprinting) und Server, zu denen die Seite mit `<link rel="preconnect">` oder im `Link`-Header vorab eine Verbindung aufbaut: Beim TLS-Handshake erfahren sie die IP-Adresse, auch wenn keine Anfrage folgt. Der Bericht nennt sie mit „nur preconnect“, `--json` mit `preconnect: true` und `requests: 0`. `dns-prefetch` zählt nicht, denn dabei fragt der Browser nur den DNS-Resolver.
 
 Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
 
 ## Fingerprinting
 
-spurlos achtet beim Aufruf auf drei Arten, den Browser zu vermessen, in der Seite und in jedem Frame:
+spurlos achtet beim Aufruf auf vier Arten, den Browser zu vermessen, in der Seite und in jedem Frame:
 
 - **Canvas:** Ein Skript liest ein Canvas zurück (`toDataURL`, `toBlob`, `convertToBlob` oder `getImageData` über mindestens 16 × 16 Pixel), das mindestens 16 × 16 Pixel groß ist und auf das es zuvor in einem Aufruf Text mit mindestens zehn verschiedenen Zeichen geschrieben hat. Die Regel stammt aus der Studie von Englehardt und Narayanan (2016). Emoji-Tests wie der von WordPress schreiben weniger Zeichen und zählen deshalb nicht.
 - **WebGL:** Ein Skript fragt Hersteller oder Modell der Grafikkarte ab (`UNMASKED_VENDOR_WEBGL`, `UNMASKED_RENDERER_WEBGL`).
 - **Audio:** Ein Skript rechnet Audio in einem `OfflineAudioContext`; Abspielen ohne Klick lassen Browser ohnehin nicht zu.
+- **WebRTC:** Ein Skript baut eine `RTCPeerConnection` auf und sammelt ihre Kandidaten (`setLocalDescription`). Dabei fragt der Browser die STUN- und TURN-Server der Verbindung nach der eigenen IP-Adresse; die Server zählen zusätzlich als fremde Server.
 
 Welches Skript es war, liest spurlos aus dem Stacktrace; bei Code direkt im HTML ist es die Adresse der Seite oder des Frames. Ist das Skript auf einer fremden Domain, ist der Befund rot. Gelb ist er bei einem eigenen Skript, einem Captcha (Kategorie `captcha`) und einem Server, der zur Seite zu gehören scheint (siehe unten), denn Bot- und Betrugserkennung lesen dieselben Werte. Schriften, die ein Skript über die Breite von Text abtastet, und andere Merkmale wie Bildschirmgröße oder Zeitzone erkennt spurlos nicht, denn die liest fast jede Seite für ihr Layout.
 
