@@ -16,7 +16,7 @@ Mit `--mobile` öffnet spurlos die Seite als Smartphone, mit dem Bildschirm eine
 Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Mobile Safari/537.36 spurlos/0.4.0
 ```
 
-Mit derselben Kennung fragt spurlos ab, ob http auf https weiterleitet: Manche Server antworten dort einem Bot anders als einem Browser (DuckDuckGo liefert einem Bot die Seite über http aus, einen Browser leitet es weiter). Impressum und Datenschutzerklärung fragt spurlos offen als Bot ab, denn dort geht es nicht um Tracker, die sich vor Bots verstecken:
+Mit derselben Kennung fragt spurlos ab, ob http auf https weiterleitet: Manche Server antworten dort einem Bot anders als einem Browser (DuckDuckGo liefert einem Bot die Seite über http aus, einen Browser leitet es weiter). Impressum und Datenschutzerklärung fragt spurlos offen als Bot ab, nur das HTML, ohne Skripte, Bilder oder Schriften, denn dort geht es nicht um Tracker, die sich vor Bots verstecken:
 
 ```
 spurlos/0.4.0 (+https://github.com/mmohrx/spurlos)

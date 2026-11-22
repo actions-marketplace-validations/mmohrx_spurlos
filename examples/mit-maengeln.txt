@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/tracked.html
 beim Aufruf 15 Anfragen, 4 kB; davon 9 mit 1 kB an andere Domains
-7 Mängel · 6 Hinweise · 1 in Ordnung
+7 Mängel · 6 Hinweise · 2 in Ordnung
 
 🔴 Fremde Server              9
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
@@ -147,6 +147,11 @@ beim Aufruf 15 Anfragen, 4 kB; davon 9 mit 1 kB an andere Domains
 🟢 Weitergegebene Daten       keine
   → In den Anfragen an fremde Server steht keine E-Mail-Adresse, kein Wert aus
     der Adresse der Seite und keine ID aus dem Cookie eines anderen Servers.
+
+🟢 Datenschutzerklärung       nicht gelesen
+  → Die Datenschutzerklärung ließ sich nicht als Text lesen: kein Link, nicht
+    erreichbar, ein PDF oder eine Seite, die ihren Text erst per JavaScript
+    lädt.
 
 Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die
 Seite DSGVO-konform ist.

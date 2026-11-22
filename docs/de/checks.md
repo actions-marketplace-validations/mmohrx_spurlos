@@ -26,6 +26,12 @@ Als Anfrage zählt auch eine WebSocket-Verbindung (`ws://`, `wss://`), etwa eine
 
 Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
 
+## Datenschutzerklärung
+
+Die Seite, die spurlos als Datenschutzerklärung erkennt (siehe oben), öffnet es ohnehin, um zu sehen, ob sie erreichbar ist; dabei liest es ihren sichtbaren Text, ohne Skripte. Darin sucht es nach den Namen der bekannten Dienste, deren Server die Seite vor dem ersten Klick anfragt: als ganze Wörter, ohne Unterschied zwischen Groß und Klein, mit Bindestrich wie mit Leerzeichen („Google-Fonts“), auch ohne den Teil in Klammern („Microsoft Advertising“) und unter den anderen Namen aus `aliases` in `src/services.json` („Facebook“ für Meta Pixel). Jeder Dienst, den der Text nicht nennt, ist gelb. Nicht gesucht werden Server, die zur Seite zu gehören scheinen, Dienste, die zum Betrieb gehören (Kategorie `necessary`), und Hosts, die spurlos keinem Dienst zuordnen kann.
+
+Hat der Text weniger als 200 Zeichen, ist er ein PDF, fehlt der Link oder antwortet die Seite mit einem Fehler, bleibt die Prüfung offen und grün („nicht gelesen“). Das gilt auch für Seiten, die ihren Text erst per JavaScript laden. Den Text selbst behält spurlos nicht, in `--json` stehen unter `scan.policy` nur die Adresse und die Namen der Dienste, die er nennt. Ob die Erklärung die Dienste richtig beschreibt, sagt die Prüfung nicht, und ein Dienst kann dort auch unter einem Namen stehen, den spurlos nicht kennt, etwa dem seines Anbieters.
+
 ## Weitergegebene Daten
 
 Beim ersten Aufruf kennt eine Seite vom Besucher nur, was in ihrer Adresse steht. spurlos sucht deshalb in Adresse und Inhalt (POST) jeder Anfrage an einen fremden Server, auch URL-kodiert, nach E-Mail-Adressen und nach den Werten der Query der geprüften Adresse. Eine E-Mail-Adresse ist rot, ein Wert aus der Query gelb. Nicht zählen Kampagnen-Parameter und Klick-IDs (`utm_…`, `gclid`, `gbraid`, `wbraid`, `dclid`, `fbclid`, `msclkid`, `ttclid`, `twclid`, `li_fat_id`, `mc_cid`, `mc_eid`, `_ga`, `_gl`, `ref`) und Werte unter sechs Zeichen. Was nach einer E-Mail-Adresse aussieht, aber direkt auf `//` folgt, etwa der DSN von Sentry (`https://schlüssel@o1.ingest.sentry.io`), ist keine. Prüfen lohnt sich vor allem mit Adressen, die Daten tragen, etwa einer Danke-Seite nach der Anmeldung: `spurlos "https://firma.de/danke?email=test@firma.de"`. 

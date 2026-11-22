@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
-  access, accessibility, blocksZoom, indexing, consentMode, cookieIds, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, accessibility, blocksZoom, indexing, consentMode, cookieIds, policy, servicesNamed, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import { iceHost, type Scan, type Visit } from '../src/scan.ts'
@@ -789,5 +789,32 @@ describe('cookie syncing', () => {
       ['px.partner.example', 'id', 'uid', 'ads.anders.de', 2, undefined],
     ])
     expect(findings(r).map(f => `${f.level} ${f.key}`)).toEqual(['yellow leak id uid cdn-firma.net', 'red leak id uid px.partner.example'])
+  })
+})
+
+describe('privacy policy', () => {
+  test('names are found as whole words in any case, with hyphens, without brackets and by alias', () => {
+    expect(servicesNamed('Wir nutzen Google-Fonts und das Facebook Pixel sowie Webtrekk; YouTube-Videos laden erst nach Klick.')).toEqual(
+      expect.arrayContaining(['Google Fonts', 'Meta Pixel', 'Mapp Intelligence (Webtrekk)', 'YouTube']),
+    )
+    // a part of a word is no name, nor are the names of what a site needs to run
+    expect(servicesNamed('Hotjars und Matomos? Nein. Eine Session und WordPress, dazu Cloudflare.')).toEqual([])
+  })
+
+  test('each service the policy does not name is yellow, named ones green; own servers do not count', () => {
+    const r = policy({
+      ...base,
+      own: ['cdn-firma.net'],
+      requests: [req('fonts.googleapis.com'), req('www.google-analytics.com'), req('cdn-firma.net'), req('cdn.unbekannt.example')],
+      policy: { url: 'https://www.firma.de/datenschutz', named: ['Google Fonts'] },
+    })
+    expect(r).toMatchObject({ level: 'yellow', read: true, services: [{ name: 'Google Analytics', named: false }, { name: 'Google Fonts', named: true }] })
+    expect(findings(r).map(f => `${f.level} ${f.key}`)).toEqual(['yellow policy Google Analytics', 'green policy Google Fonts'])
+  })
+
+  test('a policy that could not be read leaves it open: green, no findings', () => {
+    const r = policy({ ...base, requests: [req('www.google-analytics.com')] })
+    expect(r).toEqual({ check: 'policy', level: 'green', read: false, services: [{ name: 'Google Analytics', named: false }] })
+    expect(findings(r)).toEqual([])
   })
 })

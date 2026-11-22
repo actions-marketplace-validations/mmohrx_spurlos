@@ -6,10 +6,11 @@ export type Level = 'green' | 'yellow' | 'red'
 /**
  * httpOnly: its cookies hold a session and should be out of reach of JavaScript.
  * paths: parts of a file's path that give the service away where it is hosted on the site itself (Borlabs Cookie).
+ * aliases: other names a privacy policy may give it (Facebook for Meta Pixel).
  * headers: a platform that hosts the page itself, known by a response header of the page: a name (x-wix-request-id), or
  * a name and a part of its value (powered-by: Shopify).
  */
-export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; storage?: string[]; paths?: string[]; httpOnly?: boolean; headers?: string[] }
+export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; storage?: string[]; paths?: string[]; httpOnly?: boolean; headers?: string[]; aliases?: string[] }
 
 /**
  * Why another site counts as the page's own: named with --own · listed in the page's own certificate · named like
@@ -38,6 +39,8 @@ export type StorageFinding = Scan['storage'][number] & { service: Service | unde
 export type Disclosure = { source: 'header' | 'meta'; name: string; value: string; version: boolean }
 export type LegalKind = 'impressum' | 'datenschutz'
 export type LegalPage = { kind: LegalKind; link?: Link; visit?: Visit }
+/** a service the page loads before any click, and whether the privacy policy names it */
+export type PolicyService = { name: string; named: boolean }
 /**
  * redirects: http sends on to https · no-redirect: the page answers over plain http · unreachable: nothing answers on http ·
  * refused: http answers with an error (4xx, 5xx), often a bot check, so whether it redirects stays open
@@ -66,6 +69,7 @@ export type Result =
   | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string; consentMode?: ConsentMode }
   | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
+  | { check: 'policy'; level: Level; read: boolean; url?: string; services: PolicyService[] }
   | { check: 'https'; level: Level; https: boolean; certDaysLeft?: number; http?: HttpRedirect; hsts: boolean }
   | { check: 'headers'; level: Level; missing: string[]; checked: number; weak: string[] }
   | { check: 'forms'; level: Level; forms: FormFinding[] }
@@ -266,6 +270,16 @@ export const consentModeGranted = (c: ConsentMode | undefined): boolean => c !==
  * Sentry or Matomo of its own); they change no light, as the IP stays with the site, but the reader learns of them.
  */
 export function thirdParty(scan: Scan): Result {
+  const { hosts, selfHosted } = thirdPartyFound(scan)
+  const platform = platformOf(scan)
+  const mode = consentMode(scan)
+  const level = worst([...hosts.map(hostLevel), ...(consentModeGranted(mode) ? ['red' as const] : [])])
+  return { check: 'third-party', level, hosts, consent: consentManagers(scan), selfHosted, ...(platform ? { platform: platform.name } : {}), ...(mode ? { consentMode: mode } : {}) }
+}
+
+const thirdPartyHosts = (scan: Scan) => thirdPartyFound(scan).hosts
+
+function thirdPartyFound(scan: Scan): { hosts: ThirdParty[]; selfHosted: string[] } {
   const own = ownSites(scan)
   const owner = ownership(scan)
   const counts = new Map<string, number>()
@@ -296,10 +310,7 @@ export function thirdParty(scan: Scan): Result {
       return { host, service: serviceOfHost(host) ?? byPath.get(host), requests, ...(reason ? { own: reason } : {}), ...(requests ? {} : { preconnect: true as const }), ...(requests && !early.has(host) ? { afterMove: true as const } : {}) }
     })
     .sort((a, b) => a.host.localeCompare(b.host))
-  const platform = platformOf(scan)
-  const mode = consentMode(scan)
-  const level = worst([...hosts.map(hostLevel), ...(consentModeGranted(mode) ? ['red' as const] : [])])
-  return { check: 'third-party', level, hosts, consent: consentManagers(scan), selfHosted: [...selfHosted], ...(platform ? { platform: platform.name } : {}), ...(mode ? { consentMode: mode } : {}) }
+  return { hosts, selfHosted: [...selfHosted] }
 }
 
 const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.status >= 200 && v.status < 300
@@ -422,6 +433,51 @@ export function legal(scan: Scan): Result {
     return page
   })
   return { check: 'legal', level: worst(pages.map(legalLevel)), pages }
+}
+
+/** a text as words in lower case, hyphens as spaces: „Google-Fonts“ as google fonts */
+const words = (text: string) => text.toLowerCase().replace(/[-_\u2010-\u2011]/g, ' ').replace(/\s+/g, ' ')
+
+/**
+ * the names a privacy policy may give a service: its name, without what is in brackets, and its aliases; none under three
+ * letters. What is in brackets alone is no name: CookieYes (WordPress) is not WordPress.
+ */
+function namesOfService(s: Service): string[] {
+  const names = [s.name, s.name.replace(/\s*\([^)]*\)\s*/g, ' '), ...(s.aliases ?? [])]
+  return [...new Set(names.map(n => words(n).trim()))].filter(n => n.length >= 3)
+}
+
+/**
+ * The services of services.json a text names, by name or alias, as whole words in any case: what scan.ts keeps of the
+ * privacy policy instead of its text. Those needed to run a site (category necessary) are left out: their names
+ * (Session, WordPress) say nothing.
+ */
+export function servicesNamed(text: string): string[] {
+  const t = words(text)
+  const named = services.filter(
+    s => s.category !== 'necessary' && namesOfService(s).some(n => new RegExp(`(?<![\\p{L}\\p{N}])${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').test(t)),
+  )
+  return [...new Set(named.map(s => s.name))]
+}
+
+/**
+ * Whether the privacy policy names the known services that load before any click from other sites: each one it does not
+ * name is yellow. Only names are looked for, as text: whether the policy describes them rightly, spurlos does not say.
+ * Servers that seem to belong to the page, and services needed to run it, are left out. A policy spurlos could not read
+ * as text (no link, unreachable, a PDF, or text that only scripts load) leaves it open: the services are listed, but
+ * none is a finding.
+ */
+export function policy(scan: Scan): Result {
+  const names = new Set(
+    thirdPartyHosts(scan)
+      .filter(h => !h.own && h.service && h.service.category !== 'necessary')
+      .map(h => h.service?.name ?? ''),
+  )
+  const read = scan.policy !== undefined
+  const named = new Set(scan.policy?.named ?? [])
+  const found: PolicyService[] = [...names].sort((a, b) => a.localeCompare(b)).map(name => ({ name, named: named.has(name) }))
+  const level = read && found.some(s => !s.named) ? 'yellow' : 'green'
+  return { check: 'policy', level, read, ...(scan.policy ? { url: scan.policy.url } : {}), services: found }
 }
 
 /** A page without https, an expired certificate or http left without redirect is red; a certificate close to its end or no HSTS yellow. */
@@ -780,7 +836,7 @@ export function mobile(scan: Scan): Result {
 }
 
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan, now), leaks(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), indexing(scan), mobile(scan), accessibility(scan)]
+  return [thirdParty(scan), cookies(scan, now), leaks(scan), fingerprinting(scan), access(scan), legal(scan), policy(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), indexing(scan), mobile(scan), accessibility(scan)]
 }
 
 /**
@@ -794,6 +850,7 @@ export const key = {
   cookie: (c: { name: string; domain: string }) => `cookie ${c.name} ${c.domain}`,
   storage: (e: { area: string; key: string }) => `storage ${e.area} ${e.key}`,
   legal: (kind: LegalKind) => `legal ${kind}`,
+  policy: (name: string) => `policy ${name}`,
   https: (what: 'https' | 'cert' | 'http' | 'hsts') => `https ${what}`,
   header: (name: string) => `header ${name}`,
   csp: (weakness: string) => `csp ${weakness}`,
@@ -856,6 +913,8 @@ function unnumbered(r: Result): Finding[] {
       ]
     case 'legal':
       return list(r.pages).map(p => ({ key: key.legal(p.kind), level: legalLevel(p) }))
+    case 'policy':
+      return r.read ? list(r.services).map(s => ({ key: key.policy(s.name), level: s.named ? ('green' as const) : ('yellow' as const) })) : []
     case 'https':
       return [
         ...(r.https ? [] : [{ key: key.https('https'), level: 'red' as const }]),

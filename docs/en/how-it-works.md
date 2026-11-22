@@ -16,7 +16,7 @@ With `--mobile`, spurlos opens the site as a phone, with the screen of a Pixel 7
 Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Mobile Safari/537.36 spurlos/0.4.0
 ```
 
-spurlos asks with the same user agent whether http redirects to https: some servers answer a bot there differently from a browser (DuckDuckGo serves a bot the page over http and redirects a browser). The legal notice and the privacy policy are requested openly as a bot, since they are not about trackers hiding from bots:
+spurlos asks with the same user agent whether http redirects to https: some servers answer a bot there differently from a browser (DuckDuckGo serves a bot the page over http and redirects a browser). The legal notice and the privacy policy are requested openly as a bot, the HTML only, without scripts, images or fonts, since they are not about trackers hiding from bots:
 
 ```
 spurlos/0.4.0 (+https://github.com/mmohrx/spurlos)

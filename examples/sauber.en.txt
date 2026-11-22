@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/
 2 requests on load, 1 kB; none to other domains
-14 fine
+15 fine
 
 🟢 Third-party servers              none
   → Opening the page sent no request to another server.
@@ -22,6 +22,8 @@ spurlos 0.4.0  https://shop.example/
 🟢 Legal notice and privacy policy  both linked and reachable
   ├─ 🟢 Legal notice (Impressum): “Impressum” → https://shop.example/impressum – reachable
   └─ 🟢 Privacy policy: “Datenschutz” → https://shop.example/datenschutz – reachable
+
+🟢 Privacy policy text              no third-party services to name
 
 🟢 HTTPS                            fine
   └─ 🟢 http:// redirects to https://.

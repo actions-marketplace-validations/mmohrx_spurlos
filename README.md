@@ -15,7 +15,7 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 - ob Skripte den Browser per **Fingerprinting** vermessen: Canvas, Grafikkarte über WebGL, Audio, die IP-Adresse über WebRTC. Das erkennt Besucher auch ohne Cookie wieder.
 - ob Skripte schon beim Laden **nach Standort, Kamera, Mikrofon oder Benachrichtigungen fragen** oder einen Service Worker registrieren.
 - welcher **Cookie-Banner** geladen wird, etwa Usercentrics, Cookiebot oder Borlabs, ob Tracker trotzdem schon vorher laden und ob Google Consent Mode vorab Zustimmung meldet.
-- ob **Impressum und Datenschutzerklärung** verlinkt sind und sich öffnen lassen.
+- ob **Impressum und Datenschutzerklärung** verlinkt sind und sich öffnen lassen, und ob die Datenschutzerklärung die Dienste beim Namen nennt, die vor dem ersten Klick laden.
 - ob **HTTPS** sauber eingerichtet ist: Zertifikat, Weiterleitung von http, HSTS.
 - welche **Sicherheits-Header** fehlen, und ob die Content-Security-Policy Skripte doch durchlässt.
 - ob **eingebundene Dateien** über unverschlüsseltes http kommen, und ob fremde Skripte und Stylesheets ohne `integrity` eingebunden sind.
@@ -96,6 +96,7 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 | Fingerprinting | kein Skript liest Canvas, Grafikkarte, Audio oder über WebRTC die IP-Adresse aus | ein eigenes Skript, ein Captcha oder ein Server, der zur Seite zu gehören scheint, liest sie aus | ein Skript einer fremden Domain liest sie aus |
 | Browser-Zugriffe | kein Skript fragt nach Berechtigungen, oder nur ein Service Worker | ein Skript fragt beim Laden nach Benachrichtigungen oder Push; ein eigenes Skript oder eines von einem Server, der zur Seite zu gehören scheint, nach Standort, Kamera oder Mikrofon | ein Skript einer fremden Domain fragt nach Standort, Kamera oder Mikrofon |
 | Impressum und Datenschutz | beide verlinkt und erreichbar | eine Seite weist spurlos ab (`401`, `403`, `429`) oder antwortet nicht vor dem Timeout, oft ein Bot-Schutz | ein Link fehlt oder die Seite antwortet mit einem anderen Fehler, etwa `404`; ein PDF zählt als erreichbar |
+| Datenschutzerklärung | nennt jeden bekannten fremden Dienst, der vor dem ersten Klick lädt; keiner lädt; oder sie ließ sich nicht als Text lesen | ein Dienst steht nicht im Text, weder mit Namen noch mit einem bekannten anderen Namen | – |
 | HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS (oder `max-age=0`), über http antwortet nichts oder nur ein Fehler (4xx, 5xx, oft ein Bot-Schutz), Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
 | Sicherheits-Header | alle gesetzt | einer oder mehrere fehlen; die CSP lässt Skripte durch | – |
 | Eingebundene Dateien | keine Auffälligkeiten | Skript oder Stylesheet eines fremden Servers ohne `integrity`; Bild, Video oder Audio über http auf einer https-Seite | Skript, Stylesheet oder iframe über http auf einer https-Seite |
@@ -137,13 +138,13 @@ Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn sich eine Seite
 
 ## Bekannte Dienste ergänzen
 
-Welche Hosts und Cookies zu welchem Dienst gehören, steht in [`src/services.json`](src/services.json). Hosts gelten samt Subdomains, Cookie-Namen als Anfang (`_ga` deckt auch `_ga_ABC123` ab), mit `*` vorn als Ende (`*-session`). Unter `paths` stehen Teile von Dateipfaden, an denen spurlos einen Dienst auch auf der eigenen Seite oder auf einem unbekannten Host erkennt: mit `/` am Ende ein Verzeichnis irgendwo im Pfad (`/wp-content/plugins/borlabs-cookie/`), sonst das Ende des Pfads (`/klaro.js`). Fehlt ein Dienst, freue ich mich über einen Pull Request.
+Welche Hosts und Cookies zu welchem Dienst gehören, steht in [`src/services.json`](src/services.json). Hosts gelten samt Subdomains, Cookie-Namen als Anfang (`_ga` deckt auch `_ga_ABC123` ab), mit `*` vorn als Ende (`*-session`). Unter `paths` stehen Teile von Dateipfaden, an denen spurlos einen Dienst auch auf der eigenen Seite oder auf einem unbekannten Host erkennt: mit `/` am Ende ein Verzeichnis irgendwo im Pfad (`/wp-content/plugins/borlabs-cookie/`), sonst das Ende des Pfads (`/klaro.js`). Unter `aliases` stehen andere Namen, unter denen eine Datenschutzerklärung den Dienst nennen kann (`Facebook` für `Meta Pixel`). Fehlt ein Dienst, freue ich mich über einen Pull Request.
 
 ## Was spurlos nicht tut
 
 - Es sucht nicht aktiv nach Lücken. Ausgewertet wird nur, was ein normaler Aufruf der Seite ohnehin liefert; Adressen wie `/.env`, `/.git/` oder `/phpinfo.php` fragt spurlos nicht ab. So lässt es sich gegen jede Seite laufen, ohne sie abzuklopfen.
 - Es klickt keinen Cookie-Banner an. Geprüft wird der Zustand vor jeder Entscheidung des Besuchers; welcher Banner geladen wird, nennt spurlos, aber nicht, ob er richtig eingestellt ist.
-- Es liest Impressum und Datenschutzerklärung nicht, sondern prüft nur, ob sie verlinkt und erreichbar sind.
+- Es liest das Impressum nicht, sondern prüft nur, ob es verlinkt und erreichbar ist. In der Datenschutzerklärung sucht es nur nach den Namen der Dienste, die es gefunden hat; ob sie dort richtig beschrieben sind, beurteilt es nicht.
 - Es gibt keine Rechtsberatung. Ein grüner Bericht heißt nicht, dass eine Seite DSGVO-konform ist, und ein roter nicht, dass sie es nicht ist.
 
 ## Entwickeln

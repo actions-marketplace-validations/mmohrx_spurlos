@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/tracked.html
 15 requests on load, 4 kB; 9 of them with 1 kB to other domains
-7 problems · 6 notes · 1 fine
+7 problems · 6 notes · 2 fine
 
 🔴 Third-party servers              9
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
@@ -145,6 +145,10 @@ spurlos 0.4.0  https://shop.example/tracked.html
 🟢 Data passed on                   none
   → No email address, no value from the address of the page and no ID from
     another server's cookie in the requests to third-party servers.
+
+🟢 Privacy policy text              not read
+  → The privacy policy could not be read as text: no link, not reachable, a PDF,
+    or a page that only loads its text by JavaScript.
 
 Technical pre-check – not legal advice, and no statement on whether the site
 complies with the GDPR.

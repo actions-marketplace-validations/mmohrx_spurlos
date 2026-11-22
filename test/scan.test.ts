@@ -22,6 +22,7 @@ describe('scan', { timeout: 30_000 }, () => {
       fingerprinting: 'green',
       access: 'green',
       legal: 'green',
+      policy: 'green',
       https: 'green',
       headers: 'green',
       resources: 'green',
@@ -297,5 +298,23 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(r.level).toBe('red')
     expect(r.findings.map(l => [l.host, l.what, l.param, l.from])).toEqual([['px.partner.example', 'id', 'uid', 'ads.sync.example']])
     expect(text(s, runChecks(s), 'de')).toContain('px.partner.example – bekommt die ID aus dem Cookie uid von ads.sync.example')
+  })
+
+  test('the privacy policy is read as text for the names of the services the page loads; only the names are kept', async () => {
+    const s = await scan(`${SITE}/policy.html`, { setup: offline, fetch: redirects })
+    expect(s.policy).toEqual({ url: `${SITE}/policy-datenschutz`, named: expect.arrayContaining(['Google Fonts', 'YouTube']) })
+    expect(s.policy?.named).not.toContain('Google Analytics')
+    expect(s.legal.every(v => !('text' in v))).toBe(true)
+    const r = pick(runChecks(s), 'policy')
+    expect(r.level).toBe('yellow')
+    expect(r.services).toEqual([
+      { name: 'Google Analytics', named: false },
+      { name: 'Google Fonts', named: true },
+      { name: 'YouTube', named: true },
+    ])
+    expect(text(s, runChecks(s), 'de')).toContain('Google Analytics – im Text nicht gefunden')
+    // the clean page's policy is a few words: not read, and with nothing to name green either way
+    const clean = await scan(`${SITE}/`, { setup: offline, fetch: redirects })
+    expect(clean.policy).toBeUndefined()
   })
 })

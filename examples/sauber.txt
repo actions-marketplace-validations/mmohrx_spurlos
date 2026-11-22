@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/
 beim Aufruf 2 Anfragen, 1 kB; keine an andere Domains
-14 in Ordnung
+15 in Ordnung
 
 🟢 Fremde Server              keine
   → Beim Aufruf ging keine Anfrage an einen anderen Server.
@@ -22,6 +22,8 @@ beim Aufruf 2 Anfragen, 1 kB; keine an andere Domains
 🟢 Impressum und Datenschutz  beide verlinkt und erreichbar
   ├─ 🟢 Impressum: „Impressum“ → https://shop.example/impressum – erreichbar
   └─ 🟢 Datenschutzerklärung: „Datenschutz“ → https://shop.example/datenschutz – erreichbar
+
+🟢 Datenschutzerklärung       keine fremden Dienste zu nennen
 
 🟢 HTTPS                      in Ordnung
   └─ 🟢 http:// leitet auf https:// weiter.

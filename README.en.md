@@ -15,7 +15,7 @@
 - whether scripts measure the browser by **fingerprinting**: canvas, graphics card via WebGL, audio, the IP address via WebRTC. That recognizes visitors without any cookie.
 - whether scripts **ask for location, camera, microphone or notifications** right on load, or register a service worker.
 - which **cookie banner** loads, such as Usercentrics, Cookiebot or Borlabs, whether trackers load before it anyway, and whether Google Consent Mode reports consent up front.
-- whether the **legal notice (Impressum) and privacy policy** are linked and open.
+- whether the **legal notice (Impressum) and privacy policy** are linked and open, and whether the privacy policy names the services that load before the first click.
 - whether **HTTPS** is set up properly: certificate, redirect from http, HSTS.
 - which **security headers** are missing, and whether the Content-Security-Policy lets scripts through after all.
 - whether **embedded files** come over unencrypted http, and whether third-party scripts and stylesheets are embedded without `integrity`.
@@ -96,6 +96,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 | Fingerprinting | no script reads out canvas, graphics card, audio or the IP address via WebRTC | a script of the site itself, a captcha or a server that seems to belong to the site reads them out | a script of another domain reads them out |
 | Browser access | no script asks for permissions, or only a service worker | a script asks for notifications or push on load; a script of the site itself (or of a server that seems to belong to it) for location, camera or microphone | a script of another domain asks for location, camera or microphone |
 | Legal notice and privacy policy | both linked and reachable | a page turns spurlos away (`401`, `403`, `429`) or does not answer before the timeout, often a bot check | a link is missing or the page answers with another error, such as `404`; a PDF counts as reachable |
+| Privacy policy text | names every known third-party service that loads before the first click; none loads; or it could not be read as text | a service is not in the text, neither by its name nor by a known other name | – |
 | HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing or only an error answers on http (4xx, 5xx, often a bot check), certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
 | Security headers | all set | one or more missing; the CSP lets scripts through | – |
 | Embedded files | nothing to note | a script or stylesheet from a third-party server without `integrity`; an image, video or audio over http on an https page | a script, stylesheet or iframe over http on an https page |
@@ -137,13 +138,13 @@ Exit code `0` without a red finding, `1` with one, `2` if a page could not be ch
 
 ## Adding known services
 
-Which hosts and cookies belong to which service is in [`src/services.json`](src/services.json). Hosts include their subdomains, cookie names match as a prefix (`_ga` also covers `_ga_ABC123`), with a leading `*` as a suffix (`*-session`). `paths` holds parts of file paths by which spurlos recognizes a service on the site itself or on an unknown host too: ending in `/`, a directory anywhere in the path (`/wp-content/plugins/borlabs-cookie/`), otherwise the end of the path (`/klaro.js`). If a service is missing, a pull request is welcome.
+Which hosts and cookies belong to which service is in [`src/services.json`](src/services.json). Hosts include their subdomains, cookie names match as a prefix (`_ga` also covers `_ga_ABC123`), with a leading `*` as a suffix (`*-session`). `paths` holds parts of file paths by which spurlos recognizes a service on the site itself or on an unknown host too: ending in `/`, a directory anywhere in the path (`/wp-content/plugins/borlabs-cookie/`), otherwise the end of the path (`/klaro.js`). `aliases` holds other names a privacy policy may give the service (`Facebook` for `Meta Pixel`). If a service is missing, a pull request is welcome.
 
 ## What spurlos does not do
 
 - It does not actively look for holes. It only evaluates what a normal visit to the page returns anyway; it never requests addresses like `/.env`, `/.git/` or `/phpinfo.php`. So you can run it against any site without probing it.
 - It does not click the cookie banner. What it checks is the state before the visitor decides anything; spurlos names which banner loads, but not whether it is set up correctly.
-- It does not read the legal notice or privacy policy, it only checks that they are linked and reachable.
+- It does not read the legal notice, it only checks that it is linked and reachable. In the privacy policy it only looks for the names of the services it found; whether they are described correctly there, it does not judge.
 - It is not legal advice. A green report does not mean a site complies with the GDPR, and a red one does not mean it doesn't.
 
 ## Development

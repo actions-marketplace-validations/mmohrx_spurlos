@@ -26,6 +26,12 @@ A WebSocket connection (`ws://`, `wss://`), such as a chat's, counts as a reques
 
 Subdomains count as the site itself (`cdn.company.com` belongs to `www.company.com`), following the Public Suffix List (`company.co.uk`).
 
+## Privacy policy text
+
+spurlos opens the page it recognizes as the privacy policy (see above) anyway, to see whether it is reachable; while at it, it reads its visible text, without scripts. In it, it looks for the names of the known services whose servers the site contacts before the first click: as whole words, in any case, with a hyphen as with a space (“Google-Fonts”), also without the part in brackets (“Microsoft Advertising”) and under the other names in `aliases` in `src/services.json` (“Facebook” for Meta Pixel). Every service the text does not name is yellow. Not looked for are servers that seem to belong to the site, services needed to run it (category `necessary`), and hosts spurlos cannot match to a service.
+
+If the text has fewer than 200 characters, is a PDF, the link is missing or the page answers with an error, the check is left open and green (“not read”). The same goes for pages that only load their text by JavaScript. spurlos does not keep the text itself; in `--json`, `scan.policy` only holds the address and the names of the services it names. Whether the policy describes the services correctly, the check does not say, and a service may also appear there under a name spurlos does not know, its provider's, say.
+
 ## Data passed on
 
 On a first visit, a site knows of the visitor only what is in its address. So spurlos searches the address and body (POST) of every request to a third-party server, URL-encoded too, for email addresses and for the values of the query of the address checked. An email address is red, a value from the query yellow. Campaign parameters and click IDs (`utm_…`, `gclid`, `gbraid`, `wbraid`, `dclid`, `fbclid`, `msclkid`, `ttclid`, `twclid`, `li_fat_id`, `mc_cid`, `mc_eid`, `_ga`, `_gl`, `ref`) and values under six characters do not count. What looks like an email address but follows right after `//`, such as Sentry's DSN (`https://key@o1.ingest.sentry.io`), is none. Checking is worth it above all with addresses that carry data, such as a thank-you page after signing up: `spurlos "https://company.com/thanks?email=test@company.com"`. 

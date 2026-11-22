@@ -134,6 +134,17 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
         notes: [],
       }
 
+    case 'policy': {
+      if (!r.services.length) return { value: t.policyNothing, items: [], notes: [] }
+      if (!r.read) return { value: t.policyUnread, items: [], notes: [t.policyUnreadWhy] }
+      const missing = r.services.filter(s => !s.named).length
+      return {
+        value: missing ? t.policyMissing(missing) : t.policyAllNamed,
+        items: r.services.map(s => item(key.policy(s.name), s.named ? 'green' : 'yellow', s.name, s.named ? t.policyNamed : t.policyNotNamed)),
+        notes: [t.policyHow],
+      }
+    }
+
     case 'https': {
       const items: (Item | null)[] = [
         r.https ? null : item(key.https('https'), 'red', t.noHttps),

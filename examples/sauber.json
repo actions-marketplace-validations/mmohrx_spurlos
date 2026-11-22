@@ -149,6 +149,12 @@
       ]
     },
     {
+      "check": "policy",
+      "level": "green",
+      "read": false,
+      "services": []
+    },
+    {
       "check": "https",
       "level": "green",
       "https": true,

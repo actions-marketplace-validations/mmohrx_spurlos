@@ -1,7 +1,7 @@
 import { X509Certificate } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Page, type Request as PlaywrightRequest, type Response as PlaywrightResponse } from 'playwright'
-import { carried, cookieIds, legalLinks } from './checks.ts'
+import { carried, cookieIds, legalLinks, servicesNamed } from './checks.ts'
 
 // src/ and dist/ both sit next to package.json
 export const VERSION: string = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
@@ -249,6 +249,11 @@ export type Scan = {
   links: Link[]
   /** the links that look like Impressum or Datenschutz, each opened on its own */
   legal: Visit[]
+  /**
+   * the privacy policy read as text: its address, and the services of services.json it names (see servicesNamed); the
+   * text itself is not kept. Missing where it could not be read: no link, an error, a PDF, or text only scripts load.
+   */
+  policy?: { url: string; named: string[] }
   forms: Form[]
   /** scripts, stylesheets, frames, images and media the markup embeds, with their absolute address */
   resources: Resource[]
@@ -580,12 +585,18 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     // the http probe and the legal pages do not depend on each other: ask them all at once.
     // http:// as the page was asked: some servers answer a bot there with the page and a browser with a redirect.
     // One page can be both Impressum and Datenschutz; open it once.
+    // The privacy policy's text is read for the names of services, as the second browser shows it, without scripts.
+    const found = legalLinks(links, finalUrl)
+    const privacy = found.find(l => l.kind === 'datenschutz')?.href
     const [http, ...legal] = await Promise.all([
       finalUrl.startsWith('https:') ? probeHttp(finalUrl.replace(/^https:/, 'http:'), options.fetch ?? fetch, userAgent) : undefined,
-      ...[...new Set(legalLinks(links, finalUrl).map(l => l.href))].map(visitor),
+      ...[...new Set(found.map(l => l.href))].map(u => visitor(u, u === privacy)),
     ])
     if (http) result.http = http
-    result.legal = legal.filter(v => v !== undefined)
+    result.legal = legal.filter(v => v !== undefined).map(({ text: _, ...v }) => v as Visit)
+    // a few words are a page that loads its text by script, or no policy at all
+    const text = legal.find(v => v?.url === privacy)?.text ?? ''
+    if (privacy && text.trim().length >= 200) result.policy = { url: privacy, named: servicesNamed(text) }
     return result
   } finally {
     await browser.close()
@@ -625,7 +636,8 @@ async function documentsOnly(browser: Browser, url: string, options: ScanOptions
   await context.route('**/*', route => (route.request().resourceType() === 'document' ? route.continue() : route.abort()))
   // registered after the filter, so the tests' routes take precedence over it
   await options.setup?.(context)
-  return async (url: string): Promise<Visit> => {
+  // read: also hand back the page's visible text, at most a megabyte
+  return async (url: string, read = false): Promise<Visit & { text?: string }> => {
     const page = await context.newPage()
     // a PDF opens as a download, and goto fails though the server answered: its answer still counts
     let answer: PlaywrightResponse | undefined
@@ -634,7 +646,11 @@ async function documentsOnly(browser: Browser, url: string, options: ScanOptions
     })
     try {
       const r = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15_000 })
-      return r ? { url, status: r.status(), finalUrl: page.url() } : { url, error: NO_RESPONSE }
+      if (!r) return { url, error: NO_RESPONSE }
+      const visit = { url, status: r.status(), finalUrl: page.url() }
+      if (!read || r.status() >= 400) return visit
+      const text = await page.evaluate(() => (document.body?.innerText ?? '').slice(0, 1_000_000)).catch(() => '')
+      return { ...visit, text }
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
       if (answer && /Download is starting/.test(message)) return { url, status: answer.status(), finalUrl: answer.url() }

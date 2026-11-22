@@ -106,7 +106,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829910307.324913,
+        "expires": 1829910616.784017,
         "secure": false,
         "httpOnly": false,
         "sameSite": "Lax"
@@ -114,7 +114,7 @@
       {
         "name": "prefs",
         "domain": "shop.example",
-        "expires": 1829910307.324952,
+        "expires": 1829910616.784058,
         "secure": true,
         "httpOnly": false,
         "sameSite": "None"
@@ -122,7 +122,7 @@
       {
         "name": "_fbp",
         "domain": "shop.example",
-        "expires": 1803126307.953949,
+        "expires": 1803126617.41349,
         "secure": true,
         "httpOnly": false,
         "sameSite": "Lax",
@@ -331,6 +331,11 @@
             "cookies": [
               "_fbp",
               "_fbc"
+            ],
+            "aliases": [
+              "Facebook Pixel",
+              "Meta Platforms",
+              "Facebook"
             ]
           },
           "requests": 1,
@@ -344,6 +349,10 @@
             "hosts": [
               "fonts.googleapis.com",
               "fonts.gstatic.com"
+            ],
+            "aliases": [
+              "Google Web Fonts",
+              "Google Webfonts"
             ]
           },
           "requests": 1
@@ -376,6 +385,9 @@
             "category": "tracking",
             "hosts": [
               "googletagmanager.com"
+            ],
+            "aliases": [
+              "Tag Manager"
             ]
           },
           "requests": 1
@@ -431,7 +443,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829910307.324913,
+          "expires": 1829910616.784017,
           "secure": false,
           "httpOnly": false,
           "sameSite": "Lax",
@@ -457,7 +469,7 @@
         {
           "name": "prefs",
           "domain": "shop.example",
-          "expires": 1829910307.324952,
+          "expires": 1829910616.784058,
           "secure": true,
           "httpOnly": false,
           "sameSite": "None",
@@ -468,7 +480,7 @@
         {
           "name": "_fbp",
           "domain": "shop.example",
-          "expires": 1803126307.953949,
+          "expires": 1803126617.41349,
           "secure": true,
           "httpOnly": false,
           "sameSite": "Lax",
@@ -483,6 +495,11 @@
             "cookies": [
               "_fbp",
               "_fbc"
+            ],
+            "aliases": [
+              "Facebook Pixel",
+              "Meta Platforms",
+              "Facebook"
             ]
           },
           "missing": []
@@ -566,6 +583,41 @@
         },
         {
           "kind": "datenschutz"
+        }
+      ]
+    },
+    {
+      "check": "policy",
+      "level": "green",
+      "read": false,
+      "services": [
+        {
+          "name": "Google Analytics",
+          "named": false
+        },
+        {
+          "name": "Google Fonts",
+          "named": false
+        },
+        {
+          "name": "Google Tag Manager",
+          "named": false
+        },
+        {
+          "name": "jsDelivr",
+          "named": false
+        },
+        {
+          "name": "Meta Pixel",
+          "named": false
+        },
+        {
+          "name": "Usercentrics",
+          "named": false
+        },
+        {
+          "name": "YouTube",
+          "named": false
         }
       ]
     },
