@@ -26,8 +26,10 @@ describe('scan', { timeout: 30_000 }, () => {
       resources: 'green',
       forms: 'green',
       disclosure: 'green',
+      accessibility: 'green',
     })
     expect(pick(results, 'https').http).toBe('redirects')
+    expect(pick(results, 'accessibility').statement?.href).toBe(`${SITE}/barrierefreiheit`)
     expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
     expect(s).toMatchObject({ metaCsp: "default-src 'self'", metaReferrer: 'no-referrer' })
 
@@ -135,6 +137,13 @@ describe('scan', { timeout: 30_000 }, () => {
         ['service-worker', `${SITE}/tracked.html`, false],
       ]),
     )
+    // the image without alt, both newsletter fields without a label, the viewport that locks zooming
+    expect(pick(results, 'accessibility')).toMatchObject({
+      level: 'yellow',
+      problems: ['images', 'fields', 'zoom'],
+      images: [`${SITE}/team.jpg`],
+      fields: ['input mail', 'input mail'],
+    })
     // set without Secure on an https page
     expect(pick(results, 'cookies').cookies.find(c => c.name === 'session')?.missing).toEqual(['Secure'])
 

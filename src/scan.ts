@@ -67,6 +67,11 @@ export type Fingerprint = { api: FingerprintApi; script: string }
 /** what a script asks the browser for: a permission the visitor has to grant, or a service worker that stays */
 export type AccessApi = 'notifications' | 'push' | 'geolocation' | 'camera' | 'microphone' | 'service-worker'
 export type Access = { api: AccessApi; script: string }
+/**
+ * Basics of accessibility a machine can tell: lang of <html>, the viewport meta tag, images without alt (their
+ * address) and form fields without a label (tag and name), both only where visible and not hidden from screen readers.
+ */
+export type Accessibility = { lang?: string; viewport?: string; images: string[]; fields: string[] }
 const FINGERPRINT_APIS: readonly string[] = ['canvas', 'webgl', 'audio'] satisfies FingerprintApi[]
 const ACCESS_APIS: readonly string[] = ['notifications', 'push', 'geolocation', 'camera', 'microphone', 'service-worker'] satisfies AccessApi[]
 
@@ -205,6 +210,7 @@ export type Scan = {
   fingerprinting: Fingerprint[]
   /** what scripts asked the browser for before any click: permissions and service workers, once per API and script */
   access: Access[]
+  accessibility: Accessibility
   /** a Content-Security-Policy set in a <meta http-equiv> tag, the only way to one on hosts without own headers */
   metaCsp?: string
   /** a referrer policy set in <meta name="referrer"> */
@@ -344,7 +350,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     }))
     // what a visitor sees first, cookie banner included; a page that cannot be pictured still gets its report
     const screenshot = options.screenshot ? await page.screenshot({ type: 'jpeg', quality: 70 }).then(b => b.toString('base64'), () => undefined) : undefined
-    const { storage, links, forms, resources, metaCsp, metaReferrer, generator } = await page.evaluate(() => {
+    const { storage, links, forms, resources, metaCsp, metaReferrer, generator, accessibility } = await page.evaluate(() => {
       const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
         const s = window[area]
@@ -387,7 +393,19 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const meta = [...document.querySelectorAll('meta[http-equiv]')].find(m => m.getAttribute('http-equiv')?.toLowerCase() === 'content-security-policy')
       const referrer = document.querySelector('meta[name="referrer" i]')?.getAttribute('content') ?? null
       const generator = document.querySelector('meta[name="generator" i]')?.getAttribute('content') ?? null
-      return { storage, links, forms, resources, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator }
+      // what a screen reader meets: visible, and not hidden from it
+      const perceived = (el: Element) => el.getClientRects().length > 0 && !el.closest('[aria-hidden="true" i]')
+      const named = (el: Element) => ['aria-label', 'aria-labelledby', 'title'].some(a => (el.getAttribute(a) ?? '').trim() !== '')
+      const images = (all('img') as HTMLImageElement[])
+        .filter(i => !i.hasAttribute('alt') && !/^(presentation|none)$/i.test(i.getAttribute('role') ?? '') && !named(i) && perceived(i))
+        .map(i => i.currentSrc || i.src)
+      const fields = (all('input, select, textarea') as HTMLInputElement[])
+        .filter(f => !(f.tagName === 'INPUT' && /^(hidden|submit|button|reset|image)$/i.test(f.type)) && !f.labels?.length && !named(f) && perceived(f))
+        .map(f => (f.name ? `${f.tagName.toLowerCase()} ${f.name}` : f.tagName.toLowerCase()))
+      const lang = document.documentElement.getAttribute('lang')
+      const viewport = document.querySelector('meta[name="viewport" i]')?.getAttribute('content')
+      const accessibility: Accessibility = { images, fields, ...(lang !== null ? { lang } : {}), ...(viewport != null ? { viewport } : {}) }
+      return { storage, links, forms, resources, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator, accessibility }
     })
 
     const headers = await response.allHeaders()
@@ -410,6 +428,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       resources,
       fingerprinting,
       access,
+      accessibility,
       userAgent,
       sandbox,
     }

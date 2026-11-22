@@ -1,5 +1,5 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-7 problems · 3 notes
+7 problems · 4 notes
 
 🔴 Third-party servers              7
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
@@ -89,6 +89,21 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → A version number allows a targeted search for known holes.
      → Version numbers can usually be switched off, e.g. with expose_php = Off
        in PHP or server_tokens off in nginx.
+
+🟡 Accessibility                    3 basics missing
+  ├─ 🟡 1 image without alt text – https://shop.example/team.jpg
+  ├─ 🟡 2 form fields without a label – input mail, input mail
+  └─ 🟡 The viewport keeps people from zooming in – width=device-width, initial-scale=1, user-scalable=no
+     → Without alt, screen readers read out the file name. Images that only
+       decorate get alt="".
+     → Without <label>, aria-label or title, screen readers do not say what goes
+       into a field; a placeholder is no label.
+     → With user-scalable=no or a maximum-scale under 2, the page cannot be
+       zoomed to twice its size on a phone.
+     → No accessibility statement linked.
+     → These are only basics that can be checked without a click. They do not
+       say whether the site is accessible; that takes tools such as axe and
+       people using it with a screen reader and keyboard.
 
 Technical pre-check – not legal advice, and no statement on whether the site
 complies with the GDPR.

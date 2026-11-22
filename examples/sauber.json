@@ -18,7 +18,7 @@
     "cookies": [],
     "storage": [],
     "headers": {
-      "content-length": "547",
+      "content-length": "621",
       "content-security-policy": "default-src 'self'; frame-ancestors 'none'",
       "content-type": "text/html",
       "permissions-policy": "camera=(), microphone=()",
@@ -34,6 +34,10 @@
       {
         "text": "Datenschutz",
         "href": "https://shop.example/datenschutz"
+      },
+      {
+        "text": "Barrierefreiheit",
+        "href": "https://shop.example/barrierefreiheit"
       }
     ],
     "legal": [
@@ -63,6 +67,11 @@
     ],
     "fingerprinting": [],
     "access": [],
+    "accessibility": {
+      "images": [],
+      "fields": [],
+      "lang": "de"
+    },
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0",
     "sandbox": true,
     "metaCsp": "default-src 'self'",
@@ -160,6 +169,17 @@
       "check": "disclosure",
       "level": "green",
       "findings": []
+    },
+    {
+      "check": "accessibility",
+      "level": "green",
+      "problems": [],
+      "images": [],
+      "fields": [],
+      "statement": {
+        "text": "Barrierefreiheit",
+        "href": "https://shop.example/barrierefreiheit"
+      }
     }
   ],
   "note": "Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist."

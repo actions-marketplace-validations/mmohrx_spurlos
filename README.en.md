@@ -20,6 +20,7 @@
 - whether **embedded files** come over unencrypted http, and whether third-party scripts and stylesheets are embedded without `integrity`.
 - where **forms** send their data: encrypted to the site itself, to a third-party server, or unencrypted.
 - whether headers or the page **reveal the software behind it, version included**, e.g. `X-Powered-By: PHP/8.1.2` or `WordPress 6.2`.
+- a few **accessibility basics**: the page's language, images without `alt`, form fields without a label, zooming locked, a link to an accessibility statement.
 
 ```
 npx spurlos example-company.com --lang en
@@ -92,6 +93,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 | Embedded files | nothing to note | a script or stylesheet from a third-party server without `integrity`; an image, video or audio over http on an https page | a script, stylesheet or iframe over http on an https page |
 | Forms | none, or all send encrypted to the site itself | one sends to a third-party server | one sends unencrypted over http |
 | Software details | nothing, or only the software's name | a version number in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` or `<meta name="generator">` | – |
+| Accessibility | `lang` set, images with `alt`, form fields labelled, zooming allowed | one of these basics is missing | – |
 
 The exact rules are in [docs/en/checks.md](docs/en/checks.md): which headers are checked, which cookies spurlos knows, when a server on another domain belongs to the site and how it tells the platform the site runs on.
 

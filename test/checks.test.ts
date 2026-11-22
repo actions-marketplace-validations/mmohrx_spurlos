@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import {
-  access, compare, consentManagers, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, accessibility, blocksZoom, compare, consentManagers, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import type { Scan, Visit } from '../src/scan.ts'
 
-const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], fingerprinting: [], access: [], userAgent: 'test', sandbox: true }
+const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], fingerprinting: [], access: [], accessibility: { lang: 'de', images: [], fields: [] }, userAgent: 'test', sandbox: true }
 const req = (host: string) => ({ url: `https://${host}/x`, host, type: 'script' })
 
 describe('fingerprinting', () => {
@@ -45,6 +45,35 @@ describe('fingerprinting', () => {
     expect(fingerprinting(base).level).toBe('green')
     const { fingerprinting: _, ...old } = base
     expect(fingerprinting(old as Scan).level).toBe('green')
+  })
+})
+
+describe('accessibility', () => {
+  test('each missing basic is yellow; a statement is named, from the own site first', () => {
+    const r = accessibility({
+      ...base,
+      accessibility: { lang: ' ', images: ['https://www.firma.de/a.jpg'], fields: [], viewport: 'width=device-width, maximum-scale=1' },
+      links: [
+        { text: 'Accessibility', href: 'https://agentur.de/accessibility' },
+        { text: 'Erklärung zur Barrierefreiheit', href: 'https://www.firma.de/barrierefreiheit' },
+      ],
+    })
+    expect(r).toMatchObject({ level: 'yellow', problems: ['lang', 'images', 'zoom'], statement: { href: 'https://www.firma.de/barrierefreiheit' } })
+    expect(findings(r).map(f => `${f.level} ${f.key}`)).toEqual([
+      'yellow accessibility lang',
+      'yellow accessibility images',
+      'yellow accessibility zoom',
+      'green accessibility statement',
+    ])
+    expect(accessibility(base)).toMatchObject({ level: 'green', problems: [] })
+  })
+
+  test('the viewport blocks zooming with user-scalable=no or 0, or a maximum-scale under 2', () => {
+    expect(blocksZoom('width=device-width, user-scalable=no')).toBe(true)
+    expect(blocksZoom('width=device-width; user-scalable=0')).toBe(true)
+    expect(blocksZoom('maximum-scale=1.5')).toBe(true)
+    expect(blocksZoom('width=device-width, initial-scale=1, maximum-scale=5')).toBe(false)
+    expect(blocksZoom('width=device-width, initial-scale=1')).toBe(false)
   })
 })
 

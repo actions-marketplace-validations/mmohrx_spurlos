@@ -1,5 +1,5 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-7 Mängel · 3 Hinweise
+7 Mängel · 4 Hinweise
 
 🔴 Fremde Server              7
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
@@ -90,6 +90,21 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → Mit der Versionsnummer lässt sich gezielt nach bekannten Lücken suchen.
      → Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off
        in PHP oder server_tokens off in nginx.
+
+🟡 Barrierefreiheit           3 Grundlagen fehlen
+  ├─ 🟡 1 Bild ohne alt-Text – https://shop.example/team.jpg
+  ├─ 🟡 2 Formularfelder ohne Beschriftung – input mail, input mail
+  └─ 🟡 Der Viewport verhindert das Vergrößern – width=device-width, initial-scale=1, user-scalable=no
+     → Ohne alt lesen Screenreader den Dateinamen vor. Bilder, die nur
+       schmücken, bekommen alt="".
+     → Ohne <label>, aria-label oder title sagen Screenreader nicht, was in ein
+       Feld gehört; ein placeholder ersetzt keine Beschriftung.
+     → Mit user-scalable=no oder maximum-scale unter 2 lässt sich die Seite auf
+       dem Handy nicht auf das Doppelte vergrößern.
+     → Keine Erklärung zur Barrierefreiheit verlinkt.
+     → Das sind nur Grundlagen, die sich ohne Klick prüfen lassen. Ob die Seite
+       barrierefrei ist, sagt das nicht; dafür braucht es Werkzeuge wie axe und
+       Menschen, die sie mit Screenreader und Tastatur bedienen.
 
 Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die
 Seite DSGVO-konform ist.

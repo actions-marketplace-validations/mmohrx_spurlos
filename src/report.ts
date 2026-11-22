@@ -179,6 +179,22 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       }
     }
 
+    case 'accessibility': {
+      const first = (list: string[]) => list.slice(0, 3).join(', ') + (list.length > 3 ? ', …' : '')
+      const items: Item[] = r.problems.map(p =>
+        p === 'images' ? item(key.accessibility(p), 'yellow', t.a11yImages(r.images.length), first(r.images.map(withoutQuery)))
+        : p === 'fields' ? item(key.accessibility(p), 'yellow', t.a11yFields(r.fields.length), first(r.fields))
+        : p === 'zoom' ? item(key.accessibility(p), 'yellow', t.a11yZoom, r.viewport)
+        : item(key.accessibility(p), 'yellow', t.a11yLang),
+      )
+      if (r.statement) items.push(item(key.accessibility('statement'), 'green', `${t.a11yStatement}: ${t.quote(r.statement.text || r.statement.href)} → ${r.statement.href}`))
+      return {
+        value: r.problems.length ? t.a11yValue(r.problems.length) : t.a11yOk,
+        items,
+        notes: [...r.problems.map(p => t.a11yWhy[p]), ...(r.statement ? [] : [t.a11yNoStatement]), t.a11yScope],
+      }
+    }
+
     case 'disclosure': {
       if (!r.findings.length) return { value: t.none, items: [], notes: [t.disclosureNone] }
       const versions = r.findings.filter(d => d.version).length

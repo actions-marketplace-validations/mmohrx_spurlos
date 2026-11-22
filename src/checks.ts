@@ -41,6 +41,8 @@ export type ResourceFinding = Resource & { problem: 'insecure' | 'no-integrity' 
 export type Caller = { host: string; thirdParty: boolean; service: Service | undefined; own?: OwnReason }
 export type FingerprintFinding = Fingerprint & Caller
 export type AccessFinding = Access & Caller
+/** what of the accessibility basics is missing; statement: the link to an accessibility statement */
+export type AccessibilityProblem = 'lang' | 'images' | 'fields' | 'zoom'
 
 export type Result =
   | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string }
@@ -53,6 +55,7 @@ export type Result =
   | { check: 'resources'; level: Level; findings: ResourceFinding[] }
   | { check: 'fingerprinting'; level: Level; findings: FingerprintFinding[] }
   | { check: 'access'; level: Level; findings: AccessFinding[] }
+  | { check: 'accessibility'; level: Level; problems: AccessibilityProblem[]; images: string[]; fields: string[]; viewport?: string; statement?: Link }
 
 /** worst first */
 export const SEVERITY: Level[] = ['red', 'yellow', 'green']
@@ -491,8 +494,59 @@ export function access(scan: Scan): Result {
   return { check: 'access', level: worst(findings.map(accessLevel)), findings }
 }
 
+/**
+ * Whether the viewport keeps people from zooming in: user-scalable=no (or 0), or a maximum-scale under 2, as WCAG asks
+ * for 200 %.
+ */
+export function blocksZoom(viewport: string): boolean {
+  const props = new Map(
+    viewport.toLowerCase().split(/[,;]/).map((p): [string, string] => {
+      const [name = '', value = ''] = p.split('=')
+      return [name.trim(), value.trim()]
+    }),
+  )
+  const scalable = props.get('user-scalable')
+  const max = Number(props.get('maximum-scale'))
+  return scalable === 'no' || scalable === '0' || (props.has('maximum-scale') && Number.isFinite(max) && max < 2)
+}
+
+const STATEMENT = /barrierefrei|accessibility|zugänglichkeit/i
+
+/** The link to an accessibility statement, by its text, else its address; one on the page's own site first. */
+export function statementLink(links: Link[], pageUrl: string): Link | undefined {
+  const own = site(new URL(pageUrl).hostname)
+  const rank = (l: Link) => (site(new URL(l.href).hostname) === own ? 0 : 2) + (STATEMENT.test(l.text) ? 0 : 1)
+  return links.filter(l => /^https?:/.test(l.href) && (STATEMENT.test(l.text) || STATEMENT.test(l.href))).sort((a, b) => rank(a) - rank(b))[0]
+}
+
+/**
+ * The basics of accessibility a machine can tell without a click: the page names its language, images have an alt
+ * text, form fields a label, the viewport lets people zoom. Each missing is yellow: whether a page is accessible takes
+ * far more than this. A link to an accessibility statement is named, its absence only noted.
+ */
+export function accessibility(scan: Scan): Result {
+  const a = scan.accessibility
+  const zoom = a.viewport !== undefined && blocksZoom(a.viewport)
+  const problems: AccessibilityProblem[] = [
+    ...(a.lang?.trim() ? [] : ['lang' as const]),
+    ...(a.images.length ? ['images' as const] : []),
+    ...(a.fields.length ? ['fields' as const] : []),
+    ...(zoom ? ['zoom' as const] : []),
+  ]
+  const link = statementLink(scan.links, scan.finalUrl)
+  return {
+    check: 'accessibility',
+    level: problems.length ? 'yellow' : 'green',
+    problems,
+    images: a.images,
+    fields: a.fields,
+    ...(zoom && a.viewport ? { viewport: a.viewport } : {}),
+    ...(link ? { statement: { text: link.text, href: link.href } } : {}),
+  }
+}
+
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan)]
+  return [thirdParty(scan), cookies(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), accessibility(scan)]
 }
 
 /**
@@ -513,6 +567,7 @@ export const key = {
   /** by host, not by script: a fingerprinting service may serve its script under a new path on every visit */
   fingerprint: (f: { api: string; host: string }) => `fingerprinting ${f.api} ${hostKey(f.host)}`,
   access: (a: { api: string; host: string }) => `access ${a.api} ${hostKey(a.host)}`,
+  accessibility: (what: AccessibilityProblem | 'statement') => `accessibility ${what}`,
   // without the query: a cache buster like ?ver=6.4.2 changes with every update, the file stays the same
   resource: (r: { problem: string; url: string }) => `resource ${r.problem} ${withoutQuery(r.url)}`,
 }
@@ -578,6 +633,11 @@ function unnumbered(r: Result): Finding[] {
       return list(r.findings).map(f => ({ key: key.fingerprint(f), level: fingerprintLevel(f) }))
     case 'access':
       return list(r.findings).map(a => ({ key: key.access(a), level: accessLevel(a) }))
+    case 'accessibility':
+      return [
+        ...list(r.problems).map(p => ({ key: key.accessibility(p), level: 'yellow' as const })),
+        ...(r.statement ? [{ key: key.accessibility('statement'), level: 'green' as const }] : []),
+      ]
     case 'forms':
       return list(r.forms).map(f => ({ key: key.form(f), level: formLevel(f) }))
     case 'disclosure':

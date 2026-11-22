@@ -45,9 +45,19 @@
         "type": "image"
       },
       {
+        "url": "https://shop.example/team.jpg",
+        "host": "shop.example",
+        "type": "image"
+      },
+      {
         "url": "http://shop.example/alt.js",
         "host": "shop.example",
         "type": "script"
+      },
+      {
+        "url": "https://shop.example/deko.png",
+        "host": "shop.example",
+        "type": "image"
       },
       {
         "url": "https://www.youtube.com/embed/abc",
@@ -71,7 +81,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829902687.202221,
+        "expires": 1829902705.490936,
         "secure": false,
         "httpOnly": false
       }
@@ -83,7 +93,7 @@
       }
     ],
     "headers": {
-      "content-length": "1677",
+      "content-length": "1882",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -156,6 +166,16 @@
         "tag": "img",
         "url": "https://cdn.unbekannt.example/bild.png",
         "integrity": false
+      },
+      {
+        "tag": "img",
+        "url": "https://shop.example/team.jpg",
+        "integrity": false
+      },
+      {
+        "tag": "img",
+        "url": "https://shop.example/deko.png",
+        "integrity": false
       }
     ],
     "fingerprinting": [
@@ -186,6 +206,17 @@
         "script": "https://shop.example/tracked.html"
       }
     ],
+    "accessibility": {
+      "images": [
+        "https://shop.example/team.jpg"
+      ],
+      "fields": [
+        "input mail",
+        "input mail"
+      ],
+      "lang": "de",
+      "viewport": "width=device-width, initial-scale=1, user-scalable=no"
+    },
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0",
     "sandbox": true,
     "generator": "WordPress 6.2",
@@ -307,7 +338,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829902687.202221,
+          "expires": 1829902705.490936,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,
@@ -506,6 +537,23 @@
           "version": true
         }
       ]
+    },
+    {
+      "check": "accessibility",
+      "level": "yellow",
+      "problems": [
+        "images",
+        "fields",
+        "zoom"
+      ],
+      "images": [
+        "https://shop.example/team.jpg"
+      ],
+      "fields": [
+        "input mail",
+        "input mail"
+      ],
+      "viewport": "width=device-width, initial-scale=1, user-scalable=no"
     }
   ],
   "note": "Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist."

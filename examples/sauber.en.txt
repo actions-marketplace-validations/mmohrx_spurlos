@@ -1,5 +1,5 @@
 spurlos 0.4.0  https://shop.example/
-10 fine
+11 fine
 
 🟢 Third-party servers              none
   → Opening the page sent no request to another server.
@@ -29,6 +29,12 @@ spurlos 0.4.0  https://shop.example/
 
 🟢 Software details                 none
   → Neither headers nor the page name the software behind it.
+
+🟢 Accessibility                    basics in order
+  └─ 🟢 Accessibility statement: “Barrierefreiheit” → https://shop.example/barrierefreiheit
+     → These are only basics that can be checked without a click. They do not
+       say whether the site is accessible; that takes tools such as axe and
+       people using it with a screen reader and keyboard.
 
 Technical pre-check – not legal advice, and no statement on whether the site
 complies with the GDPR.

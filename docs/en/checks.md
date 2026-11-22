@@ -32,6 +32,17 @@ Which script it was, spurlos reads from the stack trace; for code right in the H
 
 spurlos notes when a script, while the page loads, asks whether it may send notifications (`Notification.requestPermission`), subscribes to push messages (`PushManager.subscribe`), asks for the location (`getCurrentPosition`, `watchPosition`), for camera or microphone (`getUserMedia`), or registers a service worker. Notifications and push are yellow, whoever asks. Location, camera and microphone are red when a script of another domain asks, yellow otherwise; whose a script is, spurlos decides as for fingerprinting. A service worker is green, as that is how push and working offline are done; the report still names it, since it stays in the browser after the visit.
 
+## Accessibility
+
+spurlos checks only a few basics that can be told without a click; each one missing is yellow:
+
+- `<html>` has a `lang` attribute.
+- Images have an `alt` attribute (`alt=""` too, for images that only decorate). Images with `role="presentation"` or `role="none"`, with `aria-label`, `aria-labelledby` or `title`, invisible ones and those inside `aria-hidden="true"` do not count.
+- Form fields (`input`, `select`, `textarea`, without buttons and hidden fields) have a label: a `<label>`, `aria-label`, `aria-labelledby` or `title`. A `placeholder` does not count. Invisible fields, such as honeypots against spam, do not count here either.
+- The viewport allows zooming: no `user-scalable=no` (or `0`) and no `maximum-scale` under 2.
+
+A link to an accessibility statement spurlos recognizes by “barrierefrei”, “Zugänglichkeit” or “accessibility” in its text or address, and names it; if there is none, that is only a note, without a light. The check does not say whether the site is accessible, nor whether it needs such a statement.
+
 ## Own servers on other domains
 
 Many sites load images and scripts from a second domain of their own, Wikipedia for example from `wikimedia.org`. Such servers are yellow instead of red when spurlos can tie them to the site, and the report says why:

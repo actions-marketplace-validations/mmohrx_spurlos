@@ -1,5 +1,5 @@
 import type { AccessApi, FingerprintApi } from '../scan.ts'
-import type { FormFinding, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
+import type { AccessibilityProblem, FormFinding, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
 import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED } from '../scan.ts'
 import { plural } from './plural.ts'
 
@@ -83,6 +83,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
     cookies: 'Cookies und Speicher',
     fingerprinting: 'Fingerprinting',
     access: 'Browser-Zugriffe',
+    accessibility: 'Barrierefreiheit',
     legal: 'Impressum und Datenschutz',
     https: 'HTTPS',
     headers: 'Sicherheits-Header',
@@ -162,6 +163,21 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   } satisfies Record<AccessApi, string>,
   accessWhy: 'Gefragt schon beim Laden, bevor jemand etwas anklickt: Der Besucher weiß dann nicht, wozu die Seite das will. Firefox zeigt die Frage nach Benachrichtigungen ohne Klick gar nicht erst an.',
   accessWorker: 'Ein Service Worker bleibt im Browser und kann auch nach dem Besuch laufen, etwa für Push-Nachrichten oder damit die Seite offline geht.',
+  a11yOk: 'Grundlagen in Ordnung',
+  a11yValue: (n: number) => plural(n, 'Grundlage fehlt', 'Grundlagen fehlen'),
+  a11yLang: 'Die Seite nennt ihre Sprache nicht (lang am <html>)',
+  a11yImages: (n: number) => `${plural(n, 'Bild', 'Bilder')} ohne alt-Text`,
+  a11yFields: (n: number) => `${plural(n, 'Formularfeld', 'Formularfelder')} ohne Beschriftung`,
+  a11yZoom: 'Der Viewport verhindert das Vergrößern',
+  a11yStatement: 'Erklärung zur Barrierefreiheit',
+  a11yWhy: {
+    lang: 'Ohne lang lesen Screenreader den Text womöglich mit der Aussprache einer anderen Sprache vor.',
+    images: 'Ohne alt lesen Screenreader den Dateinamen vor. Bilder, die nur schmücken, bekommen alt="".',
+    fields: 'Ohne <label>, aria-label oder title sagen Screenreader nicht, was in ein Feld gehört; ein placeholder ersetzt keine Beschriftung.',
+    zoom: 'Mit user-scalable=no oder maximum-scale unter 2 lässt sich die Seite auf dem Handy nicht auf das Doppelte vergrößern.',
+  } satisfies Record<AccessibilityProblem, string>,
+  a11yNoStatement: 'Keine Erklärung zur Barrierefreiheit verlinkt.',
+  a11yScope: 'Das sind nur Grundlagen, die sich ohne Klick prüfen lassen. Ob die Seite barrierefrei ist, sagt das nicht; dafür braucht es Werkzeuge wie axe und Menschen, die sie mit Screenreader und Tastatur bedienen.',
   cookiesNecessary: 'Nur bekannte Einträge, wie sie Frameworks und Proxys für den Betrieb setzen.',
 
   legal: (level: Level): string => ({ green: 'beide verlinkt und erreichbar', yellow: 'beide verlinkt, nicht alles prüfbar', red: 'nicht vollständig' })[level],

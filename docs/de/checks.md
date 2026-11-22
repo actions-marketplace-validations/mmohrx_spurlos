@@ -32,6 +32,17 @@ Welches Skript es war, liest spurlos aus dem Stacktrace; bei Code direkt im HTML
 
 spurlos merkt sich, wenn ein Skript beim Laden fragt, ob es Benachrichtigungen schicken darf (`Notification.requestPermission`), Push-Nachrichten abonniert (`PushManager.subscribe`), nach dem Standort fragt (`getCurrentPosition`, `watchPosition`), nach Kamera oder Mikrofon (`getUserMedia`) oder einen Service Worker registriert. Benachrichtigungen und Push sind gelb, wer auch fragt. Standort, Kamera und Mikrofon sind rot, wenn ein Skript einer fremden Domain fragt, sonst gelb; wem das Skript gehört, entscheidet spurlos wie beim Fingerprinting. Ein Service Worker ist grün, denn so funktionieren Push und Offline-Betrieb; der Bericht nennt ihn trotzdem, weil er auch nach dem Besuch im Browser bleibt.
 
+## Barrierefreiheit
+
+spurlos prüft nur ein paar Grundlagen, die sich ohne Klick feststellen lassen, jede fehlende ist gelb:
+
+- `<html>` hat ein `lang`-Attribut.
+- Bilder haben ein `alt`-Attribut (auch `alt=""` für Bilder, die nur schmücken). Bilder mit `role="presentation"` oder `role="none"`, mit `aria-label`, `aria-labelledby` oder `title`, unsichtbare und solche in `aria-hidden="true"` zählen nicht.
+- Formularfelder (`input`, `select`, `textarea`, ohne Buttons und versteckte Felder) haben eine Beschriftung: ein `<label>`, `aria-label`, `aria-labelledby` oder `title`. Ein `placeholder` zählt nicht. Unsichtbare Felder, etwa Honigtöpfe gegen Spam, zählen auch hier nicht.
+- Der Viewport lässt Zoomen zu: kein `user-scalable=no` (oder `0`) und kein `maximum-scale` unter 2.
+
+Einen Link auf eine Erklärung zur Barrierefreiheit erkennt spurlos an „barrierefrei“, „Zugänglichkeit“ oder „Accessibility“ in Text oder Adresse und nennt ihn; fehlt er, steht das nur als Hinweis da, ohne Ampel. Ob die Seite barrierefrei ist, sagt die Prüfung nicht, auch nicht, ob sie eine solche Erklärung braucht.
+
 ## Eigene Server auf anderen Domains
 
 Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, Wikipedia etwa von `wikimedia.org`. Solche Server sind gelb statt rot, wenn spurlos sie der Seite zuordnen kann, und der Bericht sagt, warum:
