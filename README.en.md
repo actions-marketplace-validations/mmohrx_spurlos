@@ -70,6 +70,7 @@ npx spurlos <url> --lang en
 | `--user-agent <string>` | your own user agent for every request |
 | `--own <host>` | servers that belong to the site though on another domain, such as its CDN: `--own cdn-company.net`, subdomains included; repeated or comma-separated. See [Own servers on other domains](docs/en/checks.md#own-servers-on-other-domains) |
 | `--mobile` | open the site as a phone: the screen of a Pixel 7, touch and the user agent of Chrome on Android. Some sites load other trackers and cookie banners there |
+| `--gpc` | open the site with [Global Privacy Control](https://globalprivacycontrol.org), the signal against selling and sharing the data (`Sec-GPC: 1`), as Firefox, Brave and DuckDuckGo send it. With `--baseline` against a run without it you see whether the site honours it, see [Global Privacy Control](docs/en/how-it-works.md#global-privacy-control) |
 | `--help`, `-h` | help |
 
 The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. Where there is a common fix, the report names it right away, such as serving fonts yourself or an example value for a missing header. These are technical hints, not legal advice. In a terminal the report is colored; with `-o`, in a pipe or with `NO_COLOR` set, it stays plain text. `--html` and `--pdf` go to the output too (`--pdf > report.pdf`), but spurlos does not write a PDF into the terminal. With Docker a file of `-o` stays in the container; redirect instead: `docker run --rm ghcr.io/mmohrx/spurlos example.com --pdf > report.pdf`.
@@ -108,7 +109,7 @@ The exact rules are in [docs/en/checks.md](docs/en/checks.md): which headers are
 
 ## For AI assistants (MCP)
 
-`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`), `format` (`text` or `json`) `own` (a list of host names, as with `--own`) and `mobile` (`true` as with `--mobile`). It runs on your machine, like the CLI: the assistant starts it itself and talks to it over stdin and stdout. There is no open port, so it needs no token either.
+`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`), `format` (`text` or `json`) `own` (a list of host names, as with `--own`) `mobile` (`true` as with `--mobile`) and `gpc` (`true` as with `--gpc`). It runs on your machine, like the CLI: the assistant starts it itself and talks to it over stdin and stdout. There is no open port, so it needs no token either.
 
 In Claude Code:
 

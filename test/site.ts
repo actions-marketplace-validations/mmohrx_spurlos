@@ -14,7 +14,7 @@ const HARDENED = {
 }
 
 /** what each request to SITE was sent with, newest last */
-export const seen: { url: string; ua: string | undefined; ch: string | undefined }[] = []
+export const seen: { url: string; ua: string | undefined; ch: string | undefined; gpc: string | undefined }[] = []
 
 /**
  * Serves test/sites under SITE (clean.html as the start page, /impressum as impressum.html, blocked.html with 403),
@@ -28,7 +28,7 @@ export async function offline(context: BrowserContext) {
       return u.pathname !== '/' && existsSync(foreign) ? route.fulfill({ status: 200, path: foreign }) : route.fulfill({ status: 200, body: '' })
     }
     const h = route.request().headers()
-    seen.push({ url: u.href, ua: h['user-agent'], ch: h['sec-ch-ua'] })
+    seen.push({ url: u.href, ua: h['user-agent'], ch: h['sec-ch-ua'], gpc: h['sec-gpc'] })
     const name = u.pathname === '/' ? 'clean.html' : u.pathname.slice(1)
     const file = name.includes('.') ? name : `${name}.html`
     const headers: Record<string, string> =

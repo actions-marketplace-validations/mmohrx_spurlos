@@ -127,3 +127,12 @@ test('mobile goes to the scan when true; anything but a boolean back to the mode
   const wrong = await handle(request(3, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', mobile: 'yes' } }), seeing)
   expect(wrong).toMatchObject({ result: { isError: true, content: [{ text: 'mobile ist true oder false.' }] } })
 })
+
+test('gpc goes to the scan when true; anything but a boolean back to the model', async () => {
+  let given: boolean | undefined
+  const seeing: Context = { lang: 'en', scan: async (_url, options) => ((given = options.gpc), Promise.reject(new Error('done'))) }
+  await handle(request(1, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', gpc: true } }), seeing)
+  expect(given).toBe(true)
+  const wrong = await handle(request(2, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', gpc: 1 } }), seeing)
+  expect(wrong).toMatchObject({ result: { isError: true, content: [{ text: 'gpc is true or false.' }] } })
+})

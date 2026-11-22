@@ -6,7 +6,7 @@ import { plural } from './plural.ts'
 const en: Messages = {
   usage: langs => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf | --sarif]
         [-o <file> …] [--baseline <file>] [--auth <user:password>]
-        [--user-agent <string>] [--own <host> …] [--mobile]
+        [--user-agent <string>] [--own <host> …] [--mobile] [--gpc]
 spurlos mcp [--lang ${langs}] [--user-agent <string>]
 
 Opens the site like a new visitor who clicks nothing, and shows which
@@ -36,6 +36,8 @@ Several addresses are checked one after the other, with a report each.
                 comma-separated. They are then yellow, not red
   --mobile      open the site as a phone: screen, touch and user agent of
                 Chrome on Android
+  --gpc         open the site with Global Privacy Control (Sec-GPC: 1),
+                the signal against selling and sharing the data
   --help        this help
 
 spurlos mcp starts an MCP server over stdio: it lets an AI assistant
@@ -48,6 +50,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   disclaimer: 'Technical pre-check – not legal advice, and no statement on whether the site complies with the GDPR.',
   openedAs: url => `opened as ${url}`,
   asPhone: 'opened as a phone (--mobile)',
+  withGpc: 'opened with Global Privacy Control (--gpc)',
   unknownLang: (from, value, langs) => `${from} only knows ${langs}, not ${value}.`,
   invalidUrl: arg => `${arg} is not a valid address.`,
   oneFormat: '--json, --html, --pdf and --sarif only go one at a time.',
@@ -57,7 +60,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   written: file => `Report written to ${file}.`,
   cannotWrite: (file, reason) => `${file} could not be written: ${reason}`,
   mcpOnly: flags => `spurlos mcp only takes --lang and --user-agent, not ${flags}.`,
-  mobileNotBoolean: 'mobile is true or false.',
+  notBoolean: name => `${name} is true or false.`,
   urlMissing: 'url is missing: the address of the site as a string, e.g. example.com.',
   unknownFormat: value => `format only knows text and json, not ${value}.`,
   load: (n, size, foreign, foreignSize) =>

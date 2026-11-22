@@ -440,6 +440,7 @@ export function text(scan: Scan, results: Result[], lang: Lang, options: TextOpt
     `${style('bold', 'spurlos')} ${style('dim', VERSION)}  ${style('cyan', clean(scan.finalUrl))}`,
     ...(scan.finalUrl !== scan.url ? [style('dim', t.openedAs(clean(scan.url)))] : []),
     ...(scan.mobile ? [style('dim', t.asPhone)] : []),
+    ...(scan.gpc ? [style('dim', t.withGpc)] : []),
     ...(compare ? [style('dim', clean(t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)))] : []),
     style('dim', loadLine(t, lang, scan)),
     summary,
@@ -543,6 +544,7 @@ export function htmlReports(reports: Report[], lang: Lang, options: Omit<HtmlOpt
     const meta = [
       ...(scan.finalUrl !== scan.url ? [t.openedAs(scan.url)] : []),
       ...(scan.mobile ? [t.asPhone] : []),
+      ...(scan.gpc ? [t.withGpc] : []),
       t.checkedAt(date),
       loadLine(t, lang, scan),
       ...(compare ? [t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)] : []),

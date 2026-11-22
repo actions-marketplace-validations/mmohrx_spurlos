@@ -266,6 +266,8 @@ export type Scan = {
   width: { page: number; window: number }
   /** opened as a phone (--mobile) */
   mobile?: true
+  /** opened with Global Privacy Control (--gpc) */
+  gpc?: true
   /** what <meta name="generator"> says, often the CMS and its version */
   generator?: string
   /** what <meta name="robots"> and <meta name="googlebot"> say, joined by a comma */
@@ -295,6 +297,8 @@ export type ScanOptions = {
   own?: string[]
   /** open the page as a phone: its screen, touch, and the user agent of Chrome on Android */
   mobile?: boolean
+  /** say no to selling and sharing, as a browser with Global Privacy Control does: Sec-GPC: 1, navigator.globalPrivacyControl */
+  gpc?: boolean
 }
 
 /**
@@ -362,7 +366,10 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const mobile = options.mobile === true
     const userAgent = options.userAgent ?? browserAgent(chrome, process.platform, mobile)
     const phone = mobile ? { viewport: { width: PHONE.width, height: PHONE.height }, deviceScaleFactor: PHONE.deviceScaleFactor, isMobile: true, hasTouch: true } : {}
-    const context = await browser.newContext({ locale: 'de-DE', userAgent, acceptDownloads: false, ...phone, ...credentials(url, options) })
+    // GPC goes with every request of the page, as Firefox, Brave and DuckDuckGo send it, and scripts can read it
+    const gpc = options.gpc === true
+    const context = await browser.newContext({ locale: 'de-DE', userAgent, acceptDownloads: false, ...phone, ...(gpc ? { extraHTTPHeaders: { 'sec-gpc': '1' } } : {}), ...credentials(url, options) })
+    if (gpc) await context.addInitScript(() => Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true, configurable: true, enumerable: true }))
     await options.setup?.(context)
 
     const requests: Request[] = []
@@ -532,6 +539,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     if (tls?.validTo) result.certificate = { validTo: tls.validTo, issuer: tls.issuer ?? '', ...names }
     if (options.own?.length) result.own = options.own
     if (mobile) result.mobile = true
+    if (gpc) result.gpc = true
     if (metaCsp) result.metaCsp = metaCsp
     if (metaReferrer) result.metaReferrer = metaReferrer
     if (generator) result.generator = generator

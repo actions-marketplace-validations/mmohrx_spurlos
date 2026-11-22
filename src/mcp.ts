@@ -45,6 +45,10 @@ const TOOL = {
         type: 'boolean',
         description: 'true: open the site as a phone (screen, touch, user agent of Chrome on Android). Some sites load other trackers and banners there.',
       },
+      gpc: {
+        type: 'boolean',
+        description: 'true: send Global Privacy Control (Sec-GPC: 1), the browser signal against selling and sharing data. Compare with a run without it to see whether the site honours it.',
+      },
     },
     required: ['url'],
     additionalProperties: false,
@@ -101,7 +105,7 @@ async function call(params: Record<string, unknown>, context: Context) {
   if (typeof args.url !== 'string') return reply(say.urlMissing, true)
   const url = toUrl(args.url)
   if (!url) return reply(clean(say.invalidUrl(args.url)), true)
-  if (args.mobile !== undefined && typeof args.mobile !== 'boolean') return reply(say.mobileNotBoolean, true)
+  for (const flag of ['mobile', 'gpc'] as const) if (args[flag] !== undefined && typeof args[flag] !== 'boolean') return reply(say.notBoolean(flag), true)
   const own: string[] = []
   if (args.own !== undefined) {
     for (const value of Array.isArray(args.own) ? args.own : [args.own]) {
@@ -112,7 +116,7 @@ async function call(params: Record<string, unknown>, context: Context) {
   }
 
   try {
-    const options: ScanOptions = { ...(context.userAgent ? { userAgent: context.userAgent } : {}), ...(own.length ? { own } : {}), ...(args.mobile ? { mobile: true } : {}) }
+    const options: ScanOptions = { ...(context.userAgent ? { userAgent: context.userAgent } : {}), ...(own.length ? { own } : {}), ...(args.mobile ? { mobile: true } : {}), ...(args.gpc ? { gpc: true } : {}) }
     const s = await inTurn(() => (context.scan ?? scan)(url, options))
     const results = runChecks(s)
     const report = args.format === 'json' ? json(s, results, lang) : text(s, results, lang, { verbose: true, width: 100 })

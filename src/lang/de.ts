@@ -9,7 +9,7 @@ import { plural } from './plural.ts'
 const de = {
   usage: (langs: string) => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf | --sarif]
         [-o <datei> …] [--baseline <datei>] [--auth <benutzer:passwort>]
-        [--user-agent <kennung>] [--own <host> …] [--mobile]
+        [--user-agent <kennung>] [--own <host> …] [--mobile] [--gpc]
 spurlos mcp [--lang ${langs}] [--user-agent <kennung>]
 
 Ruft die Seite wie ein neuer Besucher auf, der nichts anklickt, und zeigt,
@@ -39,6 +39,8 @@ Mehrere Adressen prüft spurlos nacheinander, mit je einem Bericht.
                 Sie sind dann gelb statt rot
   --mobile      die Seite als Smartphone aufrufen: Bildschirm, Touch und
                 Kennung von Chrome auf Android
+  --gpc         mit Global Privacy Control aufrufen (Sec-GPC: 1), dem
+                Signal gegen Verkauf und Weitergabe der Daten
   --help        diese Hilfe
 
 spurlos mcp startet einen MCP-Server über stdio: Ein KI-Assistent kann
@@ -51,6 +53,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   disclaimer: 'Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.',
   openedAs: (url: string) => `aufgerufen als ${url}`,
   asPhone: 'als Smartphone aufgerufen (--mobile)',
+  withGpc: 'mit Global Privacy Control aufgerufen (--gpc)',
   unknownLang: (from: string, value: string, langs: string) => `${from} kennt nur ${langs}, nicht ${value}.`,
   invalidUrl: (arg: string) => `${arg} ist keine gültige Adresse.`,
   oneFormat: '--json, --html, --pdf und --sarif gehen nur einzeln.',
@@ -60,7 +63,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   written: (file: string) => `Bericht in ${file} geschrieben.`,
   cannotWrite: (file: string, reason: string) => `${file} ließ sich nicht schreiben: ${reason}`,
   mcpOnly: (flags: string) => `spurlos mcp nimmt nur --lang und --user-agent, nicht ${flags}.`,
-  mobileNotBoolean: 'mobile ist true oder false.',
+  notBoolean: (name: string) => `${name} ist true oder false.`,
   urlMissing: 'url fehlt: die Adresse der Seite als Text, etwa firma.de.',
   unknownFormat: (value: string) => `format kennt nur text und json, nicht ${value}.`,
   checkedAt: (date: string) => `geprüft am ${date}`,

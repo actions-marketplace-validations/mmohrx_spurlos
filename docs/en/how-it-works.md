@@ -28,6 +28,17 @@ Because spurlos opens pages it does not know, Chromium runs in its own sandbox w
 
 The HTML report holds every finding, with the green checks folded, and at the end a screenshot of the page as a visitor sees it first, cookie banner included. It loads nothing and contains no JavaScript, so it opens offline and can be sent by mail. Several addresses go into one page, one below the other. The PDF is the same report, printed by the Chromium spurlos uses anyway, on A4 and always light, each address starting on a new page. spurlos takes the screenshot only for HTML and PDF; it is not part of `--json`. While printing, JavaScript is off and every request is blocked.
 
+## Global Privacy Control
+
+With `--gpc`, spurlos sends the header `Sec-GPC: 1` with every request of the site, and `navigator.globalPrivacyControl` is `true`, as in Firefox, Brave or DuckDuckGo with [Global Privacy Control](https://globalprivacycontrol.org) switched on. With it, the visitor says their data is not to be sold or shared. Whether a site honours it, a comparison of two runs shows:
+
+```
+spurlos example.com --json -o without-gpc.json
+spurlos example.com --gpc --baseline without-gpc.json
+```
+
+What goes away with GPC, the second report lists under “gone”. What servers otherwise make of the signal, spurlos does not check; the legal notice, the privacy policy and the request over http go without GPC.
+
 ## Sites behind a login
 
 Internal sites and staging sites before launch often sit behind HTTP basic auth. Pass the credentials through the environment, so they stay out of the shell history and the process list:

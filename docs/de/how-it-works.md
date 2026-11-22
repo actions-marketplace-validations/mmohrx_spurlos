@@ -28,6 +28,17 @@ Weil spurlos fremde Seiten öffnet, läuft Chromium in seiner eigenen Sandbox, w
 
 Der HTML-Bericht enthält alle Befunde, die grünen Prüfungen zugeklappt, und am Ende ein Bildschirmfoto der Seite, so wie ein Besucher sie zuerst sieht, samt Cookie-Banner. Er lädt nichts nach und enthält kein JavaScript, lässt sich also auch offline öffnen oder per Mail verschicken. Mehrere Adressen stehen in einer Seite untereinander. Das PDF ist derselbe Bericht, gedruckt vom Chromium, das spurlos ohnehin nutzt, im Format A4 und immer hell, jede Adresse ab einer neuen Seite. Das Bildschirmfoto macht spurlos nur für HTML und PDF; in `--json` steht es nicht. Beim Drucken ist JavaScript aus und jede Anfrage gesperrt.
 
+## Global Privacy Control
+
+Mit `--gpc` sendet spurlos bei jeder Anfrage der Seite den Header `Sec-GPC: 1`, und `navigator.globalPrivacyControl` ist `true`, wie bei Firefox, Brave oder DuckDuckGo mit eingeschalteter [Global Privacy Control](https://globalprivacycontrol.org). Damit sagt der Besucher, dass seine Daten nicht verkauft oder weitergegeben werden sollen. Ob eine Seite das beachtet, zeigt der Vergleich zweier Läufe:
+
+```
+spurlos firma.de --json -o ohne-gpc.json
+spurlos firma.de --gpc --baseline ohne-gpc.json
+```
+
+Was mit GPC wegfällt, listet der zweite Bericht unter „weg“. Was sich Server sonst in dem Signal lesen, prüft spurlos nicht; Impressum, Datenschutzerklärung und die Anfrage über http gehen ohne GPC.
+
 ## Seiten hinter einer Anmeldung
 
 Interne Seiten und Staging-Seiten vor dem Livegang stecken oft hinter HTTP Basic Auth. Die Zugangsdaten gibst du am besten über die Umgebung mit, dann stehen sie nicht in der Shell-Historie und nicht in der Prozessliste:

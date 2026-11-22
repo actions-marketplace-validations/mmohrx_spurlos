@@ -70,6 +70,7 @@ npx spurlos <url>
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
 | `--own <host>` | Server, die zur Seite gehören, obwohl sie auf einer anderen Domain liegen, etwa ihr CDN: `--own cdn-firma.net`, samt Subdomains; mehrmals oder mit Komma. Siehe [Eigene Server auf anderen Domains](docs/de/checks.md#eigene-server-auf-anderen-domains) |
 | `--mobile` | die Seite als Smartphone aufrufen: Bildschirm eines Pixel 7, Touch und Kennung von Chrome auf Android. Manche Seiten laden dort andere Tracker und Cookie-Banner |
+| `--gpc` | mit [Global Privacy Control](https://globalprivacycontrol.org) aufrufen, dem Signal gegen Verkauf und Weitergabe der Daten (`Sec-GPC: 1`), wie Firefox, Brave und DuckDuckGo es senden. Mit `--baseline` gegen einen Lauf ohne siehst du, ob die Seite es beachtet, siehe [Global Privacy Control](docs/de/how-it-works.md#global-privacy-control) |
 | `--help`, `-h` | Hilfe |
 
 Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Wo es einen gängigen Weg gibt, nennt der Bericht ihn gleich mit, etwa Schriften selbst auszuliefern oder einen Beispielwert für einen fehlenden Header. Das sind technische Hinweise, keine Rechtsberatung. Im Terminal ist der Bericht farbig. Mit `-o`, in einer Pipe oder mit `NO_COLOR` bleibt es reiner Text. `--html` und `--pdf` gehen auch über die Ausgabe (`--pdf > bericht.pdf`), ein PDF schreibt spurlos aber nicht ins Terminal. Mit Docker landet eine Datei von `-o` im Container; dort leitest du besser um: `docker run --rm ghcr.io/mmohrx/spurlos firma.de --pdf > bericht.pdf`.
@@ -108,7 +109,7 @@ Die genauen Regeln stehen in [docs/de/checks.md](docs/de/checks.md): welche Head
 
 ## Für KI-Assistenten (MCP)
 
-`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`), `format` (`text` oder `json`) `own` (eine Liste von Hostnamen wie bei `--own`) und `mobile` (`true` wie `--mobile`). Er läuft auf deinem Rechner, wie die CLI: Der Assistent startet ihn selbst und spricht über stdin und stdout mit ihm. Einen offenen Port gibt es nicht, deshalb braucht er auch kein Token.
+`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`), `format` (`text` oder `json`) `own` (eine Liste von Hostnamen wie bei `--own`) `mobile` (`true` wie `--mobile`) und `gpc` (`true` wie `--gpc`). Er läuft auf deinem Rechner, wie die CLI: Der Assistent startet ihn selbst und spricht über stdin und stdout mit ihm. Einen offenen Port gibt es nicht, deshalb braucht er auch kein Token.
 
 In Claude Code:
 

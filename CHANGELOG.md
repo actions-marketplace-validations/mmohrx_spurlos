@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- `--gpc`: die Seite mit Global Privacy Control aufrufen (`Sec-GPC: 1` bei jeder Anfrage, `navigator.globalPrivacyControl`); mit `--baseline` gegen einen Lauf ohne zeigt der Bericht, was wegfällt. Im MCP-Werkzeug `gpc`, in `--json` `gpc: true`.
 - Google Consent Mode: Meldet eine Anfrage der Google-Tags vor jedem Klick Zustimmung (`gcs=G101`, `G110`, `G111`), ist das ein roter Befund bei „Fremde Server“; `G100` nennt der Bericht als Hinweis. In `--json` unter `consentMode`.
 - Neue Prüfung „Suchmaschinen“ (`indexing`): `noindex` oder `none` in `X-Robots-Tag` oder `<meta name="robots">` (auch `googlebot`) ist gelb, etwa vergessen nach dem Livegang.
 - `--sarif` (und `-o bericht.sarif`): die Befunde als SARIF 2.1.0 für GitHub Code Scanning, mit dem Schlüssel jedes Befunds als Fingerabdruck und, mit `--baseline`, `baselineState`. Die Action legt `report.sarif` ab, Pfad in der Ausgabe `sarif`.

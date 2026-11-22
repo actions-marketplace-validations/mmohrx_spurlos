@@ -273,4 +273,16 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(new Set(seen.map(r => r.ua))).toEqual(new Set(['Test/1']))
     expect(fetched).toEqual(['Test/1'])
   })
+
+  test('with --gpc every request of the page says Sec-GPC: 1, scripts see navigator.globalPrivacyControl, the report says so', async () => {
+    const without = await scan(`${SITE}/gpc.html`, { setup: offline, fetch: redirects })
+    expect(without.requests.some(r => r.host === 'www.google-analytics.com')).toBe(true)
+    expect(without.gpc).toBeUndefined()
+    seen.length = 0
+    const s = await scan(`${SITE}/gpc.html`, { setup: offline, fetch: redirects, gpc: true })
+    expect(s.gpc).toBe(true)
+    expect(s.requests.some(r => r.host === 'www.google-analytics.com')).toBe(false)
+    expect(seen.find(r => r.url === `${SITE}/gpc.html`)?.gpc).toBe('1')
+    expect(text(s, runChecks(s), 'de')).toContain('mit Global Privacy Control aufgerufen (--gpc)')
+  })
 })
