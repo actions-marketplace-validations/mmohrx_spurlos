@@ -68,6 +68,8 @@ Einen Link auf eine Erklärung zur Barrierefreiheit erkennt spurlos an „barrie
 
 Über den Prüfungen steht, wie viele Anfragen die Seite beim ersten Aufruf stellt, wie viele Daten dabei übertragen werden (Header und Inhalt, so komprimiert, wie sie über die Leitung gehen) und wie viel davon an andere Domains geht. Eine Ampel gibt es dafür nicht. In `--json` steht die Größe je Anfrage unter `bytes`.
 
+Darunter steht, wie lange das gedauert hat: wann der erste Inhalt zu sehen war (First Contentful Paint) und wann alles geladen war, also die letzte Anfrage vor der ersten Bewegung der Maus fertig war. Unter einer Sekunde in Millisekunden. Auch dafür gibt es keine Ampel, denn die Zeiten hängen von deinem Rechner und deinem Netz ab und schwanken von Lauf zu Lauf. In `--json` stehen sie in Millisekunden unter `timing` (`firstPaint`, `load` für das Ende des `load`-Events, `idle`).
+
 ## Eigene Server auf anderen Domains
 
 Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, Wikipedia etwa von `wikimedia.org`. Solche Server sind gelb statt rot, wenn spurlos sie der Seite zuordnen kann, und der Bericht sagt, warum:

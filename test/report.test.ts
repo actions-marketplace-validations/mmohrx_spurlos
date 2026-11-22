@@ -213,3 +213,10 @@ test('SARIF: one rule per check, a result per red or yellow finding at the page,
   expect(run.results[2].message.text).toContain(shown)
   expect(run.properties.note).toContain('not legal advice')
 })
+
+test('the times under a second in ms, above in s; none for a scan of an older spurlos', () => {
+  const at = (timing?: Scan['timing']) => text({ url: 'https://shop.example/', finalUrl: 'https://shop.example/', settled: true, requests: [], ...(timing ? { timing } : {}) } as unknown as Scan, [], 'de')
+  expect(at({ firstPaint: 420, load: 900, idle: 2140 })).toContain('erster Inhalt nach 420 ms, alles geladen nach 2,1 s')
+  expect(text({ url: 'https://a.example/', finalUrl: 'https://a.example/', settled: true, requests: [], timing: { load: 1200, idle: 1500 } } as unknown as Scan, [], 'en')).toContain('everything loaded after 1.5 s')
+  expect(at()).not.toContain('geladen nach')
+})

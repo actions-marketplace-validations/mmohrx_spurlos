@@ -24,7 +24,7 @@
 - whether the page **keeps search engines out** (`noindex` in `X-Robots-Tag` or `<meta name="robots">`), left over from before going live, say.
 - whether the page fits **a phone**: viewport, scrolling sideways; with `--mobile` spurlos opens it as a phone for that, as some sites load other trackers there too.
 - a few **accessibility basics**: the page's language, images without `alt`, form fields without a label, zooming locked, a link to an accessibility statement.
-- **how much the page loads**: requests and data on first load, and how much of it goes to other domains.
+- **how much the page loads, and how long it takes**: requests and data on first load, how much of it goes to other domains, and when the first content showed and everything had loaded.
 
 ```
 npx spurlos example-company.com --lang en

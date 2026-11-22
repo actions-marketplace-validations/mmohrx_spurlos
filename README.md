@@ -24,7 +24,7 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 - ob die Seite **Suchmaschinen aussperrt** (`noindex` in `X-Robots-Tag` oder `<meta name="robots">`), etwa vergessen nach dem Livegang.
 - ob die Seite **auf dem Handy** passt: Viewport, Querscrollen; mit `--mobile` ruft spurlos sie dafür als Smartphone auf, denn manche Seiten laden dort auch andere Tracker.
 - ein paar **Grundlagen der Barrierefreiheit**: Sprache der Seite, Bilder ohne `alt`, Formularfelder ohne Beschriftung, gesperrtes Zoomen, Link auf eine Erklärung zur Barrierefreiheit.
-- **wie viel die Seite lädt**: Anfragen und Datenmenge beim ersten Aufruf, davon an andere Domains.
+- **wie viel die Seite lädt und wie lange**: Anfragen und Datenmenge beim ersten Aufruf, davon an andere Domains, und wann der erste Inhalt zu sehen und alles geladen war.
 
 ```
 npx spurlos beispiel-firma.de

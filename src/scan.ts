@@ -268,6 +268,11 @@ export type Scan = {
   mobile?: true
   /** opened with Global Privacy Control (--gpc) */
   gpc?: true
+  /**
+   * when, in ms after the navigation started: firstPaint, the first content showed (first-contentful-paint); load, the
+   * load event ended; idle, the last request before the first move was done. Missing in a scan of an older spurlos.
+   */
+  timing?: { firstPaint?: number; load: number; idle: number }
   /** what <meta name="generator"> says, often the CMS and its version */
   generator?: string
   /** what <meta name="robots"> and <meta name="googlebot"> say, joined by a comma */
@@ -383,7 +388,15 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       requests.push(entry)
       recorded.set(r, entry)
     })
+    // when the last request before the first move ended, for timing.idle
+    let moving = false
+    let lastDone = 0
+    const done = () => {
+      if (!moving) lastDone = Date.now()
+    }
+    context.on('requestfailed', done)
     context.on('requestfinished', r => {
+      done()
       const entry = recorded.get(r)
       if (entry) sizes.push(r.sizes().then(s => void (entry.bytes = s.responseHeadersSize + s.responseBodySize), () => {}))
     })
@@ -434,6 +447,17 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     // then, trackers among them: spurlos does the same, clicks nothing, and marks what comes only now.
     const cookieKey = (c: { name: string; domain: string }) => `${c.name} ${c.domain}`
     const early = new Set((await context.cookies()).map(cookieKey))
+    const timing = await page
+      .evaluate(() => {
+        const paint = performance.getEntriesByName('first-contentful-paint')[0]?.startTime
+        const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+        return { origin: performance.timeOrigin, paint, load: nav?.loadEventEnd ?? 0 }
+      })
+      .then(
+        t => ({ ...(t.paint !== undefined ? { firstPaint: Math.round(t.paint) } : {}), load: Math.round(t.load), idle: Math.round(Math.max(t.load, t.paint ?? 0, lastDone - t.origin)) }),
+        () => undefined,
+      )
+    moving = true
     const before = requests.length
     const quiet = await firstMove(page, requests, options.settleMs ?? 10_000)
     for (const r of requests.slice(before)) r.afterMove = true
@@ -540,6 +564,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     if (options.own?.length) result.own = options.own
     if (mobile) result.mobile = true
     if (gpc) result.gpc = true
+    if (timing) result.timing = timing
     if (metaCsp) result.metaCsp = metaCsp
     if (metaReferrer) result.metaReferrer = metaReferrer
     if (generator) result.generator = generator

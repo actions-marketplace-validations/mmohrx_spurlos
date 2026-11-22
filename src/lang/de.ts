@@ -69,6 +69,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   checkedAt: (date: string) => `geprüft am ${date}`,
   load: (n: number, size: string, foreign: number, foreignSize: string) =>
     `beim Aufruf ${plural(n, 'Anfrage', 'Anfragen')}, ${size}; ${foreign ? `davon ${foreign} mit ${foreignSize} an andere Domains` : 'keine an andere Domains'}`,
+  timing: (paint: string | undefined, idle: string) => `${paint ? `erster Inhalt nach ${paint}, ` : ''}alles geladen nach ${idle}`,
   failed: (url: string, reason: string) =>
     `${url} ließ sich nicht prüfen: ${
       reason === NO_RESPONSE ? 'keine Antwort'

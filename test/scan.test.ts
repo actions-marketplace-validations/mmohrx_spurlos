@@ -39,6 +39,10 @@ describe('scan', { timeout: 30_000 }, () => {
     // green checks take one line each; their findings show with verbose
     const short = text(s, results, 'de')
     expect(short).toMatch(/^beim Aufruf \d+ Anfragen, [\d,]+ kB; keine an andere Domains$/m)
+    // when the first content showed and everything before the first move had loaded, in that order
+    expect(s.timing).toBeDefined()
+    expect(s.timing!.idle).toBeGreaterThanOrEqual(Math.max(s.timing!.load, s.timing!.firstPaint ?? 0))
+    expect(short).toMatch(/^(erster Inhalt nach [\d.,]+ m?s, )?alles geladen nach [\d.,]+ m?s$/m)
     expect(short).not.toContain('Impressum: „Impressum“')
     expect(short).toContain('--verbose')
     const long = text(s, results, 'de', { verbose: true })
@@ -184,7 +188,7 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(report).toContain('Referrer-Policy fehlt – etwa strict-origin-when-cross-origin')
     // the summary comes first, the worst checks lead, and without color the text holds no escape codes
     const lines = report.split('\n')
-    expect(lines.slice(0, 3)).toContainEqual(expect.stringMatching(/^\d+ Mängel · \d+ Hinweise?( · \d+ in Ordnung)?$/))
+    expect(lines.slice(0, 4)).toContainEqual(expect.stringMatching(/^\d+ Mängel · \d+ Hinweise?( · \d+ in Ordnung)?$/))
     const lights = lines.filter(l => /^\S/.test(l) && /^(🔴|🟡|🟢)/.test(l)).map(l => l.slice(0, 2))
     expect(lights).toEqual([...lights].sort((a, b) => ['🔴', '🟡', '🟢'].indexOf(a) - ['🔴', '🟡', '🟢'].indexOf(b)))
     expect(report).not.toContain('\x1b[')

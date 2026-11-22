@@ -66,6 +66,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   load: (n, size, foreign, foreignSize) =>
     `${plural(n, 'request', 'requests')} on load, ${size}; ${foreign ? `${foreign} of them with ${foreignSize} to other domains` : 'none to other domains'}`,
   checkedAt: date => `checked on ${date}`,
+  timing: (paint, idle) => `${paint ? `first content after ${paint}, ` : ''}everything loaded after ${idle}`,
   failed: (url, reason) =>
     `${url} could not be checked: ${
       reason === NO_RESPONSE ? 'no response'

@@ -281,6 +281,15 @@ function loadLine(t: Messages, lang: Lang, scan: Scan): string {
   return t.load(l.requests, size(l.bytes), l.foreignRequests, size(l.foreignBytes))
 }
 
+/** The line on how long the page took: to show its first content, and until everything before the first move had loaded. */
+function timingLine(t: Messages, lang: Lang, scan: Scan): string | undefined {
+  if (!scan.timing) return undefined
+  // under a second in ms, as 0.0 s says nothing; the SI symbols, as Intl writes „Sek.“ in German
+  const s = (ms: number) =>
+    ms < 1000 ? `${new Intl.NumberFormat(lang).format(ms)} ms` : `${new Intl.NumberFormat(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(ms / 1000)} s`
+  return t.timing(scan.timing.firstPaint === undefined ? undefined : s(scan.timing.firstPaint), s(scan.timing.idle))
+}
+
 /** The logo for the help, as the terminal can draw it: the magnifier with the three lights, name and version beside it. */
 export function banner(color = false): string {
   const style = (format: Parameters<typeof styleText>[0], s: string) => (color ? styleText(format, s, { validateStream: false }) : s)
@@ -443,6 +452,7 @@ export function text(scan: Scan, results: Result[], lang: Lang, options: TextOpt
     ...(scan.gpc ? [style('dim', t.withGpc)] : []),
     ...(compare ? [style('dim', clean(t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)))] : []),
     style('dim', loadLine(t, lang, scan)),
+    ...[timingLine(t, lang, scan)].filter(l => l !== undefined).map(l => style('dim', l)),
     summary,
     '',
     ...body,
@@ -547,6 +557,7 @@ export function htmlReports(reports: Report[], lang: Lang, options: Omit<HtmlOpt
       ...(scan.gpc ? [t.withGpc] : []),
       t.checkedAt(date),
       loadLine(t, lang, scan),
+      ...[timingLine(t, lang, scan)].filter(l => l !== undefined),
       ...(compare ? [t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)] : []),
       ...(compare ? goneLabels(t, compare, now).map(l => `${t.gone}: ${l}`) : []),
     ]

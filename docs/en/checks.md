@@ -68,6 +68,8 @@ A link to an accessibility statement spurlos recognizes by “barrierefrei”, �
 
 Above the checks, the report says how many requests the page makes on first load, how much data that transfers (headers and body, compressed as they go over the wire) and how much of it goes to other domains. There is no light for it. In `--json`, each request has its size under `bytes`.
 
+Below it, the report says how long that took: when the first content showed (First Contentful Paint) and when everything had loaded, that is, when the last request before the first mouse move was done. Under a second in milliseconds. There is no light for this either, as the times depend on your machine and network and vary from run to run. In `--json` they are in milliseconds under `timing` (`firstPaint`, `load` for the end of the `load` event, `idle`).
+
 ## Own servers on other domains
 
 Many sites load images and scripts from a second domain of their own, Wikipedia for example from `wikimedia.org`. Such servers are yellow instead of red when spurlos can tie them to the site, and the report says why:

@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- Unter der Datenmenge steht, wann der erste Inhalt zu sehen war und wann alles geladen war (unter einer Sekunde in ms), ohne Ampel; in `--json` unter `timing`.
 - `--gpc`: die Seite mit Global Privacy Control aufrufen (`Sec-GPC: 1` bei jeder Anfrage, `navigator.globalPrivacyControl`); mit `--baseline` gegen einen Lauf ohne zeigt der Bericht, was wegfällt. Im MCP-Werkzeug `gpc`, in `--json` `gpc: true`.
 - Google Consent Mode: Meldet eine Anfrage der Google-Tags vor jedem Klick Zustimmung (`gcs=G101`, `G110`, `G111`), ist das ein roter Befund bei „Fremde Server“; `G100` nennt der Bericht als Hinweis. In `--json` unter `consentMode`.
 - Neue Prüfung „Suchmaschinen“ (`indexing`): `noindex` oder `none` in `X-Robots-Tag` oder `<meta name="robots">` (auch `googlebot`) ist gelb, etwa vergessen nach dem Livegang.
