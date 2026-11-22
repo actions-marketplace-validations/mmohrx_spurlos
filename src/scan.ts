@@ -1,7 +1,7 @@
 import { X509Certificate } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Page, type Request as PlaywrightRequest, type Response as PlaywrightResponse } from 'playwright'
-import { carried, legalLinks } from './checks.ts'
+import { carried, cookieIds, legalLinks } from './checks.ts'
 
 // src/ and dist/ both sit next to package.json
 export const VERSION: string = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
@@ -60,8 +60,9 @@ export function browserAgent(chromeVersion: string, platform = process.platform,
  * server, which Playwright does not report as requests; url is then the server's address as the page gave it.
  * bytes: what went over the wire for the answer, headers and encoded body; missing where none came.
  * afterMove: it came only once spurlos moved the mouse and scrolled, as scripts held back until then do.
- * carries: what of the visitor's it sends along, in its address or body: email, or query:<name> for a value from the
- * query of the page asked for (see carried in checks.ts)
+ * carries: what of the visitor's it sends along, in its address or body: email, query:<name> for a value from the
+ * query of the page asked for (see carried in checks.ts), id:<name>@<domain> for the ID in another site's cookie (see
+ * cookieIds)
  */
 export type Request = { url: string; host: string; type: string; bytes?: number; afterMove?: true; carries?: string[] }
 /** expires: in seconds since 1970, -1 for a session cookie; sameSite: missing in a scan of an older spurlos */
@@ -462,7 +463,13 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const quiet = await firstMove(page, requests, options.settleMs ?? 10_000)
     for (const r of requests.slice(before)) r.afterMove = true
 
-    const cookies = (await context.cookies()).map((c): Cookie => ({
+    const jar = await context.cookies()
+    // what other sites' cookies hold turns up in requests to a third: cookie syncing. Only the values are compared, none kept
+    for (const r of requests) {
+      const ids = cookieIds(r.url, jar, [url, page.url()])
+      if (ids.length) r.carries = [...(r.carries ?? []), ...ids]
+    }
+    const cookies = jar.map((c): Cookie => ({
       name: c.name,
       domain: c.domain.replace(/^\./, ''),
       expires: c.expires,

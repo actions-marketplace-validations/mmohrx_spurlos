@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
-  access, accessibility, blocksZoom, indexing, consentMode, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, accessibility, blocksZoom, indexing, consentMode, cookieIds, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import { iceHost, type Scan, type Visit } from '../src/scan.ts'
@@ -755,5 +755,39 @@ describe('consent mode', () => {
 
   test('without gcs, or with another value, there is none', () => {
     expect(consentMode({ ...base, requests: [ga('G2'), req('www.google-analytics.com'), { url: 'stun:stun.l.google.com:19302', host: 'stun.l.google.com', type: 'webrtc' }] })).toBeUndefined()
+  })
+})
+
+describe('cookie syncing', () => {
+  const jar = [
+    { name: 'uid', domain: '.ads.anders.de', value: 'AB12CD34EF56' },
+    { name: '_ga', domain: '.firma.de', value: 'GA1.1.1234567890.1700000000' },
+    { name: 'short', domain: 'ads.anders.de', value: 'abc123' },
+    { name: 'letters', domain: 'ads.anders.de', value: 'abcdefghijklmnop' },
+  ]
+  const page = ['https://www.firma.de/']
+
+  test('another site\'s cookie value in the address of a request to a third site is an id, encoded too', () => {
+    expect(cookieIds('https://px.partner.example/sync?u=AB12CD34EF56', jar, page)).toEqual(['id:uid@ads.anders.de'])
+    expect(cookieIds('https://px.partner.example/r?to=' + encodeURIComponent('https://x.example/?id=AB12CD34EF56'), jar, page)).toEqual(['id:uid@ads.anders.de'])
+  })
+
+  test('back to its own site, the page\'s own cookies, the page as receiver, short or digitless values: none', () => {
+    expect(cookieIds('https://www.anders.de/seen?uid=AB12CD34EF56', jar, page)).toEqual([])
+    expect(cookieIds('https://www.google-analytics.com/g/collect?cid=1234567890.1700000000', jar, page)).toEqual([])
+    expect(cookieIds('https://www.firma.de/?uid=AB12CD34EF56', jar, page)).toEqual([])
+    expect(cookieIds('https://px.partner.example/?a=abc123&b=abcdefghijklmnop', jar, page)).toEqual([])
+    expect(cookieIds('stun:stun.l.google.com:19302', jar, page)).toEqual([])
+  })
+
+  test('an id is red per server and cookie, yellow where the server seems to belong to the page', () => {
+    const sync = (host: string) => ({ ...req(host), carries: ['id:uid@ads.anders.de'] })
+    const r = leaks({ ...base, own: ['cdn-firma.net'], requests: [sync('px.partner.example'), sync('px.partner.example'), sync('cdn-firma.net')] })
+    if (r.check !== 'leaks') throw new Error()
+    expect(r.findings.map(l => [l.host, l.what, l.param, l.from, l.requests, l.own])).toEqual([
+      ['cdn-firma.net', 'id', 'uid', 'ads.anders.de', 1, 'option'],
+      ['px.partner.example', 'id', 'uid', 'ads.anders.de', 2, undefined],
+    ])
+    expect(findings(r).map(f => `${f.level} ${f.key}`)).toEqual(['yellow leak id uid cdn-firma.net', 'red leak id uid px.partner.example'])
   })
 })

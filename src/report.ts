@@ -172,10 +172,10 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       return {
         value: `${r.findings.length}`,
         items: r.findings.map(l => {
-          const about = [l.what === 'email' ? t.leakEmail : t.leakQuery(l.param ?? ''), l.service?.name, l.own ? t.ownBy[l.own] : undefined].filter(Boolean).join(', ')
+          const about = [l.what === 'email' ? t.leakEmail : l.what === 'id' ? t.leakId(l.param ?? '', l.from ?? '') : t.leakQuery(l.param ?? ''), l.service?.name, l.own ? t.ownBy[l.own] : undefined].filter(Boolean).join(', ')
           return item(key.leak(l), leakLevel(l), l.host, `${about} (${t.requests(l.requests)})`)
         }),
-        notes: [...(r.findings.some(l => l.what === 'email') ? [t.leakEmailNote] : []), ...(r.findings.some(l => l.what === 'query') ? [t.leakQueryNote] : [])],
+        notes: [...(['email', 'id', 'query'] as const).filter(w => r.findings.some(l => l.what === w)).map(w => t.leakNote[w])],
       }
     }
 

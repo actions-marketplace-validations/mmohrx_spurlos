@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- Weitergegebene Daten: Steht der Wert des Cookies eines fremden Servers in der Adresse einer Anfrage an einen dritten, ist das rot (Cookie-Sync, Werbe-Server tauschen ihre IDs aus); in `--json` als `what: "id"` mit dem Cookie unter `param` und `from`, an der Anfrage als `id:<cookie>@<domain>` unter `carries`.
 - Unter der Datenmenge steht, wann der erste Inhalt zu sehen war und wann alles geladen war (unter einer Sekunde in ms), ohne Ampel; in `--json` unter `timing`.
 - `--gpc`: die Seite mit Global Privacy Control aufrufen (`Sec-GPC: 1` bei jeder Anfrage, `navigator.globalPrivacyControl`); mit `--baseline` gegen einen Lauf ohne zeigt der Bericht, was wegfällt. Im MCP-Werkzeug `gpc`, in `--json` `gpc: true`.
 - Google Consent Mode: Meldet eine Anfrage der Google-Tags vor jedem Klick Zustimmung (`gcs=G101`, `G110`, `G111`), ist das ein roter Befund bei „Fremde Server“; `G100` nennt der Bericht als Hinweis. In `--json` unter `consentMode`.

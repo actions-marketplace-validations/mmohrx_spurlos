@@ -8,8 +8,8 @@ spurlos 0.4.0  https://shop.example/
 🟢 Cookies and storage              nothing set
 
 🟢 Data passed on                   none
-  → No email address and no value from the address of the page in the requests
-    to third-party servers.
+  → No email address, no value from the address of the page and no ID from
+    another server's cookie in the requests to third-party servers.
 
 🟢 Fingerprinting                   none
   → No script read out canvas, graphics card, audio or the IP address via WebRTC

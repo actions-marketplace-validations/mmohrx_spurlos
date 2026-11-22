@@ -143,8 +143,8 @@ spurlos 0.4.0  https://shop.example/tracked.html
        people using it with a screen reader and keyboard.
 
 🟢 Data passed on                   none
-  → No email address and no value from the address of the page in the requests
-    to third-party servers.
+  → No email address, no value from the address of the page and no ID from
+    another server's cookie in the requests to third-party servers.
 
 Technical pre-check – not legal advice, and no statement on whether the site
 complies with the GDPR.

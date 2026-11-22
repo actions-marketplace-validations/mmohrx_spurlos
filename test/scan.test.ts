@@ -289,4 +289,13 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(seen.find(r => r.url === `${SITE}/gpc.html`)?.gpc).toBe('1')
     expect(text(s, runChecks(s), 'de')).toContain('mit Global Privacy Control aufgerufen (--gpc)')
   })
+
+  test('an ad server that hands its ID on to a partner, as cookie syncing does, is red under leaks', async () => {
+    const s = await scan(`${SITE}/sync.html`, { setup: offline, fetch: redirects })
+    expect(s.cookies.map(c => `${c.name} ${c.domain}`)).toContain('uid ads.sync.example')
+    const r = pick(runChecks(s), 'leaks')
+    expect(r.level).toBe('red')
+    expect(r.findings.map(l => [l.host, l.what, l.param, l.from])).toEqual([['px.partner.example', 'id', 'uid', 'ads.sync.example']])
+    expect(text(s, runChecks(s), 'de')).toContain('px.partner.example – bekommt die ID aus dem Cookie uid von ads.sync.example')
+  })
 })

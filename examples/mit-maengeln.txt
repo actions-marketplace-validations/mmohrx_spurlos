@@ -145,8 +145,8 @@ beim Aufruf 15 Anfragen, 4 kB; davon 9 mit 1 kB an andere Domains
        Menschen, die sie mit Screenreader und Tastatur bedienen.
 
 🟢 Weitergegebene Daten       keine
-  → In den Anfragen an fremde Server steht keine E-Mail-Adresse und kein Wert
-    aus der Adresse der Seite.
+  → In den Anfragen an fremde Server steht keine E-Mail-Adresse, kein Wert aus
+    der Adresse der Seite und keine ID aus dem Cookie eines anderen Servers.
 
 Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die
 Seite DSGVO-konform ist.

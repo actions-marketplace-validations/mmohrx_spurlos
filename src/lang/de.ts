@@ -1,5 +1,5 @@
 import type { AccessApi, FingerprintApi } from '../scan.ts'
-import type { AccessibilityProblem, FormFinding, MobileProblem, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
+import type { AccessibilityProblem, FormFinding, Leak, MobileProblem, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
 import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED } from '../scan.ts'
 import { plural } from './plural.ts'
 
@@ -173,11 +173,15 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   indexingNo: 'sollen die Seite nicht aufnehmen (noindex)',
   indexingNone: 'Weder X-Robots-Tag noch <meta name="robots"> sagen noindex.',
   indexingWhy: 'Mit noindex nehmen Suchmaschinen die Seite nicht auf. Gewollt auf einer Staging-Seite, auf einer öffentlichen meist ein Überbleibsel aus der Zeit vor dem Livegang.',
-  leakNone: 'In den Anfragen an fremde Server steht keine E-Mail-Adresse und kein Wert aus der Adresse der Seite.',
+  leakNone: 'In den Anfragen an fremde Server steht keine E-Mail-Adresse, kein Wert aus der Adresse der Seite und keine ID aus dem Cookie eines anderen Servers.',
   leakEmail: 'bekommt eine E-Mail-Adresse',
   leakQuery: (param: string) => `bekommt den Wert von ${param} aus der Adresse`,
-  leakEmailNote: 'Steht eine E-Mail-Adresse in der Adresse der Seite, etwa auf einer Danke-Seite nach der Anmeldung, schicken Analytics und Pixel sie mit der Seitenadresse weiter. Besser gehört sie gar nicht in die Adresse.',
-  leakQueryNote: 'Werte aus der Adresse der Seite gehen mit ihr an die fremden Server, etwa als Seitenadresse an Analytics. Steht darin ein Token, ein Name oder eine Bestellnummer, erfahren sie den mit.',
+  leakId: (cookie: string, from: string) => `bekommt die ID aus dem Cookie ${cookie} von ${from}`,
+  leakNote: {
+    email: 'Steht eine E-Mail-Adresse in der Adresse der Seite, etwa auf einer Danke-Seite nach der Anmeldung, schicken Analytics und Pixel sie mit der Seitenadresse weiter. Besser gehört sie gar nicht in die Adresse.',
+    id: 'Werbe-Server tauschen so ihre IDs für denselben Besucher aus (Cookie-Sync) und führen ihre Profile zusammen, noch bevor er etwas anklickt.',
+    query: 'Werte aus der Adresse der Seite gehen mit ihr an die fremden Server, etwa als Seitenadresse an Analytics. Steht darin ein Token, ein Name oder eine Bestellnummer, erfahren sie den mit.',
+  } satisfies Record<Leak['what'], string>,
   fingerprintNone: 'Kein Skript las Canvas, Grafikkarte, Audio oder die IP-Adresse über WebRTC so aus, wie es Fingerprinting tut.',
   fingerprintApi: {
     canvas: 'liest ein Canvas mit Text aus',

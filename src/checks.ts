@@ -50,8 +50,11 @@ export type ResourceFinding = Resource & { problem: 'insecure' | 'no-integrity' 
 export type Caller = { host: string; thirdParty: boolean; service: Service | undefined; own?: OwnReason }
 export type FingerprintFinding = Fingerprint & Caller
 export type AccessFinding = Access & Caller
-/** what a server of another site got of the visitor's: an email address, or the value of the page's query parameter param */
-export type Leak = { host: string; what: 'email' | 'query'; param?: string; requests: number; service: Service | undefined; own?: OwnReason }
+/**
+ * what a server of another site got of the visitor's: an email address, the value of the page's query parameter param,
+ * or the ID in the cookie param that the site from set (cookie syncing)
+ */
+export type Leak = { host: string; what: 'email' | 'query' | 'id'; param?: string; from?: string; requests: number; service: Service | undefined; own?: OwnReason }
 /** where the page tells search engines to leave it out: the X-Robots-Tag header or <meta name="robots"> (or googlebot) */
 export type Noindex = { source: 'header' | 'meta'; value: string }
 /** what of the accessibility basics is missing; statement: the link to an accessibility statement */
@@ -600,12 +603,43 @@ export function carried(url: string, body: string | undefined, pageUrl: string):
 }
 
 /**
- * An email address that goes to another site is red: its owner can tie the visit to a person. A value from the page's
- * query is yellow, as it may be a token or a name, or harmless. Yellow too where the server seems to belong to the page.
+ * The IDs other sites hand on to a third (cookie syncing): the value of a cookie of another site than the page's, at
+ * least ten characters with a digit in them, in the address of a request to a third site. As carried entries
+ * id:<name>@<domain> of the cookie. A site's own cookie going back to it is none, nor is the page's own cookie: that
+ * its analytics gets its ID is how analytics works.
  */
-export const leakLevel = (l: Leak): Level => (l.what === 'email' && !l.own ? 'red' : 'yellow')
+export function cookieIds(url: string, cookies: { name: string; domain: string; value: string }[], pageUrls: string[]): string[] {
+  let host: string
+  try {
+    host = new URL(url).hostname
+  } catch {
+    return []
+  }
+  const own = new Set(pageUrls.map(u => site(new URL(u).hostname)))
+  const to = site(host)
+  if (own.has(to)) return []
+  const text = decoded(url)
+  const out: string[] = []
+  for (const c of cookies) {
+    const domain = c.domain.replace(/^\./, '')
+    const from = site(domain)
+    if (own.has(from) || from === to) continue
+    const value = decoded(c.value)
+    if (value.length < 10 || !/\d/.test(value) || !text.includes(value)) continue
+    const id = `id:${c.name}@${domain}`
+    if (!out.includes(id)) out.push(id)
+  }
+  return out
+}
 
-/** What requests to other sites carry of the visitor's, per server and kind. */
+/**
+ * An email address that goes to another site is red: its owner can tie the visit to a person. A value from the page's
+ * query is yellow, as it may be a token or a name, or harmless. An ID of another site's cookie is red: two trackers tie
+ * their profiles of the visitor together. Yellow too where the server seems to belong to the page.
+ */
+export const leakLevel = (l: Leak): Level => ((l.what === 'email' || l.what === 'id') && !l.own ? 'red' : 'yellow')
+
+/** What requests to other sites carry of the visitor's, per server and kind; IDs per server and cookie. */
 export function leaks(scan: Scan): Result {
   const own = ownSites(scan)
   const owner = ownership(scan)
@@ -613,8 +647,11 @@ export function leaks(scan: Scan): Result {
   for (const r of list(scan.requests)) {
     if (own.has(site(r.host))) continue
     for (const c of list(r.carries)) {
-      const what = c === 'email' ? 'email' : 'query'
-      const param = what === 'query' ? c.slice('query:'.length) : undefined
+      const what = c === 'email' ? 'email' : c.startsWith('id:') ? 'id' : 'query'
+      // id:<name>@<domain>: a cookie name may hold an @, a domain not
+      const at = c.lastIndexOf('@')
+      const param = what === 'query' ? c.slice('query:'.length) : what === 'id' ? c.slice('id:'.length, at) : undefined
+      const from = what === 'id' ? c.slice(at + 1) : undefined
       const k = `${r.host} ${c}`
       const seen = found.get(k)
       if (seen) {
@@ -622,7 +659,7 @@ export function leaks(scan: Scan): Result {
         continue
       }
       const reason = owner(r.host)
-      found.set(k, { host: r.host, what, ...(param !== undefined ? { param } : {}), requests: 1, service: serviceOfHost(r.host), ...(reason ? { own: reason } : {}) })
+      found.set(k, { host: r.host, what, ...(param !== undefined ? { param } : {}), ...(from !== undefined ? { from } : {}), requests: 1, service: serviceOfHost(r.host), ...(reason ? { own: reason } : {}) })
     }
   }
   const findings = [...found.values()].sort((a, b) => a.host.localeCompare(b.host) || a.what.localeCompare(b.what))

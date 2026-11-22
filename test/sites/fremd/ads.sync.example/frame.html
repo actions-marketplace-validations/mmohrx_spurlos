@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<script>
+  // an ad server's frame: its own ID in a cookie, handed to a partner in the address (cookie syncing)
+  document.cookie = 'uid=AB12CD34EF56; max-age=86400; path=/; SameSite=None; Secure'
+  new Image().src = 'https://px.partner.example/sync?partner_uid=AB12CD34EF56'
+  // back to itself it is no syncing
+  new Image().src = 'https://ads.sync.example/seen?uid=AB12CD34EF56'
+</script>
