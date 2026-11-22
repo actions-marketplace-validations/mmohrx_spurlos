@@ -1,16 +1,18 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-14 requests on load, 3.8 kB; 8 of them with 1 kB to other domains
+15 requests on load, 4 kB; 9 of them with 1 kB to other domains
 7 problems · 6 notes · 1 fine
 
-🔴 Third-party servers              8
+🔴 Third-party servers              9
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
   ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 request)
   ├─ 🔴 cdn.unbekannt.example – 1 request
   ├─ 🔴 connect.facebook.net – Meta Pixel (1 request, only after the first move)
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 request)
   ├─ 🔴 fp.unbekannt.example – 1 request
+  ├─ 🔴 www.google-analytics.com – Google Analytics (1 request)
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 request)
-  └─ 🔴 www.youtube.com – YouTube (1 request)
+  ├─ 🔴 www.youtube.com – YouTube (1 request)
+  └─ 🔴 Google Consent Mode (gcs=G111) – tells Google consent was given for ads and analytics before anyone chose anything
      → Each of them learns the visitor's IP address on opening the page, before
        any click.
      → “Only after the first move” came when spurlos moved the mouse and
@@ -20,6 +22,10 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → Cookie banner found: Usercentrics.
      → The trackers above still load before anyone chooses anything in the
        banner.
+     → Google Consent Mode tells Google's tags whether the visitor agreed. Set
+       to “granted” up front, they set cookies and use the data as if the
+       visitor had agreed. The usual default is “denied” until the cookie banner
+       reports the choice.
      → Fonts can be served from the own server, then no request goes out for
        them.
      → Libraries from a CDN can be served from the own server as well.

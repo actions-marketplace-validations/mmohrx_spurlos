@@ -1,5 +1,5 @@
 import {
-  certLevel, load, cookieLevel, leakLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
+  certLevel, consentModeGranted, load, cookieLevel, leakLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
   type Comparison, type Level, type Result,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
@@ -61,7 +61,12 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       const consent = r.consent.length ? [t.consentFound(r.consent.join(', ')), ...(trackers ? [t.consentButTrackers] : [])] : trackers ? [t.consentNone] : []
       // a baseline from an older spurlos has none
       const selfHosted = r.selfHosted?.length ? [t.selfHosted(r.selfHosted.join(', '))] : []
-      if (!r.hosts.length) return { value: t.none, items: [], notes: [t.thirdPartyNone, ...selfHosted, ...consent] }
+      // what Google's tags were told of the visitor's consent; a baseline from an older spurlos has none
+      const mode = r.consentMode
+      const granted = consentModeGranted(mode)
+      const modeItems = mode && granted ? [item(key.consentMode, 'red', `Google Consent Mode (gcs=${mode.gcs})`, t.consentModeGranted(mode.ads === 'granted', mode.analytics === 'granted'))] : []
+      const modeNotes = mode ? [granted ? t.consentModeGrantedNote : t.consentModeDenied(mode.gcs)] : []
+      if (!r.hosts.length) return { value: t.none, items: modeItems, notes: [t.thirdPartyNone, ...modeNotes, ...selfHosted, ...consent] }
       const hints = [
         categories.has('fonts') ? t.thirdPartyHint.fonts : null,
         categories.has('cdn') ? t.thirdPartyHint.cdn : null,
@@ -76,7 +81,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           const about = [h.service?.name, h.own ? t.ownBy[h.own] : undefined].filter(Boolean).join(', ') || undefined
           const count = h.preconnect ? t.preconnectOnly : t.requests(h.requests) + (h.afterMove ? `, ${t.afterMove}` : '')
           return item(key.host(h.host), hostLevel(h), h.host, about ? `${about} (${count})` : count)
-        }),
+        }).concat(modeItems),
         notes: [
           t.thirdParty,
           ...(r.platform && r.hosts.some(h => h.own === 'platform') ? [t.platformNote(r.platform)] : []),
@@ -85,6 +90,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           ...(r.hosts.some(h => h.afterMove) ? [t.afterMoveNote] : []),
           ...selfHosted,
           ...consent,
+          ...modeNotes,
           ...hints.filter(n => n !== null),
         ],
       }

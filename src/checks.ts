@@ -22,6 +22,11 @@ export type OwnReason = 'option' | 'certificate' | 'name' | 'platform'
  * preconnect: no request went to it, the page only opened a connection ahead (<link rel="preconnect">, Link header) ·
  * afterMove: every request to it came only once spurlos moved the mouse and scrolled
  */
+/**
+ * What Google Consent Mode tells Google's tags before any click, by gcs=G1<ads><analytics> in their requests: 1 for
+ * granted, 0 for denied. Present only where the page uses Consent Mode.
+ */
+export type ConsentMode = { gcs: string; ads: 'granted' | 'denied'; analytics: 'granted' | 'denied' }
 export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason; preconnect?: true; afterMove?: true }
 /**
  * missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie ·
@@ -55,7 +60,7 @@ export type AccessibilityProblem = 'lang' | 'images' | 'fields' | 'zoom'
 export type MobileProblem = 'viewport' | 'overflow'
 
 export type Result =
-  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string }
+  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string; consentMode?: ConsentMode }
   | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
   | { check: 'https'; level: Level; https: boolean; certDaysLeft?: number; http?: HttpRedirect; hsts: boolean }
@@ -225,6 +230,34 @@ export function preconnects(scan: Scan): string[] {
 }
 
 /**
+ * The consent state Google's tags send, of every request with gcs=G1xx: on the page's own site too, where a tag server
+ * of its own (server-side tagging) takes them. Of several, the one that grants most, as anything granted before a click
+ * is too much.
+ */
+export function consentMode(scan: Scan): ConsentMode | undefined {
+  let found: ConsentMode | undefined
+  let most = -1
+  for (const r of list(scan.requests)) {
+    let gcs: string | null = null
+    try {
+      gcs = new URL(r.url).searchParams.get('gcs')
+    } catch {
+      // a STUN server, say: no query
+    }
+    const m = /^G1([01])([01])$/.exec(gcs ?? '')
+    if (!gcs || !m) continue
+    const granted = (m[1] === '1' ? 1 : 0) + (m[2] === '1' ? 1 : 0)
+    if (granted <= most) continue
+    most = granted
+    found = { gcs, ads: m[1] === '1' ? 'granted' : 'denied', analytics: m[2] === '1' ? 'granted' : 'denied' }
+  }
+  return found
+}
+
+/** Consent Mode granting anything before a click is red: Google's tags then set cookies and use the data as if agreed. */
+export const consentModeGranted = (c: ConsentMode | undefined): boolean => c !== undefined && (c.ads === 'granted' || c.analytics === 'granted')
+
+/**
  * Every request to another site than the page's own counts. A host no name gives away may by the path asked for
  * (/matomo.php on an agency's server). selfHosted: known services the page runs on its own site, by their paths (a
  * Sentry or Matomo of its own); they change no light, as the IP stays with the site, but the reader learns of them.
@@ -261,7 +294,9 @@ export function thirdParty(scan: Scan): Result {
     })
     .sort((a, b) => a.host.localeCompare(b.host))
   const platform = platformOf(scan)
-  return { check: 'third-party', level: worst(hosts.map(hostLevel)), hosts, consent: consentManagers(scan), selfHosted: [...selfHosted], ...(platform ? { platform: platform.name } : {}) }
+  const mode = consentMode(scan)
+  const level = worst([...hosts.map(hostLevel), ...(consentModeGranted(mode) ? ['red' as const] : [])])
+  return { check: 'third-party', level, hosts, consent: consentManagers(scan), selfHosted: [...selfHosted], ...(platform ? { platform: platform.name } : {}), ...(mode ? { consentMode: mode } : {}) }
 }
 
 const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.status >= 200 && v.status < 300
@@ -718,6 +753,7 @@ export function runChecks(scan: Scan, now = Date.now()): Result[] {
 export const key = {
   /** hosts of a known service share one key: see hostKey */
   host: (host: string) => `third-party ${hostKey(host)}`,
+  consentMode: 'consent-mode granted',
   cookie: (c: { name: string; domain: string }) => `cookie ${c.name} ${c.domain}`,
   storage: (e: { area: string; key: string }) => `storage ${e.area} ${e.key}`,
   legal: (kind: LegalKind) => `legal ${kind}`,
@@ -775,7 +811,7 @@ function unnumbered(r: Result): Finding[] {
       // the hosts of one service are one finding, at their worst
       const byKey = new Map<string, Level[]>()
       for (const h of list(r.hosts)) byKey.set(key.host(h.host), [...(byKey.get(key.host(h.host)) ?? []), hostLevel(h)])
-      return [...byKey].map(([k, levels]) => ({ key: k, level: worst(levels) }))
+      return [...[...byKey].map(([k, levels]) => ({ key: k, level: worst(levels) })), ...(consentModeGranted(r.consentMode) ? [{ key: key.consentMode, level: 'red' as const }] : [])]
     case 'cookies':
       return [
         ...list(r.cookies).map(c => ({ key: key.cookie(c), level: cookieLevel({ ...c, missing: list(c.missing) }) })),

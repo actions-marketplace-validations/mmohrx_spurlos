@@ -1,16 +1,18 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-beim Aufruf 14 Anfragen, 3,8 kB; davon 8 mit 1 kB an andere Domains
+beim Aufruf 15 Anfragen, 4 kB; davon 9 mit 1 kB an andere Domains
 7 Mängel · 6 Hinweise · 1 in Ordnung
 
-🔴 Fremde Server              8
+🔴 Fremde Server              9
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
   ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 Anfrage)
   ├─ 🔴 cdn.unbekannt.example – 1 Anfrage
   ├─ 🔴 connect.facebook.net – Meta Pixel (1 Anfrage, erst nach der ersten Bewegung)
   ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
   ├─ 🔴 fp.unbekannt.example – 1 Anfrage
+  ├─ 🔴 www.google-analytics.com – Google Analytics (1 Anfrage)
   ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 Anfrage)
-  └─ 🔴 www.youtube.com – YouTube (1 Anfrage)
+  ├─ 🔴 www.youtube.com – YouTube (1 Anfrage)
+  └─ 🔴 Google Consent Mode (gcs=G111) – meldet Google Zustimmung zu Werbung und Analyse, bevor jemand etwas gewählt hat
      → Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor
        er etwas anklickt.
      → „Erst nach der ersten Bewegung“ kam, als spurlos die Maus bewegte und
@@ -20,6 +22,10 @@ beim Aufruf 14 Anfragen, 3,8 kB; davon 8 mit 1 kB an andere Domains
      → Cookie-Banner erkannt: Usercentrics.
      → Die Tracker oben laden trotzdem schon, bevor jemand im Banner etwas
        wählt.
+     → Google Consent Mode sagt den Google-Tags, ob der Besucher zugestimmt hat.
+       Steht es vorab auf „granted“, setzen sie Cookies und nutzen die Daten,
+       als hätte er zugestimmt. Üblich ist „denied“, bis der Cookie-Banner die
+       Wahl meldet.
      → Schriften lassen sich vom eigenen Server ausliefern, dann geht dafür
        keine Anfrage nach außen.
      → Bibliotheken von einem CDN lassen sich ebenso vom eigenen Server

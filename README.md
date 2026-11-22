@@ -14,7 +14,7 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 - ob **E-Mail-Adressen oder Werte aus der Adresse der Seite** an fremde Server gehen, etwa von einer Danke-Seite `/danke?email=…` an Analytics.
 - ob Skripte den Browser per **Fingerprinting** vermessen: Canvas, Grafikkarte über WebGL, Audio, die IP-Adresse über WebRTC. Das erkennt Besucher auch ohne Cookie wieder.
 - ob Skripte schon beim Laden **nach Standort, Kamera, Mikrofon oder Benachrichtigungen fragen** oder einen Service Worker registrieren.
-- welcher **Cookie-Banner** geladen wird, etwa Usercentrics, Cookiebot oder Borlabs, und ob Tracker trotzdem schon vorher laden.
+- welcher **Cookie-Banner** geladen wird, etwa Usercentrics, Cookiebot oder Borlabs, ob Tracker trotzdem schon vorher laden und ob Google Consent Mode vorab Zustimmung meldet.
 - ob **Impressum und Datenschutzerklärung** verlinkt sind und sich öffnen lassen.
 - ob **HTTPS** sauber eingerichtet ist: Zertifikat, Weiterleitung von http, HSTS.
 - welche **Sicherheits-Header** fehlen, und ob die Content-Security-Policy Skripte doch durchlässt.
@@ -89,7 +89,7 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 
 | Prüfung | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem; dazu Server, die zur Seite zu gehören scheinen (`--own`, Zertifikat, Name), und die der Plattform, auf der sie läuft (Wix, Shopify, Squarespace, Webflow, IONOS MyWebsite) | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner, keinem Captcha und nicht zur Seite gehört |
+| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem; dazu Server, die zur Seite zu gehören scheinen (`--own`, Zertifikat, Name), und die der Plattform, auf der sie läuft (Wix, Shopify, Squarespace, Webflow, IONOS MyWebsite) | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner, keinem Captcha und nicht zur Seite gehört; Google Consent Mode meldet vor jedem Klick Zustimmung (`gcs=G101`, `G110`, `G111`) |
 | Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies und solche, in denen der Cookie-Banner die Wahl speichert | eigene Cookies oder Einträge, die spurlos nicht kennt oder die zu einem Dienst wie einem Chat oder Zahlungsanbieter gehören; ein Cookie ohne `Secure` auf einer https-Seite; ein Sitzungs-Cookie ohne `HttpOnly`; ein Cookie, das länger als 13 Monate gilt | Cookie einer fremden Domain, die nicht zur Seite zu gehören scheint, oder eines bekannten Trackers |
 | Weitergegebene Daten | keine | ein Wert aus der Query der Seite (außer `utm_…` und Klick-IDs) geht an einen fremden Server, oder eine E-Mail-Adresse an einen Server, der zur Seite zu gehören scheint | eine E-Mail-Adresse geht an einen fremden Server |
 | Fingerprinting | kein Skript liest Canvas, Grafikkarte, Audio oder über WebRTC die IP-Adresse aus | ein eigenes Skript, ein Captcha oder ein Server, der zur Seite zu gehören scheint, liest sie aus | ein Skript einer fremden Domain liest sie aus |

@@ -14,7 +14,7 @@
 - whether **email addresses or values from the page address** go to third-party servers, from a thank-you page `/thanks?email=…` to analytics, say.
 - whether scripts measure the browser by **fingerprinting**: canvas, graphics card via WebGL, audio, the IP address via WebRTC. That recognizes visitors without any cookie.
 - whether scripts **ask for location, camera, microphone or notifications** right on load, or register a service worker.
-- which **cookie banner** loads, such as Usercentrics, Cookiebot or Borlabs, and whether trackers load before it anyway.
+- which **cookie banner** loads, such as Usercentrics, Cookiebot or Borlabs, whether trackers load before it anyway, and whether Google Consent Mode reports consent up front.
 - whether the **legal notice (Impressum) and privacy policy** are linked and open.
 - whether **HTTPS** is set up properly: certificate, redirect from http, HSTS.
 - which **security headers** are missing, and whether the Content-Security-Policy lets scripts through after all.
@@ -89,7 +89,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 
 | Check | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address; and servers that seem to belong to the site (`--own`, certificate, name), and those of the platform it runs on (Wix, Shopify, Squarespace, Webflow, IONOS MyWebsite) | at least one request to another domain that belongs to no cookie banner, no captcha and not to the site |
+| Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address; and servers that seem to belong to the site (`--own`, certificate, name), and those of the platform it runs on (Wix, Shopify, Squarespace, Webflow, IONOS MyWebsite) | at least one request to another domain that belongs to no cookie banner, no captcha and not to the site; Google Consent Mode reports consent before any click (`gcs=G101`, `G110`, `G111`) |
 | Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly`; a cookie that lasts longer than 13 months | a cookie of another domain that does not seem to belong to the site, or one of a known tracker |
 | Data passed on | none | a value from the page query (other than `utm_…` and click IDs) goes to a third-party server, or an email address to a server that seems to belong to the site | an email address goes to a third-party server |
 | Fingerprinting | no script reads out canvas, graphics card, audio or the IP address via WebRTC | a script of the site itself, a captcha or a server that seems to belong to the site reads them out | a script of another domain reads them out |

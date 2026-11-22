@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
-  access, accessibility, blocksZoom, indexing, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, accessibility, blocksZoom, indexing, consentMode, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import { iceHost, type Scan, type Visit } from '../src/scan.ts'
@@ -733,5 +733,27 @@ describe('indexing', () => {
   test('index, nofollow and other rules are green', () => {
     expect(indexing({ ...base, headers: { 'x-robots-tag': 'noarchive, max-snippet:-1' }, metaRobots: 'index, nofollow' })).toEqual({ check: 'indexing', level: 'green', noindex: [] })
     expect(indexing(base).level).toBe('green')
+  })
+})
+
+describe('consent mode', () => {
+  const ga = (gcs: string, host = 'www.google-analytics.com') => ({ url: `https://${host}/g/collect?v=2&tid=G-X&gcs=${gcs}`, host, type: 'ping' })
+
+  test('denied before any click is a note, no finding', () => {
+    const r = thirdParty({ ...base, requests: [ga('G100')] })
+    if (r.check !== 'third-party') throw new Error()
+    expect(r.consentMode).toEqual({ gcs: 'G100', ads: 'denied', analytics: 'denied' })
+    expect(findings(r).map(f => f.key)).toEqual(['third-party google-analytics.com'])
+  })
+
+  test('anything granted before a click is red, the most granted of several counts, also on a tag server of the page', () => {
+    expect(consentMode({ ...base, requests: [ga('G100'), ga('G101'), ga('G100')] })).toEqual({ gcs: 'G101', ads: 'denied', analytics: 'granted' })
+    const r = thirdParty({ ...base, requests: [ga('G111', 'sgtm.firma.de')] })
+    expect(r.level).toBe('red')
+    expect(findings(r)).toEqual([{ key: 'consent-mode granted', level: 'red' }])
+  })
+
+  test('without gcs, or with another value, there is none', () => {
+    expect(consentMode({ ...base, requests: [ga('G2'), req('www.google-analytics.com'), { url: 'stun:stun.l.google.com:19302', host: 'stun.l.google.com', type: 'webrtc' }] })).toBeUndefined()
   })
 })

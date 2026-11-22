@@ -8,7 +8,7 @@
         "url": "https://shop.example/tracked.html",
         "host": "shop.example",
         "type": "document",
-        "bytes": 2540
+        "bytes": 2702
       },
       {
         "url": "https://fonts.googleapis.com/css2?family=Inter",
@@ -70,6 +70,12 @@
         "type": "script"
       },
       {
+        "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-TEST&gcs=G111",
+        "host": "www.google-analytics.com",
+        "type": "image",
+        "bytes": 17
+      },
+      {
         "url": "https://www.youtube.com/embed/abc",
         "host": "www.youtube.com",
         "type": "document",
@@ -100,7 +106,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829909736.527281,
+        "expires": 1829909845.1195,
         "secure": false,
         "httpOnly": false,
         "sameSite": "Lax"
@@ -108,7 +114,7 @@
       {
         "name": "prefs",
         "domain": "shop.example",
-        "expires": 1829909736.527323,
+        "expires": 1829909845.119551,
         "secure": true,
         "httpOnly": false,
         "sameSite": "None"
@@ -116,7 +122,7 @@
       {
         "name": "_fbp",
         "domain": "shop.example",
-        "expires": 1803125737.157734,
+        "expires": 1803125845.749683,
         "secure": true,
         "httpOnly": false,
         "sameSite": "Lax",
@@ -130,7 +136,7 @@
       }
     ],
     "headers": {
-      "content-length": "2386",
+      "content-length": "2548",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -347,6 +353,23 @@
           "requests": 1
         },
         {
+          "host": "www.google-analytics.com",
+          "service": {
+            "name": "Google Analytics",
+            "category": "tracking",
+            "hosts": [
+              "google-analytics.com",
+              "analytics.google.com"
+            ],
+            "cookies": [
+              "_ga",
+              "_gid",
+              "_gat"
+            ]
+          },
+          "requests": 1
+        },
+        {
           "host": "www.googletagmanager.com",
           "service": {
             "name": "Google Tag Manager",
@@ -382,7 +405,12 @@
       "consent": [
         "Usercentrics"
       ],
-      "selfHosted": []
+      "selfHosted": [],
+      "consentMode": {
+        "gcs": "G111",
+        "ads": "granted",
+        "analytics": "granted"
+      }
     },
     {
       "check": "cookies",
@@ -403,7 +431,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829909736.527281,
+          "expires": 1829909845.1195,
           "secure": false,
           "httpOnly": false,
           "sameSite": "Lax",
@@ -429,7 +457,7 @@
         {
           "name": "prefs",
           "domain": "shop.example",
-          "expires": 1829909736.527323,
+          "expires": 1829909845.119551,
           "secure": true,
           "httpOnly": false,
           "sameSite": "None",
@@ -440,7 +468,7 @@
         {
           "name": "_fbp",
           "domain": "shop.example",
-          "expires": 1803125737.157734,
+          "expires": 1803125845.749683,
           "secure": true,
           "httpOnly": false,
           "sameSite": "Lax",

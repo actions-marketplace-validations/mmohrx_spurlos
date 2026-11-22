@@ -120,6 +120,7 @@ describe('scan', { timeout: 30_000 }, () => {
     // held back by the cookie banner: it does not run, so it is no finding
     expect(res.findings.some(f => f.url.includes('maps.googleapis.com'))).toBe(false)
     expect(pick(results, 'third-party').consent).toEqual(['Usercentrics'])
+    expect(pick(results, 'third-party').consentMode).toEqual({ gcs: 'G111', ads: 'granted', analytics: 'granted' })
     // the banner yellow, the trackers red
     const hostLights = Object.fromEntries(third.hosts.map(h => [h.host, hostLevel(h)]))
     expect(hostLights).toMatchObject({ 'app.usercentrics.eu': 'yellow', 'www.googletagmanager.com': 'red', 'fonts.googleapis.com': 'red' })

@@ -25,6 +25,8 @@
       document.head.append(pixel)
       document.cookie = '_fbp=fb.1.123.456; max-age=7776000; path=/; Secure'
     }, { once: true })
+    // Google Consent Mode set to granted before anyone chose anything
+    new Image().src = 'https://www.google-analytics.com/g/collect?v=2&tid=G-TEST&gcs=G111'
     // asked right on load, before any click
     navigator.geolocation.getCurrentPosition(() => {}, () => {})
     Notification.requestPermission().catch(() => {})
