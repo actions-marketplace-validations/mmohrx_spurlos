@@ -24,6 +24,10 @@ Als Anfrage zählt auch eine WebSocket-Verbindung (`ws://`, `wss://`), etwa eine
 
 Subdomains zählen zur eigenen Seite (`cdn.firma.de` gehört zu `www.firma.de`), dabei gilt die Public Suffix List (`firma.co.uk`).
 
+## Weitergegebene Daten
+
+Beim ersten Aufruf kennt eine Seite vom Besucher nur, was in ihrer Adresse steht. spurlos sucht deshalb in Adresse und Inhalt (POST) jeder Anfrage an einen fremden Server, auch URL-kodiert, nach E-Mail-Adressen und nach den Werten der Query der geprüften Adresse. Eine E-Mail-Adresse ist rot, ein Wert aus der Query gelb. Nicht zählen Kampagnen-Parameter und Klick-IDs (`utm_…`, `gclid`, `gbraid`, `wbraid`, `dclid`, `fbclid`, `msclkid`, `ttclid`, `twclid`, `li_fat_id`, `mc_cid`, `mc_eid`, `_ga`, `_gl`, `ref`) und Werte unter sechs Zeichen. Was nach einer E-Mail-Adresse aussieht, aber direkt auf `//` folgt, etwa der DSN von Sentry (`https://schlüssel@o1.ingest.sentry.io`), ist keine. Prüfen lohnt sich vor allem mit Adressen, die Daten tragen, etwa einer Danke-Seite nach der Anmeldung: `spurlos "https://firma.de/danke?email=test@firma.de"`. In `--json` steht an der Anfrage unter `carries`, was sie trägt (`email`, `query:<name>`).
+
 ## Fingerprinting
 
 spurlos achtet beim Aufruf auf vier Arten, den Browser zu vermessen, in der Seite und in jedem Frame:

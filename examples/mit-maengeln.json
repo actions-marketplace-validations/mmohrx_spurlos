@@ -59,15 +59,15 @@
         "bytes": 24
       },
       {
-        "url": "http://shop.example/alt.js",
-        "host": "shop.example",
-        "type": "script"
-      },
-      {
         "url": "https://shop.example/deko.png",
         "host": "shop.example",
         "type": "image",
         "bytes": 24
+      },
+      {
+        "url": "http://shop.example/alt.js",
+        "host": "shop.example",
+        "type": "script"
       },
       {
         "url": "https://www.youtube.com/embed/abc",
@@ -100,7 +100,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829904471.436077,
+        "expires": 1829904675.699277,
         "secure": false,
         "httpOnly": false,
         "sameSite": "Lax"
@@ -108,7 +108,7 @@
       {
         "name": "prefs",
         "domain": "shop.example",
-        "expires": 1829904471.436148,
+        "expires": 1829904675.699319,
         "secure": true,
         "httpOnly": false,
         "sameSite": "None"
@@ -116,7 +116,7 @@
       {
         "name": "_fbp",
         "domain": "shop.example",
-        "expires": 1803120472.066469,
+        "expires": 1803120676.330268,
         "secure": true,
         "httpOnly": false,
         "sameSite": "Lax",
@@ -402,7 +402,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829904471.436077,
+          "expires": 1829904675.699277,
           "secure": false,
           "httpOnly": false,
           "sameSite": "Lax",
@@ -428,7 +428,7 @@
         {
           "name": "prefs",
           "domain": "shop.example",
-          "expires": 1829904471.436148,
+          "expires": 1829904675.699319,
           "secure": true,
           "httpOnly": false,
           "sameSite": "None",
@@ -439,7 +439,7 @@
         {
           "name": "_fbp",
           "domain": "shop.example",
-          "expires": 1803120472.066469,
+          "expires": 1803120676.330268,
           "secure": true,
           "httpOnly": false,
           "sameSite": "Lax",
@@ -465,6 +465,11 @@
           "key": "theme"
         }
       ]
+    },
+    {
+      "check": "leaks",
+      "level": "green",
+      "findings": []
     },
     {
       "check": "fingerprinting",

@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/tracked.html
 14 requests on load, 3.8 kB; 8 of them with 1 kB to other domains
-7 problems · 5 notes
+7 problems · 5 notes · 1 fine
 
 🔴 Third-party servers              8
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
@@ -130,6 +130,10 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → These are only basics that can be checked without a click. They do not
        say whether the site is accessible; that takes tools such as axe and
        people using it with a screen reader and keyboard.
+
+🟢 Data passed on                   none
+  → No email address and no value from the address of the page in the requests
+    to third-party servers.
 
 Technical pre-check – not legal advice, and no statement on whether the site
 complies with the GDPR.

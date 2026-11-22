@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Danke für deine Anmeldung</title>
+</head>
+<body>
+  <h1>Danke für deine Anmeldung</h1>
+  <script>
+    // analytics sends the page address, the email in it included
+    new Image().src = 'https://www.google-analytics.com/g/collect?v=2&dl=' + encodeURIComponent(location.href)
+    // an error tracker's DSN looks like an email address, but is none
+    fetch('https://o1.ingest.sentry.io/api/1/envelope/', { method: 'POST', body: '{"dsn":"https://abc123@o1.ingest.sentry.io/1"}' })
+    // the campaign alone is no data of the visitor's
+    new Image().src = 'https://ads.unbekannt.example/px?src=' + new URLSearchParams(location.search).get('utm_source')
+  </script>
+  <a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a>
+</body>
+</html>

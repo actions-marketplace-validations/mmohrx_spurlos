@@ -1,7 +1,7 @@
 import { X509Certificate } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Page, type Request as PlaywrightRequest, type Response as PlaywrightResponse } from 'playwright'
-import { legalLinks } from './checks.ts'
+import { carried, legalLinks } from './checks.ts'
 
 // src/ and dist/ both sit next to package.json
 export const VERSION: string = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
@@ -59,9 +59,11 @@ export function browserAgent(chromeVersion: string, platform = process.platform,
  * type: as Playwright names it (script, image, fetch …), websocket for a WebSocket and webrtc for a STUN or TURN
  * server, which Playwright does not report as requests; url is then the server's address as the page gave it.
  * bytes: what went over the wire for the answer, headers and encoded body; missing where none came.
- * afterMove: it came only once spurlos moved the mouse and scrolled, as scripts held back until then do
+ * afterMove: it came only once spurlos moved the mouse and scrolled, as scripts held back until then do.
+ * carries: what of the visitor's it sends along, in its address or body: email, or query:<name> for a value from the
+ * query of the page asked for (see carried in checks.ts)
  */
-export type Request = { url: string; host: string; type: string; bytes?: number; afterMove?: true }
+export type Request = { url: string; host: string; type: string; bytes?: number; afterMove?: true; carries?: string[] }
 /** expires: in seconds since 1970, -1 for a session cookie; sameSite: missing in a scan of an older spurlos */
 export type Cookie = { name: string; domain: string; expires: number; secure: boolean; httpOnly: boolean; sameSite?: 'Strict' | 'Lax' | 'None'; afterMove?: true }
 export type StorageEntry = { area: 'localStorage' | 'sessionStorage'; key: string }
@@ -367,7 +369,8 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     context.on('request', r => {
       const u = new URL(r.url())
       if (u.protocol !== 'http:' && u.protocol !== 'https:') return
-      const entry: Request = { url: r.url(), host: u.hostname, type: r.resourceType() }
+      const carries = carried(r.url(), r.postData() ?? undefined, url)
+      const entry: Request = { url: r.url(), host: u.hostname, type: r.resourceType(), ...(carries.length ? { carries } : {}) }
       requests.push(entry)
       recorded.set(r, entry)
     })

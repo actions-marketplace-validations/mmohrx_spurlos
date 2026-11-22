@@ -1,11 +1,15 @@
 spurlos 0.4.0  https://shop.example/
 2 requests on load, 1 kB; none to other domains
-12 fine
+13 fine
 
 🟢 Third-party servers              none
   → Opening the page sent no request to another server.
 
 🟢 Cookies and storage              nothing set
+
+🟢 Data passed on                   none
+  → No email address and no value from the address of the page in the requests
+    to third-party servers.
 
 🟢 Fingerprinting                   none
   → No script read out canvas, graphics card, audio or the IP address via WebRTC

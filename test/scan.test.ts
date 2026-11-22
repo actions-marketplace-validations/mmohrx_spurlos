@@ -18,6 +18,7 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(Object.fromEntries(results.map(r => [r.check, r.level]))).toEqual({
       'third-party': 'green',
       cookies: 'green',
+      leaks: 'green',
       fingerprinting: 'green',
       access: 'green',
       legal: 'green',
@@ -180,7 +181,7 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(report).toContain('Referrer-Policy fehlt – etwa strict-origin-when-cross-origin')
     // the summary comes first, the worst checks lead, and without color the text holds no escape codes
     const lines = report.split('\n')
-    expect(lines.slice(0, 3)).toContainEqual(expect.stringMatching(/^\d+ Mängel · \d+ Hinweise?$/))
+    expect(lines.slice(0, 3)).toContainEqual(expect.stringMatching(/^\d+ Mängel · \d+ Hinweise?( · \d+ in Ordnung)?$/))
     const lights = lines.filter(l => /^\S/.test(l) && /^(🔴|🟡|🟢)/.test(l)).map(l => l.slice(0, 2))
     expect(lights).toEqual([...lights].sort((a, b) => ['🔴', '🟡', '🟢'].indexOf(a) - ['🔴', '🟡', '🟢'].indexOf(b)))
     expect(report).not.toContain('\x1b[')
@@ -225,6 +226,17 @@ describe('scan', { timeout: 30_000 }, () => {
     // the table of fixed width is far too wide for a phone
     const wide = await scan(`${SITE}/tracked.html`, { setup: offline, fetch: staysOnHttp, mobile: true })
     expect(pick(runChecks(wide), 'mobile')).toMatchObject({ problems: ['overflow'], width: { window: PHONE.width } })
+  })
+
+  test('an email address and values from the page address that go to other sites are found', async () => {
+    const s = await scan(`${SITE}/danke.html?email=max%40mail.example&bestellung=A12345678&utm_source=newsletter`, { setup: offline, fetch: redirects })
+    const leaks = pick(runChecks(s), 'leaks')
+    expect(leaks.level).toBe('red')
+    expect(leaks.findings.map(l => [l.host, l.what, l.param])).toEqual([
+      ['www.google-analytics.com', 'email', undefined],
+      ['www.google-analytics.com', 'query', 'bestellung'],
+    ])
+    expect(text(s, runChecks(s), 'de')).toContain('🔴 www.google-analytics.com – bekommt eine E-Mail-Adresse, Google Analytics (1 Anfrage)')
   })
 
   test('a screenshot only when asked for', async () => {

@@ -1,11 +1,15 @@
 spurlos 0.4.0  https://shop.example/
 beim Aufruf 2 Anfragen, 1 kB; keine an andere Domains
-12 in Ordnung
+13 in Ordnung
 
 🟢 Fremde Server              keine
   → Beim Aufruf ging keine Anfrage an einen anderen Server.
 
 🟢 Cookies und Speicher       nichts gesetzt
+
+🟢 Weitergegebene Daten       keine
+  → In den Anfragen an fremde Server steht keine E-Mail-Adresse und kein Wert
+    aus der Adresse der Seite.
 
 🟢 Fingerprinting             keine
   → Kein Skript las Canvas, Grafikkarte, Audio oder die IP-Adresse über WebRTC

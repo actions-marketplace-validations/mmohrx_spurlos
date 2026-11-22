@@ -24,6 +24,10 @@ A WebSocket connection (`ws://`, `wss://`), such as a chat's, counts as a reques
 
 Subdomains count as the site itself (`cdn.company.com` belongs to `www.company.com`), following the Public Suffix List (`company.co.uk`).
 
+## Data passed on
+
+On a first visit, a site knows of the visitor only what is in its address. So spurlos searches the address and body (POST) of every request to a third-party server, URL-encoded too, for email addresses and for the values of the query of the address checked. An email address is red, a value from the query yellow. Campaign parameters and click IDs (`utm_…`, `gclid`, `gbraid`, `wbraid`, `dclid`, `fbclid`, `msclkid`, `ttclid`, `twclid`, `li_fat_id`, `mc_cid`, `mc_eid`, `_ga`, `_gl`, `ref`) and values under six characters do not count. What looks like an email address but follows right after `//`, such as Sentry's DSN (`https://key@o1.ingest.sentry.io`), is none. Checking is worth it above all with addresses that carry data, such as a thank-you page after signing up: `spurlos "https://company.com/thanks?email=test@company.com"`. In `--json`, a request has what it carries under `carries` (`email`, `query:<name>`).
+
 ## Fingerprinting
 
 While loading, spurlos watches for four ways of measuring the browser, in the page and in every frame:

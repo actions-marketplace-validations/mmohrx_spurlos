@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
-  access, accessibility, blocksZoom, compare, mobile, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, accessibility, blocksZoom, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import { iceHost, type Scan, type Visit } from '../src/scan.ts'
@@ -121,6 +121,30 @@ describe('access', () => {
     ])
     expect(r.level).toBe('red')
     expect(access(base).level).toBe('green')
+  })
+})
+
+describe('leaks', () => {
+  test('an email address in address or body, encoded or not; a Sentry DSN is none', () => {
+    const page = 'https://www.firma.de/'
+    expect(carried('https://t.anders.de/c?u=max%2540mail.example', undefined, page)).toEqual(['email'])
+    expect(carried('https://t.anders.de/c', 'user=max@mail.example', page)).toEqual(['email'])
+    expect(carried('https://o1.ingest.sentry.io/api/1/envelope/', '{"dsn":"https://abc123@o1.ingest.sentry.io/1"}', page)).toEqual([])
+    expect(carried('https://t.anders.de/c?v=1', undefined, page)).toEqual([])
+  })
+
+  test('values from the page query, not campaigns and not short ones', () => {
+    const page = 'https://www.firma.de/konto?token=abc123xyz&id=42&utm_campaign=sommer2026&gclid=Cj0KCQ'
+    expect(carried('https://t.anders.de/c?dl=https%3A%2F%2Fwww.firma.de%2Fkonto%3Ftoken%3Dabc123xyz%26id%3D42%26utm_campaign%3Dsommer2026%26gclid%3DCj0KCQ', undefined, page)).toEqual(['query:token'])
+  })
+
+  test('an email to another site is red, a query value yellow, both counted per server; the own site carries nothing away', () => {
+    const at = (host: string, carries: string[]) => ({ ...req(host), carries })
+    const r = leaks({ ...base, requests: [at('t.anders.de', ['email', 'query:token']), at('t.anders.de', ['email']), at('www.firma.de', ['email'])] })
+    expect(findings(r).map(f => `${f.level} ${f.key}`)).toEqual(['red leak email t.anders.de', 'yellow leak query token t.anders.de'])
+    if (r.check !== 'leaks') throw new Error()
+    expect(r.findings.map(l => l.requests)).toEqual([2, 1])
+    expect(leaks(base).level).toBe('green')
   })
 })
 

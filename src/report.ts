@@ -1,5 +1,5 @@
 import {
-  certLevel, load, cookieLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
+  certLevel, load, cookieLevel, leakLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
   type Comparison, type Level, type Result,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
@@ -158,6 +158,18 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
         // shortened: a query is noise here and may hold an API key; --json keeps the full address
         items: r.findings.map(f => item(key.resource(f), resourceLevel(f), `${f.tag} ${withoutQuery(f.url)}${withoutQuery(f.url) === f.url ? '' : '?…'}`, t.resource[f.problem])),
         notes: [...(has('insecure') ? [t.resourcesInsecure] : []), ...(has('no-integrity') ? [t.resourcesIntegrity] : [])],
+      }
+    }
+
+    case 'leaks': {
+      if (!r.findings.length) return { value: t.none, items: [], notes: [t.leakNone] }
+      return {
+        value: `${r.findings.length}`,
+        items: r.findings.map(l => {
+          const about = [l.what === 'email' ? t.leakEmail : t.leakQuery(l.param ?? ''), l.service?.name, l.own ? t.ownBy[l.own] : undefined].filter(Boolean).join(', ')
+          return item(key.leak(l), leakLevel(l), l.host, `${about} (${t.requests(l.requests)})`)
+        }),
+        notes: [...(r.findings.some(l => l.what === 'email') ? [t.leakEmailNote] : []), ...(r.findings.some(l => l.what === 'query') ? [t.leakQueryNote] : [])],
       }
     }
 

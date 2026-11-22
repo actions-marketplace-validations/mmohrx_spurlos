@@ -104,6 +104,11 @@
       "storage": []
     },
     {
+      "check": "leaks",
+      "level": "green",
+      "findings": []
+    },
+    {
       "check": "fingerprinting",
       "level": "green",
       "findings": []

@@ -45,6 +45,8 @@ export type ResourceFinding = Resource & { problem: 'insecure' | 'no-integrity' 
 export type Caller = { host: string; thirdParty: boolean; service: Service | undefined; own?: OwnReason }
 export type FingerprintFinding = Fingerprint & Caller
 export type AccessFinding = Access & Caller
+/** what a server of another site got of the visitor's: an email address, or the value of the page's query parameter param */
+export type Leak = { host: string; what: 'email' | 'query'; param?: string; requests: number; service: Service | undefined; own?: OwnReason }
 /** what of the accessibility basics is missing; statement: the link to an accessibility statement */
 export type AccessibilityProblem = 'lang' | 'images' | 'fields' | 'zoom'
 /** viewport: no width=device-width, so a phone shows the desktop page shrunk · overflow: the page is wider than the window */
@@ -61,6 +63,7 @@ export type Result =
   | { check: 'resources'; level: Level; findings: ResourceFinding[] }
   | { check: 'fingerprinting'; level: Level; findings: FingerprintFinding[] }
   | { check: 'access'; level: Level; findings: AccessFinding[] }
+  | { check: 'leaks'; level: Level; findings: Leak[] }
   | { check: 'mobile'; level: Level; problems: MobileProblem[]; mobile: boolean; viewport?: string; width: { page: number; window: number } }
   | { check: 'accessibility'; level: Level; problems: AccessibilityProblem[]; images: string[]; fields: string[]; viewport?: string; statement?: Link }
 
@@ -504,6 +507,75 @@ export function resources(scan: Scan): Result {
   return { check: 'resources', level: worst(findings.map(resourceLevel)), findings }
 }
 
+// what a link or ad sets on every visit, and the page's address carries to analytics anyway: no data of the visitor's
+const CAMPAIGN = /^(utm_\w+|gclid|gbraid|wbraid|dclid|fbclid|msclkid|ttclid|twclid|li_fat_id|mc_cid|mc_eid|_ga|_gl|ref)$/i
+// a local part not right after a word, a dot or a slash: https://key@o1.ingest.sentry.io is a Sentry DSN, no address
+const EMAIL = /(?<![\w.%+\-/])[\w.%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}(?![\w-])/i
+
+/** a text as it may arrive encoded, once or twice: name%2540firma.de */
+function decoded(text: string): string {
+  let out = text.replace(/\+/g, ' ')
+  for (let i = 0; i < 2; i++) {
+    try {
+      out = decodeURIComponent(out)
+    } catch {
+      break
+    }
+  }
+  return out
+}
+
+/**
+ * What a request carries of the visitor's, in its address or body: an email address (email), and the values of the
+ * query of the page asked for, as query:<name> – a token, a name, an order number. Campaign parameters (utm_…, gclid …)
+ * and values under six characters do not count; a value that is an email address counts as email.
+ */
+export function carried(url: string, body: string | undefined, pageUrl: string): string[] {
+  const text = `${decoded(url)}\n${body === undefined ? '' : decoded(body)}`
+  const out = EMAIL.test(text) ? ['email'] : []
+  let query: URLSearchParams
+  try {
+    query = new URL(pageUrl).searchParams
+  } catch {
+    return out
+  }
+  for (const [name, value] of query) {
+    if (CAMPAIGN.test(name) || value.length < 6 || EMAIL.test(value)) continue
+    if (text.includes(value) && !out.includes(`query:${name}`)) out.push(`query:${name}`)
+  }
+  return out
+}
+
+/**
+ * An email address that goes to another site is red: its owner can tie the visit to a person. A value from the page's
+ * query is yellow, as it may be a token or a name, or harmless. Yellow too where the server seems to belong to the page.
+ */
+export const leakLevel = (l: Leak): Level => (l.what === 'email' && !l.own ? 'red' : 'yellow')
+
+/** What requests to other sites carry of the visitor's, per server and kind. */
+export function leaks(scan: Scan): Result {
+  const own = ownSites(scan)
+  const owner = ownership(scan)
+  const found = new Map<string, Leak>()
+  for (const r of list(scan.requests)) {
+    if (own.has(site(r.host))) continue
+    for (const c of list(r.carries)) {
+      const what = c === 'email' ? 'email' : 'query'
+      const param = what === 'query' ? c.slice('query:'.length) : undefined
+      const k = `${r.host} ${c}`
+      const seen = found.get(k)
+      if (seen) {
+        seen.requests++
+        continue
+      }
+      const reason = owner(r.host)
+      found.set(k, { host: r.host, what, ...(param !== undefined ? { param } : {}), requests: 1, service: serviceOfHost(r.host), ...(reason ? { own: reason } : {}) })
+    }
+  }
+  const findings = [...found.values()].sort((a, b) => a.host.localeCompare(b.host) || a.what.localeCompare(b.what))
+  return { check: 'leaks', level: worst(findings.map(leakLevel)), findings }
+}
+
 /** Tells, for the address of a script, whose it is. */
 function callers(scan: Scan): (script: string) => Caller {
   const own = ownSites(scan)
@@ -618,7 +690,7 @@ export function mobile(scan: Scan): Result {
 }
 
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan, now), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), mobile(scan), accessibility(scan)]
+  return [thirdParty(scan), cookies(scan, now), leaks(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), mobile(scan), accessibility(scan)]
 }
 
 /**
@@ -641,6 +713,7 @@ export const key = {
   access: (a: { api: string; host: string }) => `access ${a.api} ${hostKey(a.host)}`,
   accessibility: (what: AccessibilityProblem | 'statement') => `accessibility ${what}`,
   mobile: (what: MobileProblem) => `mobile ${what}`,
+  leak: (l: { host: string; what: string; param?: string }) => `leak ${l.what}${l.param === undefined ? '' : ` ${l.param}`} ${hostKey(l.host)}`,
   // without the query: a cache buster like ?ver=6.4.2 changes with every update, the file stays the same
   resource: (r: { problem: string; url: string }) => `resource ${r.problem} ${withoutQuery(r.url)}`,
 }
@@ -706,6 +779,8 @@ function unnumbered(r: Result): Finding[] {
       return list(r.findings).map(f => ({ key: key.fingerprint(f), level: fingerprintLevel(f) }))
     case 'access':
       return list(r.findings).map(a => ({ key: key.access(a), level: accessLevel(a) }))
+    case 'leaks':
+      return list(r.findings).map(l => ({ key: key.leak(l), level: leakLevel(l) }))
     case 'mobile':
       return list(r.problems).map(p => ({ key: key.mobile(p), level: 'yellow' as const }))
     case 'accessibility':
