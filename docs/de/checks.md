@@ -43,6 +43,10 @@ spurlos prüft nur ein paar Grundlagen, die sich ohne Klick feststellen lassen, 
 
 Einen Link auf eine Erklärung zur Barrierefreiheit erkennt spurlos an „barrierefrei“, „Zugänglichkeit“ oder „Accessibility“ in Text oder Adresse und nennt ihn; fehlt er, steht das nur als Hinweis da, ohne Ampel. Ob die Seite barrierefrei ist, sagt die Prüfung nicht, auch nicht, ob sie eine solche Erklärung braucht.
 
+## Datenmenge
+
+Über den Prüfungen steht, wie viele Anfragen die Seite beim ersten Aufruf stellt, wie viele Daten dabei übertragen werden (Header und Inhalt, so komprimiert, wie sie über die Leitung gehen) und wie viel davon an andere Domains geht. Eine Ampel gibt es dafür nicht. In `--json` steht die Größe je Anfrage unter `bytes`.
+
 ## Eigene Server auf anderen Domains
 
 Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, Wikipedia etwa von `wikimedia.org`. Solche Server sind gelb statt rot, wenn spurlos sie der Seite zuordnen kann, und der Bericht sagt, warum:

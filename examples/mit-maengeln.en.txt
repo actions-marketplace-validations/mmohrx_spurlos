@@ -1,4 +1,5 @@
 spurlos 0.4.0  https://shop.example/tracked.html
+13 requests on load, 3.2 kB; 7 of them with 1 kB to other domains
 7 problems · 4 notes
 
 🔴 Third-party servers              7

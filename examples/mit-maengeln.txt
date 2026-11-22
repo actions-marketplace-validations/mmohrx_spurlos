@@ -1,4 +1,5 @@
 spurlos 0.4.0  https://shop.example/tracked.html
+beim Aufruf 13 Anfragen, 3,2 kB; davon 7 mit 1 kB an andere Domains
 7 Mängel · 4 Hinweise
 
 🔴 Fremde Server              7

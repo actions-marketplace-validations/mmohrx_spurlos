@@ -21,6 +21,7 @@
 - where **forms** send their data: encrypted to the site itself, to a third-party server, or unencrypted.
 - whether headers or the page **reveal the software behind it, version included**, e.g. `X-Powered-By: PHP/8.1.2` or `WordPress 6.2`.
 - a few **accessibility basics**: the page's language, images without `alt`, form fields without a label, zooming locked, a link to an accessibility statement.
+- **how much the page loads**: requests and data on first load, and how much of it goes to other domains.
 
 ```
 npx spurlos example-company.com --lang en

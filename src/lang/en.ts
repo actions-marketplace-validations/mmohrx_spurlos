@@ -55,6 +55,8 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   mcpOnly: flags => `spurlos mcp only takes --lang and --user-agent, not ${flags}.`,
   urlMissing: 'url is missing: the address of the site as a string, e.g. example.com.',
   unknownFormat: value => `format only knows text and json, not ${value}.`,
+  load: (n, size, foreign, foreignSize) =>
+    `${plural(n, 'request', 'requests')} on load, ${size}; ${foreign ? `${foreign} of them with ${foreignSize} to other domains` : 'none to other domains'}`,
   checkedAt: date => `checked on ${date}`,
   failed: (url, reason) =>
     `${url} could not be checked: ${
@@ -62,6 +64,8 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
       : reason === AUTH_REQUIRED ? 'The page asks for a login. --auth or SPURLOS_AUTH only applies to exactly the address given (scheme, host, port).'
       : reason === AUTH_REJECTED ? 'The login was rejected.'
       : /^page\.goto: Timeout \d+ms exceeded/.test(reason) ? `no answer after ${Number(/(\d+)ms/.exec(reason)?.[1]) / 1000} seconds`
+      : /net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH/.test(reason) ? 'The server offers no TLS version and cipher current browsers accept, often only the outdated TLS 1.0 or 1.1. Visitors get an error page.'
+      : /net::ERR_CERT_/.test(reason) ? `The certificate is invalid (${/ERR_CERT_\w+/.exec(reason)?.[0]}). Browsers show visitors a warning instead of the page.`
       : reason.startsWith(`${REFUSED} `) ? `The page turned the request away with status ${reason.slice(REFUSED.length + 1)}, often because of a bot check. Its error page says nothing about what visitors get. If it is your site, let spurlos through the bot check.`
       : reason
     }`,

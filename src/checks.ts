@@ -545,6 +545,23 @@ export function accessibility(scan: Scan): Result {
   }
 }
 
+/** How much the page loaded before any click, and how much of it from other sites: no light, the report only names it. */
+export type Load = { requests: number; bytes: number; foreignRequests: number; foreignBytes: number }
+
+export function load(scan: Scan): Load {
+  const own = ownSites(scan)
+  const out: Load = { requests: 0, bytes: 0, foreignRequests: 0, foreignBytes: 0 }
+  // a scan put together by hand, as in the tests, may lack them
+  for (const r of list(scan.requests)) {
+    out.requests++
+    out.bytes += r.bytes ?? 0
+    if (own.has(site(r.host))) continue
+    out.foreignRequests++
+    out.foreignBytes += r.bytes ?? 0
+  }
+  return out
+}
+
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
   return [thirdParty(scan), cookies(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), accessibility(scan)]
 }

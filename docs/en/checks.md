@@ -43,6 +43,10 @@ spurlos checks only a few basics that can be told without a click; each one miss
 
 A link to an accessibility statement spurlos recognizes by “barrierefrei”, “Zugänglichkeit” or “accessibility” in its text or address, and names it; if there is none, that is only a note, without a light. The check does not say whether the site is accessible, nor whether it needs such a statement.
 
+## Amount of data
+
+Above the checks, the report says how many requests the page makes on first load, how much data that transfers (headers and body, compressed as they go over the wire) and how much of it goes to other domains. There is no light for it. In `--json`, each request has its size under `bytes`.
+
 ## Own servers on other domains
 
 Many sites load images and scripts from a second domain of their own, Wikipedia for example from `wikimedia.org`. Such servers are yellow instead of red when spurlos can tie them to the site, and the report says why:

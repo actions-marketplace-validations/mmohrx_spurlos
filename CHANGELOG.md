@@ -5,6 +5,8 @@
 - Neue Prüfung „Fingerprinting“ (`fingerprinting`): Skripte, die vor jedem Klick ein Canvas mit Text, die Grafikkarte über WebGL oder Audio im `OfflineAudioContext` auslesen. Rot bei einem fremden Skript, gelb bei einem eigenen, einem Captcha oder einem Server, der zur Seite zu gehören scheint. In `--json` unter `scan.fingerprinting` die Rohdaten.
 - Neue Prüfung „Browser-Zugriffe“ (`access`): Skripte, die beim Laden nach Benachrichtigungen, Push, Standort, Kamera oder Mikrofon fragen oder einen Service Worker registrieren. Benachrichtigungen und Push gelb, Standort, Kamera und Mikrofon rot bei einem fremden Skript, sonst gelb; ein Service Worker grün.
 - Neue Prüfung „Barrierefreiheit“ (`accessibility`): `lang` am `<html>`, Bilder ohne `alt`, Formularfelder ohne Beschriftung, ein Viewport, der Zoomen sperrt, je gelb; ein Link auf eine Erklärung zur Barrierefreiheit wird genannt. Nur Grundlagen, keine Aussage darüber, ob die Seite barrierefrei ist.
+- Über den Prüfungen steht, wie viele Anfragen und Daten die Seite beim ersten Aufruf lädt und wie viel davon an andere Domains geht; in `--json` je Anfrage unter `bytes`.
+- Öffnet Chromium eine Seite nicht, weil ihr Zertifikat ungültig ist oder ihr Server nur veraltete TLS-Versionen anbietet, sagt die Meldung das, statt die Meldung von Chromium zu zeigen.
 
 ## 0.4.0 – 2026-11-21
 

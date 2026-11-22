@@ -7,7 +7,8 @@
       {
         "url": "https://shop.example/",
         "host": "shop.example",
-        "type": "document"
+        "type": "document",
+        "bytes": 913
       },
       {
         "url": "https://shop.example/style.css",

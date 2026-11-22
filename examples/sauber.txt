@@ -1,4 +1,5 @@
 spurlos 0.4.0  https://shop.example/
+beim Aufruf 2 Anfragen, 0,9 kB; keine an andere Domains
 11 in Ordnung
 
 🟢 Fremde Server              keine

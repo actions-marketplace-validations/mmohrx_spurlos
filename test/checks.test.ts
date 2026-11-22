@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
-  access, accessibility, blocksZoom, compare, consentManagers, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, accessibility, blocksZoom, compare, load, consentManagers, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import type { Scan, Visit } from '../src/scan.ts'
@@ -45,6 +45,18 @@ describe('fingerprinting', () => {
     expect(fingerprinting(base).level).toBe('green')
     const { fingerprinting: _, ...old } = base
     expect(fingerprinting(old as Scan).level).toBe('green')
+  })
+})
+
+describe('load', () => {
+  test('counts requests and bytes, and those to other sites; a request without an answer adds no bytes', () => {
+    const at = (host: string, bytes?: number) => ({ url: `https://${host}/x`, host, type: 'script', ...(bytes === undefined ? {} : { bytes }) })
+    expect(load({ ...base, requests: [at('www.firma.de', 1000), at('cdn.firma.de', 500), at('fonts.gstatic.com', 300), at('cdn.anders.de')] })).toEqual({
+      requests: 4,
+      bytes: 1800,
+      foreignRequests: 2,
+      foreignBytes: 300,
+    })
   })
 })
 

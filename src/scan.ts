@@ -1,6 +1,6 @@
 import { X509Certificate } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { chromium, type Browser, type BrowserContext, type CDPSession, type Page, type Response as PlaywrightResponse } from 'playwright'
+import { chromium, type Browser, type BrowserContext, type CDPSession, type Page, type Request as PlaywrightRequest, type Response as PlaywrightResponse } from 'playwright'
 import { legalLinks } from './checks.ts'
 
 // src/ and dist/ both sit next to package.json
@@ -53,7 +53,8 @@ export function browserAgent(chromeVersion: string, platform = process.platform)
   return `Mozilla/5.0 (${(PLATFORM[platform] ?? LINUX).ua}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36 spurlos/${VERSION}`
 }
 
-export type Request = { url: string; host: string; type: string }
+/** bytes: what went over the wire for the answer, headers and encoded body; missing where none came */
+export type Request = { url: string; host: string; type: string; bytes?: number }
 export type Cookie = { name: string; domain: string; expires: number; secure: boolean; httpOnly: boolean }
 export type StorageEntry = { area: 'localStorage' | 'sessionStorage'; key: string }
 export type Link = { text: string; href: string }
@@ -309,9 +310,18 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     await options.setup?.(context)
 
     const requests: Request[] = []
+    const recorded = new Map<PlaywrightRequest, Request>()
+    const sizes: Promise<void>[] = []
     context.on('request', r => {
       const u = new URL(r.url())
-      if (u.protocol === 'http:' || u.protocol === 'https:') requests.push({ url: r.url(), host: u.hostname, type: r.resourceType() })
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return
+      const entry: Request = { url: r.url(), host: u.hostname, type: r.resourceType() }
+      requests.push(entry)
+      recorded.set(r, entry)
+    })
+    context.on('requestfinished', r => {
+      const entry = recorded.get(r)
+      if (entry) sizes.push(r.sizes().then(s => void (entry.bytes = s.responseHeadersSize + s.responseBodySize), () => {}))
     })
     const fingerprinting: Fingerprint[] = []
     const access: Access[] = []
@@ -413,6 +423,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const finalUrl = page.url()
     const names = tls?.validTo && finalUrl.startsWith('https:') ? await certificateNames(cdp, finalUrl) : {}
     const visitor = await documentsOnly(browser, url, options)
+    await Promise.all(sizes)
 
     const result: Scan = {
       url,

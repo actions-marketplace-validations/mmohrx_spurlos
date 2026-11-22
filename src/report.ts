@@ -1,5 +1,5 @@
 import {
-  certLevel, cookieLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
+  certLevel, load, cookieLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
   type Comparison, type Level, type Result,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
@@ -224,6 +224,16 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
   }
 }
 
+/** The line on what the page loaded: requests and size, and how much of it from other sites. */
+function loadLine(t: Messages, lang: Lang, scan: Scan): string {
+  const l = load(scan)
+  const size = (bytes: number) => {
+    const mb = bytes >= 1_000_000
+    return new Intl.NumberFormat(lang, { style: 'unit', unit: mb ? 'megabyte' : 'kilobyte', maximumFractionDigits: 1 }).format(bytes / (mb ? 1_000_000 : 1000))
+  }
+  return t.load(l.requests, size(l.bytes), l.foreignRequests, size(l.foreignBytes))
+}
+
 /** The logo for the help, as the terminal can draw it: the magnifier with the three lights, name and version beside it. */
 export function banner(color = false): string {
   const style = (format: Parameters<typeof styleText>[0], s: string) => (color ? styleText(format, s, { validateStream: false }) : s)
@@ -338,6 +348,7 @@ export function text(scan: Scan, results: Result[], lang: Lang, options: TextOpt
     `${style('bold', 'spurlos')} ${style('dim', VERSION)}  ${style('cyan', clean(scan.finalUrl))}`,
     ...(scan.finalUrl !== scan.url ? [style('dim', t.openedAs(clean(scan.url)))] : []),
     ...(compare ? [style('dim', clean(t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)))] : []),
+    style('dim', loadLine(t, lang, scan)),
     summary,
     '',
     ...body,
@@ -439,6 +450,7 @@ export function htmlReports(reports: Report[], lang: Lang, options: Omit<HtmlOpt
     const meta = [
       ...(scan.finalUrl !== scan.url ? [t.openedAs(scan.url)] : []),
       t.checkedAt(date),
+      loadLine(t, lang, scan),
       ...(compare ? [t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)] : []),
       ...(compare ? goneLabels(t, compare, now).map(l => `${t.gone}: ${l}`) : []),
     ]

@@ -21,6 +21,7 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 - wohin **Formulare** senden: verschlüsselt an die eigene Seite, an einen fremden Server oder unverschlüsselt.
 - ob Header oder Seite **die Software dahinter samt Version** verraten, etwa `X-Powered-By: PHP/8.1.2` oder `WordPress 6.2`.
 - ein paar **Grundlagen der Barrierefreiheit**: Sprache der Seite, Bilder ohne `alt`, Formularfelder ohne Beschriftung, gesperrtes Zoomen, Link auf eine Erklärung zur Barrierefreiheit.
+- **wie viel die Seite lädt**: Anfragen und Datenmenge beim ersten Aufruf, davon an andere Domains.
 
 ```
 npx spurlos beispiel-firma.de

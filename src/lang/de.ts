@@ -59,12 +59,16 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   urlMissing: 'url fehlt: die Adresse der Seite als Text, etwa firma.de.',
   unknownFormat: (value: string) => `format kennt nur text und json, nicht ${value}.`,
   checkedAt: (date: string) => `geprüft am ${date}`,
+  load: (n: number, size: string, foreign: number, foreignSize: string) =>
+    `beim Aufruf ${plural(n, 'Anfrage', 'Anfragen')}, ${size}; ${foreign ? `davon ${foreign} mit ${foreignSize} an andere Domains` : 'keine an andere Domains'}`,
   failed: (url: string, reason: string) =>
     `${url} ließ sich nicht prüfen: ${
       reason === NO_RESPONSE ? 'keine Antwort'
       : reason === AUTH_REQUIRED ? 'Die Seite verlangt eine Anmeldung. --auth oder SPURLOS_AUTH gilt nur für genau die angegebene Adresse (Schema, Host, Port).'
       : reason === AUTH_REJECTED ? 'Die Anmeldung wurde abgelehnt.'
       : /^page\.goto: Timeout \d+ms exceeded/.test(reason) ? `keine Antwort nach ${Number(/(\d+)ms/.exec(reason)?.[1]) / 1000} Sekunden`
+      : /net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH/.test(reason) ? 'Der Server bietet keine TLS-Version und Verschlüsselung an, die aktuelle Browser annehmen, oft nur das veraltete TLS 1.0 oder 1.1. Besucher bekommen eine Fehlerseite.'
+      : /net::ERR_CERT_/.test(reason) ? `Das Zertifikat ist ungültig (${/ERR_CERT_\w+/.exec(reason)?.[0]}). Browser zeigen Besuchern eine Warnung statt der Seite.`
       : reason.startsWith(`${REFUSED} `) ? `Die Seite hat den Aufruf mit Status ${reason.slice(REFUSED.length + 1)} abgewiesen, oft wegen eines Bot-Schutzes. Ihre Fehlerseite sagt nichts darüber, was Besucher bekommen. Ist es deine Seite, lass spurlos im Bot-Schutz zu.`
       : reason
     }`,

@@ -1,4 +1,5 @@
 spurlos 0.4.0  https://shop.example/
+2 requests on load, 0.9 kB; none to other domains
 11 fine
 
 🟢 Third-party servers              none

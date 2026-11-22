@@ -35,6 +35,7 @@ describe('scan', { timeout: 30_000 }, () => {
 
     // green checks take one line each; their findings show with verbose
     const short = text(s, results, 'de')
+    expect(short).toMatch(/^beim Aufruf \d+ Anfragen, [\d,]+ kB; keine an andere Domains$/m)
     expect(short).not.toContain('Impressum: „Impressum“')
     expect(short).toContain('--verbose')
     const long = text(s, results, 'de', { verbose: true })
@@ -56,6 +57,9 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(MESSAGES.en.failed('https://shop.example/', `${REFUSED} 429`)).toContain('turned the request away with status 429')
     expect(MESSAGES.de.failed('https://a.example/', 'page.goto: Timeout 30000ms exceeded.')).toBe('https://a.example/ ließ sich nicht prüfen: keine Antwort nach 30 Sekunden')
     expect(MESSAGES.en.failed('https://a.example/', 'page.goto: Timeout 30000ms exceeded.')).toBe('https://a.example/ could not be checked: no answer after 30 seconds')
+    // what Chromium says when it will not connect at all
+    expect(MESSAGES.de.failed('https://a.example/', 'page.goto: net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH at https://a.example/')).toContain('oft nur das veraltete TLS 1.0 oder 1.1')
+    expect(MESSAGES.en.failed('https://a.example/', 'page.goto: net::ERR_CERT_DATE_INVALID at https://a.example/')).toContain('The certificate is invalid (ERR_CERT_DATE_INVALID).')
   })
 
   test('a privacy policy as a PDF opens as a download, and counts as reachable; a script in its link is no text', async () => {
@@ -149,6 +153,7 @@ describe('scan', { timeout: 30_000 }, () => {
 
     const report = text(s, results, 'de')
     expect(report).toContain('Google Fonts')
+    expect(report).toMatch(/^beim Aufruf \d+ Anfragen, [\d,]+ kB; davon \d+ mit [\d,]+ kB an andere Domains$/m)
     expect(report).toContain('🔴 https://fp.unbekannt.example/fp.js – liest ein Canvas mit Text aus, fremd')
     expect(report).toContain('🟡 https://shop.example/tracked.html – fragt nach dem Standort, eigen')
     expect(report).toContain('🟢 https://shop.example/tracked.html – registriert einen Service Worker, eigen')

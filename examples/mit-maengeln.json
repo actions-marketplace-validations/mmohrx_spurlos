@@ -7,47 +7,62 @@
       {
         "url": "https://shop.example/tracked.html",
         "host": "shop.example",
-        "type": "document"
+        "type": "document",
+        "bytes": 2036
       },
       {
         "url": "https://fonts.googleapis.com/css2?family=Inter",
         "host": "fonts.googleapis.com",
-        "type": "stylesheet"
+        "type": "stylesheet",
+        "bytes": 17
       },
       {
         "url": "https://www.googletagmanager.com/gtag/js?id=G-TEST",
         "host": "www.googletagmanager.com",
-        "type": "script"
+        "type": "script",
+        "bytes": 17
       },
       {
         "url": "https://shop.example/tracker.js",
         "host": "shop.example",
-        "type": "script"
+        "type": "script",
+        "bytes": 174
       },
       {
         "url": "https://app.usercentrics.eu/browser-ui/latest/loader.js",
         "host": "app.usercentrics.eu",
-        "type": "script"
+        "type": "script",
+        "bytes": 17
       },
       {
         "url": "https://cdn.jsdelivr.net/npm/slider.js",
         "host": "cdn.jsdelivr.net",
-        "type": "script"
+        "type": "script",
+        "bytes": 17
       },
       {
         "url": "https://fp.unbekannt.example/fp.js",
         "host": "fp.unbekannt.example",
-        "type": "script"
+        "type": "script",
+        "bytes": 853
       },
       {
         "url": "https://cdn.unbekannt.example/bild.png",
         "host": "cdn.unbekannt.example",
-        "type": "image"
+        "type": "image",
+        "bytes": 17
       },
       {
         "url": "https://shop.example/team.jpg",
         "host": "shop.example",
-        "type": "image"
+        "type": "image",
+        "bytes": 24
+      },
+      {
+        "url": "https://shop.example/deko.png",
+        "host": "shop.example",
+        "type": "image",
+        "bytes": 24
       },
       {
         "url": "http://shop.example/alt.js",
@@ -55,14 +70,10 @@
         "type": "script"
       },
       {
-        "url": "https://shop.example/deko.png",
-        "host": "shop.example",
-        "type": "image"
-      },
-      {
         "url": "https://www.youtube.com/embed/abc",
         "host": "www.youtube.com",
-        "type": "document"
+        "type": "document",
+        "bytes": 17
       },
       {
         "url": "https://shop.example/sw.js",
@@ -81,7 +92,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829902705.490936,
+        "expires": 1829902725.058442,
         "secure": false,
         "httpOnly": false
       }
@@ -338,7 +349,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829902705.490936,
+          "expires": 1829902725.058442,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,
