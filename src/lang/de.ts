@@ -1,4 +1,4 @@
-import type { FingerprintApi } from '../scan.ts'
+import type { AccessApi, FingerprintApi } from '../scan.ts'
 import type { FormFinding, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
 import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED } from '../scan.ts'
 import { plural } from './plural.ts'
@@ -82,6 +82,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
     'third-party': 'Fremde Server',
     cookies: 'Cookies und Speicher',
     fingerprinting: 'Fingerprinting',
+    access: 'Browser-Zugriffe',
     legal: 'Impressum und Datenschutz',
     https: 'HTTPS',
     headers: 'Sicherheits-Header',
@@ -149,6 +150,18 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   } satisfies Record<FingerprintApi, string>,
   fingerprintWhy: 'Aus solchen Werten lässt sich ein Merkmal bilden, das den Browser auch ohne Cookie wiedererkennt, noch bevor jemand etwas anklickt.',
   fingerprintYellow: 'Gelb bei Captchas und eigenen Skripten: Bot- und Betrugserkennung lesen solche Werte auch. Prüfe, wozu das Skript sie braucht.',
+  accessNone: 'Kein Skript fragte nach Standort, Kamera, Mikrofon oder Benachrichtigungen, keines registrierte einen Service Worker.',
+  accessWorkerOnly: 'nur ein Service Worker',
+  accessApi: {
+    notifications: 'fragt, ob es Benachrichtigungen schicken darf',
+    push: 'abonniert Push-Nachrichten',
+    geolocation: 'fragt nach dem Standort',
+    camera: 'fragt nach der Kamera',
+    microphone: 'fragt nach dem Mikrofon',
+    'service-worker': 'registriert einen Service Worker',
+  } satisfies Record<AccessApi, string>,
+  accessWhy: 'Gefragt schon beim Laden, bevor jemand etwas anklickt: Der Besucher weiß dann nicht, wozu die Seite das will. Firefox zeigt die Frage nach Benachrichtigungen ohne Klick gar nicht erst an.',
+  accessWorker: 'Ein Service Worker bleibt im Browser und kann auch nach dem Besuch laufen, etwa für Push-Nachrichten oder damit die Seite offline geht.',
   cookiesNecessary: 'Nur bekannte Einträge, wie sie Frameworks und Proxys für den Betrieb setzen.',
 
   legal: (level: Level): string => ({ green: 'beide verlinkt und erreichbar', yellow: 'beide verlinkt, nicht alles prüfbar', red: 'nicht vollständig' })[level],

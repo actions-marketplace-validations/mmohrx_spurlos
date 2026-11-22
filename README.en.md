@@ -12,6 +12,7 @@
 - **which third-party servers** get requests, such as Google Fonts, Tag Manager, YouTube or a CDN. Each of them learns the visitor's IP address.
 - **which cookies and browser storage entries** are set before any consent, and whether known trackers or third-party cookies are among them.
 - whether scripts measure the browser by **fingerprinting**: canvas, graphics card via WebGL, audio. That recognizes visitors without any cookie.
+- whether scripts **ask for location, camera, microphone or notifications** right on load, or register a service worker.
 - which **cookie banner** loads, such as Usercentrics, Cookiebot or Borlabs, and whether trackers load before it anyway.
 - whether the **legal notice (Impressum) and privacy policy** are linked and open.
 - whether **HTTPS** is set up properly: certificate, redirect from http, HSTS.
@@ -84,6 +85,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 | Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address; and servers that seem to belong to the site (`--own`, certificate, name), and those of the platform it runs on (Wix, Shopify, Squarespace, Webflow, IONOS MyWebsite) | at least one request to another domain that belongs to no cookie banner, no captcha and not to the site |
 | Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly` | a cookie of another domain that does not seem to belong to the site, or one of a known tracker |
 | Fingerprinting | no script reads out canvas, graphics card or audio | a script of the site itself, a captcha or a server that seems to belong to the site reads them out | a script of another domain reads them out |
+| Browser access | no script asks for permissions, or only a service worker | a script asks for notifications or push on load; a script of the site itself (or of a server that seems to belong to it) for location, camera or microphone | a script of another domain asks for location, camera or microphone |
 | Legal notice and privacy policy | both linked and reachable | a page turns spurlos away (`401`, `403`, `429`) or does not answer before the timeout, often a bot check | a link is missing or the page answers with another error, such as `404`; a PDF counts as reachable |
 | HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing or only an error answers on http (4xx, 5xx, often a bot check), certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
 | Security headers | all set | one or more missing; the CSP lets scripts through | – |

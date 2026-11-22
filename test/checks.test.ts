@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import {
-  compare, consentManagers, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, compare, consentManagers, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import type { Scan, Visit } from '../src/scan.ts'
 
-const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], fingerprinting: [], userAgent: 'test', sandbox: true }
+const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], fingerprinting: [], access: [], userAgent: 'test', sandbox: true }
 const req = (host: string) => ({ url: `https://${host}/x`, host, type: 'script' })
 
 describe('fingerprinting', () => {
@@ -45,6 +45,28 @@ describe('fingerprinting', () => {
     expect(fingerprinting(base).level).toBe('green')
     const { fingerprinting: _, ...old } = base
     expect(fingerprinting(old as Scan).level).toBe('green')
+  })
+})
+
+describe('access', () => {
+  test('a service worker is green, notifications yellow, location, camera and microphone red only for a foreign script', () => {
+    const r = access({
+      ...base,
+      access: [
+        { api: 'service-worker', script: 'https://www.firma.de/app.js' },
+        { api: 'notifications', script: 'https://push.anders.de/sdk.js' },
+        { api: 'geolocation', script: 'https://www.firma.de/app.js' },
+        { api: 'camera', script: 'https://chat.anders.de/widget.js' },
+      ],
+    })
+    expect(findings(r).map(f => `${f.level} ${f.key}`)).toEqual([
+      'green access service-worker www.firma.de',
+      'yellow access notifications push.anders.de',
+      'yellow access geolocation www.firma.de',
+      'red access camera chat.anders.de',
+    ])
+    expect(r.level).toBe('red')
+    expect(access(base).level).toBe('green')
   })
 })
 

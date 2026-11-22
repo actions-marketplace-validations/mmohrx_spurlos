@@ -1,5 +1,5 @@
 import {
-  certLevel, cookieLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
+  certLevel, cookieLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
   type Comparison, type Level, type Result,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
@@ -162,6 +162,20 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           return item(key.fingerprint(f), fingerprintLevel(f), `${script}${script === f.script ? '' : '?…'}`, about)
         }),
         notes: [t.fingerprintWhy, ...(r.findings.some(f => fingerprintLevel(f) === 'yellow') ? [t.fingerprintYellow] : [])],
+      }
+    }
+
+    case 'access': {
+      if (!r.findings.length) return { value: t.none, items: [], notes: [t.accessNone] }
+      const asks = r.findings.filter(a => a.api !== 'service-worker').length
+      return {
+        value: asks ? `${asks}` : t.accessWorkerOnly,
+        items: r.findings.map(a => {
+          const about = [t.accessApi[a.api], a.own ? t.ownBy[a.own] : a.thirdParty ? t.cookieForeign : t.cookieOwn, a.service?.name].filter(Boolean).join(', ')
+          const script = withoutQuery(a.script)
+          return item(key.access(a), accessLevel(a), `${script}${script === a.script ? '' : '?…'}`, about)
+        }),
+        notes: [...(asks ? [t.accessWhy] : []), ...(r.findings.some(a => a.api === 'service-worker') ? [t.accessWorker] : [])],
       }
     }
 

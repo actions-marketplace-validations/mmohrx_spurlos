@@ -16,6 +16,10 @@
     const c = document.createElement('canvas'), x = c.getContext('2d')
     x.fillText('\u{1F3F3}\uFE0F\u200D\u26A7\uFE0F', 0, 0)
     x.getImageData(0, 0, c.width, c.height)
+    // asked right on load, before any click
+    navigator.geolocation.getCurrentPosition(() => {}, () => {})
+    Notification.requestPermission().catch(() => {})
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
   </script>
   <script type="text/plain" data-cookieconsent="marketing" src="https://maps.googleapis.com/maps/api/js?key=AIzaTEST"></script>
 </head>

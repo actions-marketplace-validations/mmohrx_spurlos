@@ -64,18 +64,24 @@ export type Resource = { tag: string; url: string; integrity: boolean }
 export type FingerprintApi = 'canvas' | 'webgl' | 'audio'
 /** script: the address of the script that read it, the frame's own for inline code */
 export type Fingerprint = { api: FingerprintApi; script: string }
+/** what a script asks the browser for: a permission the visitor has to grant, or a service worker that stays */
+export type AccessApi = 'notifications' | 'push' | 'geolocation' | 'camera' | 'microphone' | 'service-worker'
+export type Access = { api: AccessApi; script: string }
+const FINGERPRINT_APIS: readonly string[] = ['canvas', 'webgl', 'audio'] satisfies FingerprintApi[]
+const ACCESS_APIS: readonly string[] = ['notifications', 'push', 'geolocation', 'camera', 'microphone', 'service-worker'] satisfies AccessApi[]
 
 /** the name of the function the init script reports to; the page can see it, as it sees navigator.webdriver */
-const FINGERPRINT_BINDING = '__spurlos'
+const BINDING = '__spurlos'
 
 /**
- * Runs in every frame before the page's own scripts and notes the reads that serve fingerprinting, once per API and
- * script: a canvas read back after text with at least ten different characters went on it, at least 16 × 16 pixels
- * (the rule of Englehardt and Narayanan, 2016: emoji tests such as WordPress's draw fewer); the graphics card's
- * unmasked vendor or renderer from WebGL; an OfflineAudioContext rendered. Never breaks the page: each wrapper calls
- * the original whatever happens.
+ * Runs in every frame before the page's own scripts and notes, once per API and script, the reads that serve
+ * fingerprinting: a canvas read back after text with at least ten different characters went on it, at least 16 × 16
+ * pixels (the rule of Englehardt and Narayanan, 2016: emoji tests such as WordPress's draw fewer); the graphics card's
+ * unmasked vendor or renderer from WebGL; an OfflineAudioContext rendered. And what a script asks the browser for:
+ * notifications, push, location, camera, microphone, a service worker. Never breaks the page: each wrapper calls the
+ * original whatever happens.
  */
-function watchFingerprinting(binding: string) {
+function watchApis(binding: string) {
   const sent = new Set<string>()
   const report = (api: string) => {
     // the innermost frame with an address is the script that called; the wrappers here have none
@@ -128,6 +134,16 @@ function watchFingerprinting(binding: string) {
     })
   }
   wrap(w.OfflineAudioContext?.prototype, 'startRendering', () => report('audio'))
+
+  wrap(w.Notification, 'requestPermission', () => report('notifications'))
+  wrap(w.PushManager?.prototype, 'subscribe', () => report('push'))
+  wrap(w.Geolocation?.prototype, 'getCurrentPosition', () => report('geolocation'))
+  wrap(w.Geolocation?.prototype, 'watchPosition', () => report('geolocation'))
+  wrap(w.MediaDevices?.prototype, 'getUserMedia', (_, [constraints]) => {
+    if (constraints?.video) report('camera')
+    if (constraints?.audio) report('microphone')
+  })
+  wrap(w.ServiceWorkerContainer?.prototype, 'register', () => report('service-worker'))
 }
 /** What a user typed, as a URL to open: https:// unless they wrote http:// or https://; undefined if it is none. */
 export function toUrl(arg: string): string | undefined {
@@ -187,6 +203,8 @@ export type Scan = {
   resources: Resource[]
   /** what scripts read out that serves to recognize the browser without a cookie, once per API and script */
   fingerprinting: Fingerprint[]
+  /** what scripts asked the browser for before any click: permissions and service workers, once per API and script */
+  access: Access[]
   /** a Content-Security-Policy set in a <meta http-equiv> tag, the only way to one on hosts without own headers */
   metaCsp?: string
   /** a referrer policy set in <meta name="referrer"> */
@@ -290,13 +308,14 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       if (u.protocol === 'http:' || u.protocol === 'https:') requests.push({ url: r.url(), host: u.hostname, type: r.resourceType() })
     })
     const fingerprinting: Fingerprint[] = []
-    // frames report on their own: the same read in two frames arrives twice
-    await context.exposeBinding(FINGERPRINT_BINDING, (_, api: unknown, script: unknown) => {
-      if ((api === 'canvas' || api === 'webgl' || api === 'audio') && typeof script === 'string' && !fingerprinting.some(f => f.api === api && f.script === script)) {
-        fingerprinting.push({ api, script })
-      }
+    const access: Access[] = []
+    // frames report on their own: the same call in two frames arrives twice
+    await context.exposeBinding(BINDING, (_, api: unknown, script: unknown) => {
+      if (typeof api !== 'string' || typeof script !== 'string') return
+      const list = FINGERPRINT_APIS.includes(api) ? fingerprinting : ACCESS_APIS.includes(api) ? access : undefined
+      if (list && !list.some(f => f.api === api && f.script === script)) list.push({ api, script } as Fingerprint & Access)
     })
-    await context.addInitScript(watchFingerprinting, FINGERPRINT_BINDING)
+    await context.addInitScript(watchApis, BINDING)
 
     const page = await context.newPage()
     if (!options.userAgent) await plainBrands(context, page, userAgent, chrome)
@@ -390,6 +409,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       forms,
       resources,
       fingerprinting,
+      access,
       userAgent,
       sandbox,
     }

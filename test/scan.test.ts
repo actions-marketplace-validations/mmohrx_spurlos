@@ -19,6 +19,7 @@ describe('scan', { timeout: 30_000 }, () => {
       'third-party': 'green',
       cookies: 'green',
       fingerprinting: 'green',
+      access: 'green',
       legal: 'green',
       https: 'green',
       headers: 'green',
@@ -124,12 +125,24 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(fp.level).toBe('red')
     expect(fp.findings.map(f => f.api)).toEqual(expect.arrayContaining(['canvas', 'audio']))
     expect(new Set(fp.findings.map(f => f.script))).toEqual(new Set(['https://fp.unbekannt.example/fp.js']))
+    // the page's own inline script asks for location and notifications, and registers a service worker
+    const access = pick(results, 'access')
+    expect(access.level).toBe('yellow')
+    expect(access.findings.map(a => [a.api, a.script, a.thirdParty])).toEqual(
+      expect.arrayContaining([
+        ['geolocation', `${SITE}/tracked.html`, false],
+        ['notifications', `${SITE}/tracked.html`, false],
+        ['service-worker', `${SITE}/tracked.html`, false],
+      ]),
+    )
     // set without Secure on an https page
     expect(pick(results, 'cookies').cookies.find(c => c.name === 'session')?.missing).toEqual(['Secure'])
 
     const report = text(s, results, 'de')
     expect(report).toContain('Google Fonts')
     expect(report).toContain('🔴 https://fp.unbekannt.example/fp.js – liest ein Canvas mit Text aus, fremd')
+    expect(report).toContain('🟡 https://shop.example/tracked.html – fragt nach dem Standort, eigen')
+    expect(report).toContain('🟢 https://shop.example/tracked.html – registriert einen Service Worker, eigen')
     // each finding carries its own light, so the reader sees which one makes the check red or yellow
     expect(report).toContain('🔴 Cookie _ga (shop.example) – eigen, Google Analytics')
     expect(report).toContain('🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure')

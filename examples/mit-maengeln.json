@@ -53,6 +53,11 @@
         "url": "https://www.youtube.com/embed/abc",
         "host": "www.youtube.com",
         "type": "document"
+      },
+      {
+        "url": "https://shop.example/sw.js",
+        "host": "shop.example",
+        "type": "script"
       }
     ],
     "cookies": [
@@ -66,7 +71,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829902668.934739,
+        "expires": 1829902687.202221,
         "secure": false,
         "httpOnly": false
       }
@@ -78,7 +83,7 @@
       }
     ],
     "headers": {
-      "content-length": "1451",
+      "content-length": "1677",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -165,6 +170,20 @@
       {
         "api": "audio",
         "script": "https://fp.unbekannt.example/fp.js"
+      }
+    ],
+    "access": [
+      {
+        "api": "geolocation",
+        "script": "https://shop.example/tracked.html"
+      },
+      {
+        "api": "notifications",
+        "script": "https://shop.example/tracked.html"
+      },
+      {
+        "api": "service-worker",
+        "script": "https://shop.example/tracked.html"
       }
     ],
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0",
@@ -288,7 +307,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829902668.934739,
+          "expires": 1829902687.202221,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,
@@ -338,6 +357,30 @@
           "script": "https://fp.unbekannt.example/fp.js",
           "host": "fp.unbekannt.example",
           "thirdParty": true
+        }
+      ]
+    },
+    {
+      "check": "access",
+      "level": "yellow",
+      "findings": [
+        {
+          "api": "geolocation",
+          "script": "https://shop.example/tracked.html",
+          "host": "shop.example",
+          "thirdParty": false
+        },
+        {
+          "api": "notifications",
+          "script": "https://shop.example/tracked.html",
+          "host": "shop.example",
+          "thirdParty": false
+        },
+        {
+          "api": "service-worker",
+          "script": "https://shop.example/tracked.html",
+          "host": "shop.example",
+          "thirdParty": false
         }
       ]
     },

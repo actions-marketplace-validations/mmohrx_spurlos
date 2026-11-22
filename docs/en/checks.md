@@ -28,6 +28,10 @@ While loading, spurlos watches for three ways of measuring the browser, in the p
 
 Which script it was, spurlos reads from the stack trace; for code right in the HTML it is the address of the page or frame. A script on another domain makes the finding red. It is yellow for a script of the site itself, a captcha (category `captcha`) and a server that seems to belong to the site (see below), as bot and fraud detection read the same values. Fonts a script probes by measuring text, and other traits such as screen size or time zone, spurlos does not detect, as nearly every page reads those for its layout.
 
+## Browser access
+
+spurlos notes when a script, while the page loads, asks whether it may send notifications (`Notification.requestPermission`), subscribes to push messages (`PushManager.subscribe`), asks for the location (`getCurrentPosition`, `watchPosition`), for camera or microphone (`getUserMedia`), or registers a service worker. Notifications and push are yellow, whoever asks. Location, camera and microphone are red when a script of another domain asks, yellow otherwise; whose a script is, spurlos decides as for fingerprinting. A service worker is green, as that is how push and working offline are done; the report still names it, since it stays in the browser after the visit.
+
 ## Own servers on other domains
 
 Many sites load images and scripts from a second domain of their own, Wikipedia for example from `wikimedia.org`. Such servers are yellow instead of red when spurlos can tie them to the site, and the report says why:

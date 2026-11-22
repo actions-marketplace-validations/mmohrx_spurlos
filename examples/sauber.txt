@@ -1,5 +1,5 @@
 spurlos 0.4.0  https://shop.example/
-9 in Ordnung
+10 in Ordnung
 
 🟢 Fremde Server              keine
   → Beim Aufruf ging keine Anfrage an einen anderen Server.
@@ -9,6 +9,10 @@ spurlos 0.4.0  https://shop.example/
 🟢 Fingerprinting             keine
   → Kein Skript las Canvas, Grafikkarte oder Audio so aus, wie es Fingerprinting
     tut.
+
+🟢 Browser-Zugriffe           keine
+  → Kein Skript fragte nach Standort, Kamera, Mikrofon oder Benachrichtigungen,
+    keines registrierte einen Service Worker.
 
 🟢 Impressum und Datenschutz  beide verlinkt und erreichbar
   ├─ 🟢 Impressum: „Impressum“ → https://shop.example/impressum – erreichbar

@@ -1,5 +1,5 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-7 problems · 2 notes
+7 problems · 3 notes
 
 🔴 Third-party servers              7
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
@@ -64,6 +64,16 @@ spurlos 0.4.0  https://shop.example/tracked.html
 🔴 Forms                            2
   ├─ 🔴 POST http://shop.example/newsletter – sends unencrypted over http
   └─ 🟡 POST https://formspree.io/f/abc – sends to a third-party server
+
+🟡 Browser access                   2
+  ├─ 🟡 https://shop.example/tracked.html – asks for the location, first-party
+  ├─ 🟡 https://shop.example/tracked.html – asks whether it may send notifications, first-party
+  └─ 🟢 https://shop.example/tracked.html – registers a service worker, first-party
+     → Asked right on load, before anyone clicks anything: the visitor does not
+       know what the site wants it for. Firefox does not even show the
+       notification prompt without a click.
+     → A service worker stays in the browser and can run after the visit too,
+       for push messages, say, or so the site works offline.
 
 🟡 Security headers                 5 of 5 missing
   ├─ 🟡 Content-Security-Policy missing – try it as Content-Security-Policy-Report-Only first

@@ -1,5 +1,5 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-7 Mängel · 2 Hinweise
+7 Mängel · 3 Hinweise
 
 🔴 Fremde Server              7
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
@@ -65,6 +65,16 @@ spurlos 0.4.0  https://shop.example/tracked.html
 🔴 Formulare                  2
   ├─ 🔴 POST http://shop.example/newsletter – sendet unverschlüsselt über http
   └─ 🟡 POST https://formspree.io/f/abc – sendet an einen fremden Server
+
+🟡 Browser-Zugriffe           2
+  ├─ 🟡 https://shop.example/tracked.html – fragt nach dem Standort, eigen
+  ├─ 🟡 https://shop.example/tracked.html – fragt, ob es Benachrichtigungen schicken darf, eigen
+  └─ 🟢 https://shop.example/tracked.html – registriert einen Service Worker, eigen
+     → Gefragt schon beim Laden, bevor jemand etwas anklickt: Der Besucher weiß
+       dann nicht, wozu die Seite das will. Firefox zeigt die Frage nach
+       Benachrichtigungen ohne Klick gar nicht erst an.
+     → Ein Service Worker bleibt im Browser und kann auch nach dem Besuch
+       laufen, etwa für Push-Nachrichten oder damit die Seite offline geht.
 
 🟡 Sicherheits-Header         5 von 5 fehlen
   ├─ 🟡 Content-Security-Policy fehlt – erst als Content-Security-Policy-Report-Only ausprobieren

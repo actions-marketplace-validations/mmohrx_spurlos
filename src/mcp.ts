@@ -19,7 +19,7 @@ const TOOL = {
   title: 'spurlos: check a website',
   description:
     'Opens a website in a fresh browser like a first-time visitor who clicks nothing, and reports what happens before any consent: ' +
-    'requests to third-party servers, which cookie banner loads, cookies and browser storage, scripts that fingerprint the browser, whether Impressum and privacy policy are ' +
+    'requests to third-party servers, which cookie banner loads, cookies and browser storage, scripts that fingerprint the browser or ask for permissions on load, whether Impressum and privacy policy are ' +
     'linked and reachable, HTTPS and certificate, security headers and how tight the CSP is, files embedded over http or without ' +
     'integrity, where forms send to, and software versions the site discloses. ' +
     'Each check gets a traffic light (red, yellow, green). Passive only: it loads the page, opens the legal pages via their links ' +

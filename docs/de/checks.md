@@ -28,6 +28,10 @@ spurlos achtet beim Aufruf auf drei Arten, den Browser zu vermessen, in der Seit
 
 Welches Skript es war, liest spurlos aus dem Stacktrace; bei Code direkt im HTML ist es die Adresse der Seite oder des Frames. Ist das Skript auf einer fremden Domain, ist der Befund rot. Gelb ist er bei einem eigenen Skript, einem Captcha (Kategorie `captcha`) und einem Server, der zur Seite zu gehören scheint (siehe unten), denn Bot- und Betrugserkennung lesen dieselben Werte. Schriften, die ein Skript über die Breite von Text abtastet, und andere Merkmale wie Bildschirmgröße oder Zeitzone erkennt spurlos nicht, denn die liest fast jede Seite für ihr Layout.
 
+## Browser-Zugriffe
+
+spurlos merkt sich, wenn ein Skript beim Laden fragt, ob es Benachrichtigungen schicken darf (`Notification.requestPermission`), Push-Nachrichten abonniert (`PushManager.subscribe`), nach dem Standort fragt (`getCurrentPosition`, `watchPosition`), nach Kamera oder Mikrofon (`getUserMedia`) oder einen Service Worker registriert. Benachrichtigungen und Push sind gelb, wer auch fragt. Standort, Kamera und Mikrofon sind rot, wenn ein Skript einer fremden Domain fragt, sonst gelb; wem das Skript gehört, entscheidet spurlos wie beim Fingerprinting. Ein Service Worker ist grün, denn so funktionieren Push und Offline-Betrieb; der Bericht nennt ihn trotzdem, weil er auch nach dem Besuch im Browser bleibt.
+
 ## Eigene Server auf anderen Domains
 
 Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, Wikipedia etwa von `wikimedia.org`. Solche Server sind gelb statt rot, wenn spurlos sie der Seite zuordnen kann, und der Bericht sagt, warum:

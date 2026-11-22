@@ -1,6 +1,6 @@
 import { getDomain, getDomainWithoutSuffix } from 'tldts'
 import knownServices from './services.json' with { type: 'json' }
-import type { Cookie, Fingerprint, Form, Link, Resource, Scan, Visit } from './scan.ts'
+import type { Access, Cookie, Fingerprint, Form, Link, Resource, Scan, Visit } from './scan.ts'
 
 export type Level = 'green' | 'yellow' | 'red'
 /**
@@ -37,8 +37,10 @@ export type HttpRedirect = 'redirects' | 'no-redirect' | 'unreachable' | 'refuse
 export type FormFinding = Form & { problem?: 'unencrypted' | 'third-party' }
 /** insecure: loaded over http on an https page · no-integrity: a script or stylesheet of another site without integrity="…" */
 export type ResourceFinding = Resource & { problem: 'insecure' | 'no-integrity' }
-/** host: the script's, empty for a frame without one (about:blank); thirdParty: on another site than the page */
-export type FingerprintFinding = Fingerprint & { host: string; thirdParty: boolean; service: Service | undefined; own?: OwnReason }
+/** who called: host the script's, empty for a frame without one (about:blank); thirdParty: on another site than the page */
+export type Caller = { host: string; thirdParty: boolean; service: Service | undefined; own?: OwnReason }
+export type FingerprintFinding = Fingerprint & Caller
+export type AccessFinding = Access & Caller
 
 export type Result =
   | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string }
@@ -50,6 +52,7 @@ export type Result =
   | { check: 'disclosure'; level: Level; findings: Disclosure[] }
   | { check: 'resources'; level: Level; findings: ResourceFinding[] }
   | { check: 'fingerprinting'; level: Level; findings: FingerprintFinding[] }
+  | { check: 'access'; level: Level; findings: AccessFinding[] }
 
 /** worst first */
 export const SEVERITY: Level[] = ['red', 'yellow', 'green']
@@ -251,6 +254,14 @@ export const resourceLevel = (r: ResourceFinding): Level =>
  */
 export const fingerprintLevel = (f: FingerprintFinding): Level =>
   f.thirdParty && !f.own && f.service?.category !== 'captcha' ? 'red' : 'yellow'
+/**
+ * A service worker is how a site works offline or sends push: green, the report names it. Asking for notifications
+ * before any click is yellow; for location, camera or microphone too, red where a script of another site asks.
+ */
+export const accessLevel = (a: AccessFinding): Level =>
+  a.api === 'service-worker' ? 'green'
+  : a.api === 'notifications' || a.api === 'push' || !a.thirdParty || a.own ? 'yellow'
+  : 'red'
 
 /**
  * Cookies and storage present before any click. A third-party cookie or a known tracker's is red; known session,
@@ -449,26 +460,39 @@ export function resources(scan: Scan): Result {
   return { check: 'resources', level: worst(findings.map(resourceLevel)), findings }
 }
 
-/** Scripts that read out canvas, graphics card or audio stack before any click, as scan.ts notes them. */
-export function fingerprinting(scan: Scan): Result {
+/** Tells, for the address of a script, whose it is. */
+function callers(scan: Scan): (script: string) => Caller {
   const own = ownSites(scan)
   const owner = ownership(scan)
-  const findings = list(scan.fingerprinting).map((f): FingerprintFinding => {
+  return script => {
     let host = ''
     try {
-      host = new URL(f.script).hostname
+      host = new URL(script).hostname
     } catch {
       // no address: the frame's own code
     }
     const thirdParty = host !== '' && !own.has(site(host))
     const reason = thirdParty ? owner(host) : undefined
-    return { ...f, host, thirdParty, service: host ? serviceOfHost(host) : undefined, ...(reason ? { own: reason } : {}) }
-  })
+    return { host, thirdParty, service: host ? serviceOfHost(host) : undefined, ...(reason ? { own: reason } : {}) }
+  }
+}
+
+/** Scripts that read out canvas, graphics card or audio stack before any click, as scan.ts notes them. */
+export function fingerprinting(scan: Scan): Result {
+  const caller = callers(scan)
+  const findings = list(scan.fingerprinting).map((f): FingerprintFinding => ({ ...f, ...caller(f.script) }))
   return { check: 'fingerprinting', level: worst(findings.map(fingerprintLevel)), findings }
 }
 
+/** What scripts asked the browser for before any click: permissions and service workers. */
+export function access(scan: Scan): Result {
+  const caller = callers(scan)
+  const findings = list(scan.access).map((a): AccessFinding => ({ ...a, ...caller(a.script) }))
+  return { check: 'access', level: worst(findings.map(accessLevel)), findings }
+}
+
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan), fingerprinting(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan)]
+  return [thirdParty(scan), cookies(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan)]
 }
 
 /**
@@ -488,6 +512,7 @@ export const key = {
   disclosure: (d: { name: string }) => `disclosure ${d.name}`,
   /** by host, not by script: a fingerprinting service may serve its script under a new path on every visit */
   fingerprint: (f: { api: string; host: string }) => `fingerprinting ${f.api} ${hostKey(f.host)}`,
+  access: (a: { api: string; host: string }) => `access ${a.api} ${hostKey(a.host)}`,
   // without the query: a cache buster like ?ver=6.4.2 changes with every update, the file stays the same
   resource: (r: { problem: string; url: string }) => `resource ${r.problem} ${withoutQuery(r.url)}`,
 }
@@ -551,6 +576,8 @@ function unnumbered(r: Result): Finding[] {
       return list(r.findings).map(f => ({ key: key.resource(f), level: resourceLevel(f) }))
     case 'fingerprinting':
       return list(r.findings).map(f => ({ key: key.fingerprint(f), level: fingerprintLevel(f) }))
+    case 'access':
+      return list(r.findings).map(a => ({ key: key.access(a), level: accessLevel(a) }))
     case 'forms':
       return list(r.forms).map(f => ({ key: key.form(f), level: formLevel(f) }))
     case 'disclosure':
