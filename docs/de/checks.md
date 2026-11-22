@@ -35,6 +35,10 @@ Welches Skript es war, liest spurlos aus dem Stacktrace; bei Code direkt im HTML
 
 spurlos merkt sich, wenn ein Skript beim Laden fragt, ob es Benachrichtigungen schicken darf (`Notification.requestPermission`), Push-Nachrichten abonniert (`PushManager.subscribe`), nach dem Standort fragt (`getCurrentPosition`, `watchPosition`), nach Kamera oder Mikrofon (`getUserMedia`) oder einen Service Worker registriert. Benachrichtigungen und Push sind gelb, wer auch fragt. Standort, Kamera und Mikrofon sind rot, wenn ein Skript einer fremden Domain fragt, sonst gelb; wem das Skript gehört, entscheidet spurlos wie beim Fingerprinting. Ein Service Worker ist grün, denn so funktionieren Push und Offline-Betrieb; der Bericht nennt ihn trotzdem, weil er auch nach dem Besuch im Browser bleibt.
 
+## Mobil
+
+Ohne `<meta name="viewport">` mit `width=device-width` legen Smartphones eine Seite 980 Pixel breit an und verkleinern sie; das ist gelb. Gelb ist auch eine Seite, die breiter ist als das Fenster (`scrollWidth` größer als `innerWidth`), sodass Besucher quer scrollen müssen. Gemessen wird im Fenster, in dem spurlos die Seite öffnet: ohne Option 1280 Pixel breit, mit `--mobile` 412 Pixel wie ein Pixel 7. Für Smartphones sagt das Querscrollen also nur etwas mit `--mobile`. Ob Schrift und Schaltflächen groß genug sind, prüft spurlos nicht; gesperrtes Zoomen gehört zur Barrierefreiheit.
+
 ## Barrierefreiheit
 
 spurlos prüft nur ein paar Grundlagen, die sich ohne Klick feststellen lassen, jede fehlende ist gelb:

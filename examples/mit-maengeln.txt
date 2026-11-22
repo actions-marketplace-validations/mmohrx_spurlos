@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-beim Aufruf 13 Anfragen, 3,2 kB; davon 7 mit 1 kB an andere Domains
-7 Mängel · 4 Hinweise
+beim Aufruf 13 Anfragen, 3,3 kB; davon 7 mit 1 kB an andere Domains
+7 Mängel · 5 Hinweise
 
 🔴 Fremde Server              7
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
@@ -91,6 +91,13 @@ beim Aufruf 13 Anfragen, 3,2 kB; davon 7 mit 1 kB an andere Domains
      → Mit der Versionsnummer lässt sich gezielt nach bekannten Lücken suchen.
      → Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off
        in PHP oder server_tokens off in nginx.
+
+🟡 Mobil                      1 Hinweis
+  └─ 🟡 Die Seite ist 1608 Pixel breit, das Fenster 1280: Besucher müssen quer scrollen
+     → Meist ragt ein Bild, eine Tabelle oder ein Element mit fester Breite über
+       den Rand.
+     → Auf dem Handy prüft spurlos das mit --mobile; manche Seiten laden dort
+       auch andere Tracker und Cookie-Banner.
 
 🟡 Barrierefreiheit           3 Grundlagen fehlen
   ├─ 🟡 1 Bild ohne alt-Text – https://shop.example/team.jpg

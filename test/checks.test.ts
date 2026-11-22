@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
 import {
-  access, accessibility, blocksZoom, compare, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, accessibility, blocksZoom, compare, mobile, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import { iceHost, type Scan, type Visit } from '../src/scan.ts'
 
-const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], fingerprinting: [], access: [], accessibility: { lang: 'de', images: [], fields: [] }, preconnect: [], userAgent: 'test', sandbox: true }
+const base: Scan = { url: 'https://www.firma.de/', finalUrl: 'https://www.firma.de/', settled: true, requests: [], cookies: [], storage: [], headers: {}, links: [], legal: [], forms: [], resources: [], fingerprinting: [], access: [], accessibility: { lang: 'de', images: [], fields: [] }, preconnect: [], width: { page: 1280, window: 1280 }, userAgent: 'test', sandbox: true }
 const req = (host: string) => ({ url: `https://${host}/x`, host, type: 'script' })
 
 describe('fingerprinting', () => {
@@ -57,6 +57,19 @@ describe('load', () => {
       foreignRequests: 2,
       foreignBytes: 300,
     })
+  })
+})
+
+describe('mobile', () => {
+  test('a viewport without width=device-width and a page wider than its window are yellow', () => {
+    const at = (viewport: string | undefined, page: number, window: number) =>
+      mobile({ ...base, accessibility: { ...base.accessibility, ...(viewport === undefined ? {} : { viewport }) }, width: { page, window } })
+    expect(at('width=device-width, initial-scale=1', 412, 412)).toMatchObject({ level: 'green', problems: [] })
+    // a pixel of rounding is no scrolling
+    expect(at('width=device-width', 413, 412)).toMatchObject({ level: 'green', problems: [] })
+    expect(at(undefined, 412, 412)).toMatchObject({ level: 'yellow', problems: ['viewport'] })
+    expect(at('width=1024', 1024, 412)).toMatchObject({ level: 'yellow', problems: ['viewport', 'overflow'] })
+    expect(findings(at('width=1024', 1024, 412)).map(f => f.key)).toEqual(['mobile viewport', 'mobile overflow'])
   })
 })
 

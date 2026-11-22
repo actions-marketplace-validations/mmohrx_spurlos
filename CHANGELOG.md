@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- `--mobile`: die Seite als Smartphone aufrufen (Bildschirm eines Pixel 7, Touch, Kennung von Chrome auf Android mit `spurlos/<version>`); im MCP-Werkzeug `mobile`. Manche Seiten laden dort andere Tracker und Cookie-Banner.
+- Neue Prüfung „Mobil“ (`mobile`): kein Viewport mit `width=device-width` und eine Seite, die breiter ist als das Fenster, je gelb.
 - Fingerprinting erkennt auch WebRTC: Ein Skript, das über STUN oder TURN die IP-Adresse erfragt, ist ein Befund, die STUN- und TURN-Server zählen als fremde Server (`type: "webrtc"`).
 - Fremde Server: Server, zu denen die Seite per `preconnect` (Markup oder `Link`-Header) vorab eine Verbindung aufbaut, zählen mit, auch ohne Anfrage („nur preconnect“, in `--json` `preconnect: true`).
 - Fremde Server: WebSocket-Verbindungen zählen als Anfragen; vorher fehlten sie, etwa die eines Chats, weil Playwright sie getrennt meldet. In `--json` mit `type: "websocket"`.

@@ -22,7 +22,7 @@ const LINUX = { ua: 'X11; Linux x86_64', ch: 'Linux' }
  * user agent says; this sets them to plain Chromium, to match. navigator.webdriver stays true on purpose: spurlos
  * does not pretend to be a person.
  */
-async function plainBrands(context: BrowserContext, page: Page, userAgent: string, chromeVersion: string) {
+async function plainBrands(context: BrowserContext, page: Page, userAgent: string, chromeVersion: string, mobile = false) {
   const major = chromeVersion.split('.')[0] ?? ''
   const cdp = await context.newCDPSession(page)
   await cdp.send('Emulation.setUserAgentOverride', {
@@ -34,11 +34,11 @@ async function plainBrands(context: BrowserContext, page: Page, userAgent: strin
         { brand: 'Not/A)Brand', version: '8' },
       ],
       fullVersion: chromeVersion,
-      platform: (PLATFORM[process.platform] ?? LINUX).ch,
+      platform: mobile ? 'Android' : (PLATFORM[process.platform] ?? LINUX).ch,
       platformVersion: '',
       architecture: '',
       model: '',
-      mobile: false,
+      mobile,
     },
   })
 }
@@ -48,8 +48,10 @@ async function plainBrands(context: BrowserContext, page: Page, userAgent: strin
  * from what they take for a bot – HeadlessChrome or a URL in the user agent – and the scan would miss what real
  * visitors get. The page still sees spurlos in its logs.
  */
-export function browserAgent(chromeVersion: string, platform = process.platform): string {
+export function browserAgent(chromeVersion: string, platform = process.platform, mobile = false): string {
   const major = chromeVersion.split('.')[0]
+  // as Chrome on Android names itself, with the reduced device part it sends everywhere
+  if (mobile) return `Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Mobile Safari/537.36 spurlos/${VERSION}`
   return `Mozilla/5.0 (${(PLATFORM[platform] ?? LINUX).ua}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36 spurlos/${VERSION}`
 }
 
@@ -185,6 +187,9 @@ function watchApis(binding: string) {
   })
   wrap(w.ServiceWorkerContainer?.prototype, 'register', () => report('service-worker'))
 }
+/** the phone --mobile opens the page as: the screen of a Pixel 7, in CSS pixels */
+export const PHONE = { width: 412, height: 915, deviceScaleFactor: 2.625 }
+
 /** What a user typed, as a URL to open: https:// unless they wrote http:// or https://; undefined if it is none. */
 export function toUrl(arg: string): string | undefined {
   try {
@@ -252,6 +257,10 @@ export type Scan = {
   metaCsp?: string
   /** a referrer policy set in <meta name="referrer"> */
   metaReferrer?: string
+  /** how wide the page lays itself out and how wide the window is, in CSS pixels; wider means scrolling sideways */
+  width: { page: number; window: number }
+  /** opened as a phone (--mobile) */
+  mobile?: true
   /** what <meta name="generator"> says, often the CMS and its version */
   generator?: string
   /** the user agent the page was opened with */
@@ -277,6 +286,8 @@ export type ScanOptions = {
   screenshot?: boolean
   /** hosts that belong to the page, though on another site (its CDN), subdomains included */
   own?: string[]
+  /** open the page as a phone: its screen, touch, and the user agent of Chrome on Android */
+  mobile?: boolean
 }
 
 /**
@@ -341,8 +352,10 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
   const { browser, sandbox } = await launch()
   try {
     const chrome = browser.version()
-    const userAgent = options.userAgent ?? browserAgent(chrome)
-    const context = await browser.newContext({ locale: 'de-DE', userAgent, acceptDownloads: false, ...credentials(url, options) })
+    const mobile = options.mobile === true
+    const userAgent = options.userAgent ?? browserAgent(chrome, process.platform, mobile)
+    const phone = mobile ? { viewport: { width: PHONE.width, height: PHONE.height }, deviceScaleFactor: PHONE.deviceScaleFactor, isMobile: true, hasTouch: true } : {}
+    const context = await browser.newContext({ locale: 'de-DE', userAgent, acceptDownloads: false, ...phone, ...credentials(url, options) })
     await options.setup?.(context)
 
     const requests: Request[] = []
@@ -382,7 +395,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const u = new URL(ws.url())
       requests.push({ url: ws.url(), host: u.hostname, type: 'websocket' })
     })
-    if (!options.userAgent) await plainBrands(context, page, userAgent, chrome)
+    if (!options.userAgent) await plainBrands(context, page, userAgent, chrome, mobile)
     // Chromium hands out the page's certificate later only with the network domain on from the start
     const cdp = await context.newCDPSession(page).then(
       async s => (await s.send('Network.enable'), s),
@@ -408,7 +421,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     }))
     // what a visitor sees first, cookie banner included; a page that cannot be pictured still gets its report
     const screenshot = options.screenshot ? await page.screenshot({ type: 'jpeg', quality: 70 }).then(b => b.toString('base64'), () => undefined) : undefined
-    const { storage, links, forms, resources, metaCsp, metaReferrer, generator, accessibility, preconnect } = await page.evaluate(() => {
+    const { storage, links, forms, resources, metaCsp, metaReferrer, generator, accessibility, preconnect, width } = await page.evaluate(() => {
       const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
         const s = window[area]
@@ -466,7 +479,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const lang = document.documentElement.getAttribute('lang')
       const viewport = document.querySelector('meta[name="viewport" i]')?.getAttribute('content')
       const accessibility: Accessibility = { images, fields, ...(lang !== null ? { lang } : {}), ...(viewport != null ? { viewport } : {}) }
-      return { storage, links, forms, resources, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator, accessibility, preconnect }
+      return { storage, links, forms, resources, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator, accessibility, preconnect, width: { page: document.documentElement.scrollWidth, window: window.innerWidth } }
     })
 
     const headers = await response.allHeaders()
@@ -492,11 +505,13 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       access,
       accessibility,
       preconnect,
+      width,
       userAgent,
       sandbox,
     }
     if (tls?.validTo) result.certificate = { validTo: tls.validTo, issuer: tls.issuer ?? '', ...names }
     if (options.own?.length) result.own = options.own
+    if (mobile) result.mobile = true
     if (metaCsp) result.metaCsp = metaCsp
     if (metaReferrer) result.metaReferrer = metaReferrer
     if (generator) result.generator = generator

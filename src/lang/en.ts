@@ -6,7 +6,7 @@ import { plural } from './plural.ts'
 const en: Messages = {
   usage: langs => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <file> …]
         [--baseline <file>] [--auth <user:password>] [--user-agent <string>]
-        [--own <host> …]
+        [--own <host> …] [--mobile]
 spurlos mcp [--lang ${langs}] [--user-agent <string>]
 
 Opens the site like a new visitor who clicks nothing, and shows which
@@ -33,6 +33,8 @@ Several addresses are checked one after the other, with a report each.
   --own         servers that belong to the site, such as its CDN, with
                 their subdomains: --own cdn-company.net; repeated or
                 comma-separated. They are then yellow, not red
+  --mobile      open the site as a phone: screen, touch and user agent of
+                Chrome on Android
   --help        this help
 
 spurlos mcp starts an MCP server over stdio: it lets an AI assistant
@@ -44,6 +46,7 @@ With --baseline only new red findings count.
 Does spurlos help you? https://ko-fi.com/mmohrx`,
   disclaimer: 'Technical pre-check – not legal advice, and no statement on whether the site complies with the GDPR.',
   openedAs: url => `opened as ${url}`,
+  asPhone: 'opened as a phone (--mobile)',
   unknownLang: (from, value, langs) => `${from} only knows ${langs}, not ${value}.`,
   invalidUrl: arg => `${arg} is not a valid address.`,
   oneFormat: '--json, --html and --pdf only go one at a time.',
@@ -53,6 +56,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   written: file => `Report written to ${file}.`,
   cannotWrite: (file, reason) => `${file} could not be written: ${reason}`,
   mcpOnly: flags => `spurlos mcp only takes --lang and --user-agent, not ${flags}.`,
+  mobileNotBoolean: 'mobile is true or false.',
   urlMissing: 'url is missing: the address of the site as a string, e.g. example.com.',
   unknownFormat: value => `format only knows text and json, not ${value}.`,
   load: (n, size, foreign, foreignSize) =>
@@ -84,6 +88,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
     cookies: 'Cookies and storage',
     fingerprinting: 'Fingerprinting',
     access: 'Browser access',
+    mobile: 'Mobile',
     accessibility: 'Accessibility',
     legal: 'Legal notice and privacy policy',
     https: 'HTTPS',
@@ -167,6 +172,16 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   },
   accessWhy: 'Asked right on load, before anyone clicks anything: the visitor does not know what the site wants it for. Firefox does not even show the notification prompt without a click.',
   accessWorker: 'A service worker stays in the browser and can run after the visit too, for push messages, say, or so the site works offline.',
+  mobileOk: 'in order',
+  mobileValue: n => plural(n, 'note', 'notes'),
+  mobileViewport: 'No viewport for phones (width=device-width)',
+  mobileNoViewport: 'no <meta name="viewport">',
+  mobileOverflow: (page, window) => `The page is ${page} pixels wide, the window ${window}: visitors have to scroll sideways`,
+  mobileWhy: {
+    viewport: 'Without width=device-width, phones lay the page out 980 pixels wide and shrink it; the text gets tiny. The usual tag is <meta name="viewport" content="width=device-width, initial-scale=1">.',
+    overflow: 'Usually an image, a table or an element with a fixed width sticks out over the edge.',
+  },
+  mobileHint: 'For phones, spurlos checks this with --mobile; some sites also load other trackers and cookie banners there.',
   a11yOk: 'basics in order',
   a11yValue: n => plural(n, 'basic missing', 'basics missing'),
   a11yLang: 'The page does not name its language (lang on <html>)',

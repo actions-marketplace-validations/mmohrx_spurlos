@@ -35,6 +35,10 @@ Which script it was, spurlos reads from the stack trace; for code right in the H
 
 spurlos notes when a script, while the page loads, asks whether it may send notifications (`Notification.requestPermission`), subscribes to push messages (`PushManager.subscribe`), asks for the location (`getCurrentPosition`, `watchPosition`), for camera or microphone (`getUserMedia`), or registers a service worker. Notifications and push are yellow, whoever asks. Location, camera and microphone are red when a script of another domain asks, yellow otherwise; whose a script is, spurlos decides as for fingerprinting. A service worker is green, as that is how push and working offline are done; the report still names it, since it stays in the browser after the visit.
 
+## Mobile
+
+Without `<meta name="viewport">` with `width=device-width`, phones lay a page out 980 pixels wide and shrink it; that is yellow. So is a page wider than its window (`scrollWidth` greater than `innerWidth`), which makes visitors scroll sideways. It is measured in the window spurlos opens the page in: 1280 pixels wide without options, 412 pixels with `--mobile`, like a Pixel 7. For phones, scrolling sideways is thus only told with `--mobile`. Whether text and buttons are large enough, spurlos does not check; locked zooming belongs to accessibility.
+
 ## Accessibility
 
 spurlos checks only a few basics that can be told without a click; each one missing is yellow:

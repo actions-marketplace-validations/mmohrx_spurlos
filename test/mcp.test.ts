@@ -116,3 +116,14 @@ test('own goes to the scan as host names; anything else back to the model', asyn
   const wrong = await handle(request(2, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', own: ['https://x.de'] } }), seeing)
   expect(wrong).toMatchObject({ result: { isError: true, content: [{ text: expect.stringContaining('--own braucht einen Hostnamen') }] } })
 })
+
+test('mobile goes to the scan when true; anything but a boolean back to the model', async () => {
+  let given: boolean | undefined
+  const seeing: Context = { lang: 'de', scan: async (_url, options) => ((given = options.mobile), Promise.reject(new Error('done'))) }
+  await handle(request(1, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', mobile: true } }), seeing)
+  expect(given).toBe(true)
+  await handle(request(2, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', mobile: false } }), seeing)
+  expect(given).toBeUndefined()
+  const wrong = await handle(request(3, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', mobile: 'yes' } }), seeing)
+  expect(wrong).toMatchObject({ result: { isError: true, content: [{ text: 'mobile ist true oder false.' }] } })
+})

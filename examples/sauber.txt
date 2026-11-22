@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/
-beim Aufruf 2 Anfragen, 0,9 kB; keine an andere Domains
-11 in Ordnung
+beim Aufruf 2 Anfragen, 1 kB; keine an andere Domains
+12 in Ordnung
 
 🟢 Fremde Server              keine
   → Beim Aufruf ging keine Anfrage an einen anderen Server.
@@ -30,6 +30,10 @@ beim Aufruf 2 Anfragen, 0,9 kB; keine an andere Domains
 
 🟢 Verratene Details          keine
   → Weder Header noch Seite nennen die Software dahinter.
+
+🟢 Mobil                      in Ordnung
+  → Auf dem Handy prüft spurlos das mit --mobile; manche Seiten laden dort auch
+    andere Tracker und Cookie-Banner.
 
 🟢 Barrierefreiheit           Grundlagen in Ordnung
   └─ 🟢 Erklärung zur Barrierefreiheit: „Barrierefreiheit“ → https://shop.example/barrierefreiheit

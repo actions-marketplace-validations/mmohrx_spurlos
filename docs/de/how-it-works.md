@@ -10,6 +10,12 @@ Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/15
 
 „HeadlessChrome“ fehlt darin mit Absicht, auch in den Client Hints (`sec-ch-ua`). Viele Cookie-Banner und Tracker laden für Aufrufe, die sie für Bots halten, gar nicht erst. spurlos würde dann eine saubere Seite melden, während echte Besucher getrackt werden. Verstecken will sich spurlos trotzdem nicht: Der eigene Name steht in jeder Kennung, und `navigator.webdriver` bleibt `true`. Um Fingerprinting und Fragen nach Berechtigungen zu bemerken, ersetzt spurlos einige Funktionen von Canvas, WebGL, Audio, WebRTC, Benachrichtigungen, Standort, Kamera und Service Workern durch eigene, die das Original aufrufen, und legt die Funktion `__spurlos` an; beides kann die Seite sehen.
 
+Mit `--mobile` öffnet spurlos die Seite als Smartphone, mit dem Bildschirm eines Pixel 7 (412 × 915 Pixel), Touch und der Kennung von Chrome auf Android, in den Client Hints mit `mobile` und der Plattform `Android`:
+
+```
+Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Mobile Safari/537.36 spurlos/0.4.0
+```
+
 Mit derselben Kennung fragt spurlos ab, ob http auf https weiterleitet: Manche Server antworten dort einem Bot anders als einem Browser (DuckDuckGo liefert einem Bot die Seite über http aus, einen Browser leitet es weiter). Impressum und Datenschutzerklärung fragt spurlos offen als Bot ab, denn dort geht es nicht um Tracker, die sich vor Bots verstecken:
 
 ```

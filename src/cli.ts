@@ -23,6 +23,7 @@ const OPTIONS = {
   'user-agent': { type: 'string' },
   auth: { type: 'string' },
   own: { type: 'string', multiple: true },
+  mobile: { type: 'boolean' },
   help: { type: 'boolean', short: 'h' },
 } as const
 
@@ -59,7 +60,7 @@ else await check(positionals)
 
 async function mcp() {
   // the format is the client's to choose, per call
-  const ignored = (['json', 'html', 'pdf', 'output', 'baseline', 'auth', 'verbose', 'own'] as const).filter(f => values[f]).map(f => `--${f}`)
+  const ignored = (['json', 'html', 'pdf', 'output', 'baseline', 'auth', 'verbose', 'own', 'mobile'] as const).filter(f => values[f]).map(f => `--${f}`)
   if (ignored.length) {
     console.error(`spurlos: ${say.mcpOnly(ignored.join(', '))}`)
     process.exit(2)
@@ -179,7 +180,7 @@ async function check(args: string[]) {
   // one after the other: each scan starts its own Chromium
   for (const url of urls) {
     try {
-      const s = await scan(url, { ...(ua ? { userAgent: ua } : {}), ...(auth ? { auth } : {}), ...(screenshot ? { screenshot } : {}), ...(own.length ? { own } : {}) })
+      const s = await scan(url, { ...(ua ? { userAgent: ua } : {}), ...(auth ? { auth } : {}), ...(screenshot ? { screenshot } : {}), ...(own.length ? { own } : {}), ...(values.mobile ? { mobile: true } : {}) })
       const results = runChecks(s)
       const before = baseline?.(s.url, s.finalUrl, urls.length === 1)
       reports.push({ scan: s, results, ...(before && baselineFile ? { compare: { file: baselineFile, comparison: compare(results, before), before } } : {}) })

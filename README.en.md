@@ -20,6 +20,7 @@
 - whether **embedded files** come over unencrypted http, and whether third-party scripts and stylesheets are embedded without `integrity`.
 - where **forms** send their data: encrypted to the site itself, to a third-party server, or unencrypted.
 - whether headers or the page **reveal the software behind it, version included**, e.g. `X-Powered-By: PHP/8.1.2` or `WordPress 6.2`.
+- whether the page fits **a phone**: viewport, scrolling sideways; with `--mobile` spurlos opens it as a phone for that, as some sites load other trackers there too.
 - a few **accessibility basics**: the page's language, images without `alt`, form fields without a label, zooming locked, a link to an accessibility statement.
 - **how much the page loads**: requests and data on first load, and how much of it goes to other domains.
 
@@ -65,6 +66,7 @@ npx spurlos <url> --lang en
 | `--auth <user:password>` | login by HTTP basic auth, e.g. for a staging site. Better through `SPURLOS_AUTH`, see [Sites behind a login](docs/en/how-it-works.md#sites-behind-a-login) |
 | `--user-agent <string>` | your own user agent for every request |
 | `--own <host>` | servers that belong to the site though on another domain, such as its CDN: `--own cdn-company.net`, subdomains included; repeated or comma-separated. See [Own servers on other domains](docs/en/checks.md#own-servers-on-other-domains) |
+| `--mobile` | open the site as a phone: the screen of a Pixel 7, touch and the user agent of Chrome on Android. Some sites load other trackers and cookie banners there |
 | `--help`, `-h` | help |
 
 The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. Where there is a common fix, the report names it right away, such as serving fonts yourself or an example value for a missing header. These are technical hints, not legal advice. In a terminal the report is colored; with `-o`, in a pipe or with `NO_COLOR` set, it stays plain text. `--html` and `--pdf` go to the output too (`--pdf > report.pdf`), but spurlos does not write a PDF into the terminal. With Docker a file of `-o` stays in the container; redirect instead: `docker run --rm ghcr.io/mmohrx/spurlos example.com --pdf > report.pdf`.
@@ -94,13 +96,14 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 | Embedded files | nothing to note | a script or stylesheet from a third-party server without `integrity`; an image, video or audio over http on an https page | a script, stylesheet or iframe over http on an https page |
 | Forms | none, or all send encrypted to the site itself | one sends to a third-party server | one sends unencrypted over http |
 | Software details | nothing, or only the software's name | a version number in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` or `<meta name="generator">` | – |
+| Mobile | viewport with `width=device-width`, the page fits the window | no viewport with `width=device-width`; the page is wider than the window, visitors have to scroll sideways (for phones with `--mobile`) | – |
 | Accessibility | `lang` set, images with `alt`, form fields labelled, zooming allowed | one of these basics is missing | – |
 
 The exact rules are in [docs/en/checks.md](docs/en/checks.md): which headers are checked, which cookies spurlos knows, when a server on another domain belongs to the site and how it tells the platform the site runs on.
 
 ## For AI assistants (MCP)
 
-`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`), `format` (`text` or `json`) and `own` (a list of host names, as with `--own`). It runs on your machine, like the CLI: the assistant starts it itself and talks to it over stdin and stdout. There is no open port, so it needs no token either.
+`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`), `format` (`text` or `json`) `own` (a list of host names, as with `--own`) and `mobile` (`true` as with `--mobile`). It runs on your machine, like the CLI: the assistant starts it itself and talks to it over stdin and stdout. There is no open port, so it needs no token either.
 
 In Claude Code:
 

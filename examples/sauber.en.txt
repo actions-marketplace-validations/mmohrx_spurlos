@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/
-2 requests on load, 0.9 kB; none to other domains
-11 fine
+2 requests on load, 1 kB; none to other domains
+12 fine
 
 🟢 Third-party servers              none
   → Opening the page sent no request to another server.
@@ -30,6 +30,10 @@ spurlos 0.4.0  https://shop.example/
 
 🟢 Software details                 none
   → Neither headers nor the page name the software behind it.
+
+🟢 Mobile                           in order
+  → For phones, spurlos checks this with --mobile; some sites also load other
+    trackers and cookie banners there.
 
 🟢 Accessibility                    basics in order
   └─ 🟢 Accessibility statement: “Barrierefreiheit” → https://shop.example/barrierefreiheit

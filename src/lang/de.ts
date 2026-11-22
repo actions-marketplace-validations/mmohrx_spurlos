@@ -1,5 +1,5 @@
 import type { AccessApi, FingerprintApi } from '../scan.ts'
-import type { AccessibilityProblem, FormFinding, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
+import type { AccessibilityProblem, FormFinding, MobileProblem, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
 import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED } from '../scan.ts'
 import { plural } from './plural.ts'
 
@@ -9,7 +9,7 @@ import { plural } from './plural.ts'
 const de = {
   usage: (langs: string) => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <datei> …]
         [--baseline <datei>] [--auth <benutzer:passwort>] [--user-agent <kennung>]
-        [--own <host> …]
+        [--own <host> …] [--mobile]
 spurlos mcp [--lang ${langs}] [--user-agent <kennung>]
 
 Ruft die Seite wie ein neuer Besucher auf, der nichts anklickt, und zeigt,
@@ -36,6 +36,8 @@ Mehrere Adressen prüft spurlos nacheinander, mit je einem Bericht.
   --own         Server, die zur Seite gehören, etwa ihr CDN, samt
                 Subdomains: --own cdn-firma.net; mehrmals oder mit Komma.
                 Sie sind dann gelb statt rot
+  --mobile      die Seite als Smartphone aufrufen: Bildschirm, Touch und
+                Kennung von Chrome auf Android
   --help        diese Hilfe
 
 spurlos mcp startet einen MCP-Server über stdio: Ein KI-Assistent kann
@@ -47,6 +49,7 @@ Mit --baseline zählen nur neue rote Befunde.
 Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   disclaimer: 'Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die Seite DSGVO-konform ist.',
   openedAs: (url: string) => `aufgerufen als ${url}`,
+  asPhone: 'als Smartphone aufgerufen (--mobile)',
   unknownLang: (from: string, value: string, langs: string) => `${from} kennt nur ${langs}, nicht ${value}.`,
   invalidUrl: (arg: string) => `${arg} ist keine gültige Adresse.`,
   oneFormat: '--json, --html und --pdf gehen nur einzeln.',
@@ -56,6 +59,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   written: (file: string) => `Bericht in ${file} geschrieben.`,
   cannotWrite: (file: string, reason: string) => `${file} ließ sich nicht schreiben: ${reason}`,
   mcpOnly: (flags: string) => `spurlos mcp nimmt nur --lang und --user-agent, nicht ${flags}.`,
+  mobileNotBoolean: 'mobile ist true oder false.',
   urlMissing: 'url fehlt: die Adresse der Seite als Text, etwa firma.de.',
   unknownFormat: (value: string) => `format kennt nur text und json, nicht ${value}.`,
   checkedAt: (date: string) => `geprüft am ${date}`,
@@ -87,6 +91,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
     cookies: 'Cookies und Speicher',
     fingerprinting: 'Fingerprinting',
     access: 'Browser-Zugriffe',
+    mobile: 'Mobil',
     accessibility: 'Barrierefreiheit',
     legal: 'Impressum und Datenschutz',
     https: 'HTTPS',
@@ -170,6 +175,16 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   } satisfies Record<AccessApi, string>,
   accessWhy: 'Gefragt schon beim Laden, bevor jemand etwas anklickt: Der Besucher weiß dann nicht, wozu die Seite das will. Firefox zeigt die Frage nach Benachrichtigungen ohne Klick gar nicht erst an.',
   accessWorker: 'Ein Service Worker bleibt im Browser und kann auch nach dem Besuch laufen, etwa für Push-Nachrichten oder damit die Seite offline geht.',
+  mobileOk: 'in Ordnung',
+  mobileValue: (n: number) => plural(n, 'Hinweis', 'Hinweise'),
+  mobileViewport: 'Kein Viewport für Smartphones (width=device-width)',
+  mobileNoViewport: 'kein <meta name="viewport">',
+  mobileOverflow: (page: number, window: number) => `Die Seite ist ${page} Pixel breit, das Fenster ${window}: Besucher müssen quer scrollen`,
+  mobileWhy: {
+    viewport: 'Ohne width=device-width legen Smartphones die Seite 980 Pixel breit an und verkleinern sie; der Text wird winzig. Üblich ist <meta name="viewport" content="width=device-width, initial-scale=1">.',
+    overflow: 'Meist ragt ein Bild, eine Tabelle oder ein Element mit fester Breite über den Rand.',
+  } satisfies Record<MobileProblem, string>,
+  mobileHint: 'Auf dem Handy prüft spurlos das mit --mobile; manche Seiten laden dort auch andere Tracker und Cookie-Banner.',
   a11yOk: 'Grundlagen in Ordnung',
   a11yValue: (n: number) => plural(n, 'Grundlage fehlt', 'Grundlagen fehlen'),
   a11yLang: 'Die Seite nennt ihre Sprache nicht (lang am <html>)',

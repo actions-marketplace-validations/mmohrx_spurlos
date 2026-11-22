@@ -8,7 +8,7 @@
         "url": "https://shop.example/tracked.html",
         "host": "shop.example",
         "type": "document",
-        "bytes": 2036
+        "bytes": 2102
       },
       {
         "url": "https://fonts.googleapis.com/css2?family=Inter",
@@ -92,7 +92,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829903220.980619,
+        "expires": 1829903498.235919,
         "secure": false,
         "httpOnly": false
       }
@@ -104,7 +104,7 @@
       }
     ],
     "headers": {
-      "content-length": "1882",
+      "content-length": "1948",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -229,6 +229,10 @@
       "viewport": "width=device-width, initial-scale=1, user-scalable=no"
     },
     "preconnect": [],
+    "width": {
+      "page": 1608,
+      "window": 1280
+    },
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0",
     "sandbox": true,
     "generator": "WordPress 6.2",
@@ -350,7 +354,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829903220.980619,
+          "expires": 1829903498.235919,
           "secure": false,
           "httpOnly": false,
           "thirdParty": false,
@@ -549,6 +553,19 @@
           "version": true
         }
       ]
+    },
+    {
+      "check": "mobile",
+      "level": "yellow",
+      "problems": [
+        "overflow"
+      ],
+      "mobile": false,
+      "viewport": "width=device-width, initial-scale=1, user-scalable=no",
+      "width": {
+        "page": 1608,
+        "window": 1280
+      }
     },
     {
       "check": "accessibility",

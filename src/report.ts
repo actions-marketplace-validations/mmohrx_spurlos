@@ -181,6 +181,18 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       }
     }
 
+    case 'mobile': {
+      const items = r.problems.map(p =>
+        p === 'viewport' ? item(key.mobile(p), 'yellow', t.mobileViewport, r.viewport ? `<meta name="viewport" content="${r.viewport}">` : t.mobileNoViewport)
+        : item(key.mobile(p), 'yellow', t.mobileOverflow(r.width.page, r.width.window)),
+      )
+      return {
+        value: r.problems.length ? t.mobileValue(r.problems.length) : t.mobileOk,
+        items,
+        notes: [...r.problems.map(p => t.mobileWhy[p]), ...(r.mobile ? [] : [t.mobileHint])],
+      }
+    }
+
     case 'accessibility': {
       const first = (list: string[]) => list.slice(0, 3).join(', ') + (list.length > 3 ? ', …' : '')
       const items: Item[] = r.problems.map(p =>
@@ -349,6 +361,7 @@ export function text(scan: Scan, results: Result[], lang: Lang, options: TextOpt
   return [
     `${style('bold', 'spurlos')} ${style('dim', VERSION)}  ${style('cyan', clean(scan.finalUrl))}`,
     ...(scan.finalUrl !== scan.url ? [style('dim', t.openedAs(clean(scan.url)))] : []),
+    ...(scan.mobile ? [style('dim', t.asPhone)] : []),
     ...(compare ? [style('dim', clean(t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)))] : []),
     style('dim', loadLine(t, lang, scan)),
     summary,
@@ -451,6 +464,7 @@ export function htmlReports(reports: Report[], lang: Lang, options: Omit<HtmlOpt
     const sorted = results.map(r => ({ r, s: section(t, r, now) })).sort((a, b) => SEVERITY.indexOf(a.r.level) - SEVERITY.indexOf(b.r.level))
     const meta = [
       ...(scan.finalUrl !== scan.url ? [t.openedAs(scan.url)] : []),
+      ...(scan.mobile ? [t.asPhone] : []),
       t.checkedAt(date),
       loadLine(t, lang, scan),
       ...(compare ? [t.compared(compare.file, compare.comparison.fresh.length, compare.comparison.gone.length)] : []),

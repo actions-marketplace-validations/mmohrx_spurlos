@@ -44,6 +44,8 @@ export type FingerprintFinding = Fingerprint & Caller
 export type AccessFinding = Access & Caller
 /** what of the accessibility basics is missing; statement: the link to an accessibility statement */
 export type AccessibilityProblem = 'lang' | 'images' | 'fields' | 'zoom'
+/** viewport: no width=device-width, so a phone shows the desktop page shrunk · overflow: the page is wider than the window */
+export type MobileProblem = 'viewport' | 'overflow'
 
 export type Result =
   | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string }
@@ -56,6 +58,7 @@ export type Result =
   | { check: 'resources'; level: Level; findings: ResourceFinding[] }
   | { check: 'fingerprinting'; level: Level; findings: FingerprintFinding[] }
   | { check: 'access'; level: Level; findings: AccessFinding[] }
+  | { check: 'mobile'; level: Level; problems: MobileProblem[]; mobile: boolean; viewport?: string; width: { page: number; window: number } }
   | { check: 'accessibility'; level: Level; problems: AccessibilityProblem[]; images: string[]; fields: string[]; viewport?: string; statement?: Link }
 
 /** worst first */
@@ -588,8 +591,22 @@ export function load(scan: Scan): Load {
   return out
 }
 
+/**
+ * Whether the page suits a phone: a viewport with width=device-width, else phones lay it out 980 pixels wide and shrink
+ * it; and no scrolling sideways, as a page wider than the window makes visitors do. Measured in the window the page was
+ * opened in, so only --mobile tells about phones; each missing is yellow.
+ */
+export function mobile(scan: Scan): Result {
+  const viewport = scan.accessibility.viewport
+  const width = scan.width ?? { page: 0, window: 0 }
+  const fits = viewport !== undefined && /(^|[\s,;])width\s*=\s*device-width/i.test(viewport)
+  // a pixel of rounding is no scrolling
+  const problems: MobileProblem[] = [...(fits ? [] : ['viewport' as const]), ...(width.page > width.window + 1 ? ['overflow' as const] : [])]
+  return { check: 'mobile', level: problems.length ? 'yellow' : 'green', problems, mobile: scan.mobile === true, ...(viewport !== undefined ? { viewport } : {}), width }
+}
+
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), accessibility(scan)]
+  return [thirdParty(scan), cookies(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), mobile(scan), accessibility(scan)]
 }
 
 /**
@@ -611,6 +628,7 @@ export const key = {
   fingerprint: (f: { api: string; host: string }) => `fingerprinting ${f.api} ${hostKey(f.host)}`,
   access: (a: { api: string; host: string }) => `access ${a.api} ${hostKey(a.host)}`,
   accessibility: (what: AccessibilityProblem | 'statement') => `accessibility ${what}`,
+  mobile: (what: MobileProblem) => `mobile ${what}`,
   // without the query: a cache buster like ?ver=6.4.2 changes with every update, the file stays the same
   resource: (r: { problem: string; url: string }) => `resource ${r.problem} ${withoutQuery(r.url)}`,
 }
@@ -676,6 +694,8 @@ function unnumbered(r: Result): Finding[] {
       return list(r.findings).map(f => ({ key: key.fingerprint(f), level: fingerprintLevel(f) }))
     case 'access':
       return list(r.findings).map(a => ({ key: key.access(a), level: accessLevel(a) }))
+    case 'mobile':
+      return list(r.problems).map(p => ({ key: key.mobile(p), level: 'yellow' as const }))
     case 'accessibility':
       return [
         ...list(r.problems).map(p => ({ key: key.accessibility(p), level: 'yellow' as const })),

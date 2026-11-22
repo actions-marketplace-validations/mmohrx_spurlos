@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { hostLevel, runChecks, type Result } from '../src/checks.ts'
 import { text } from '../src/report.ts'
 import { MESSAGES } from '../src/lang/index.ts'
-import { BOT_AGENT, REFUSED, scan } from '../src/scan.ts'
+import { BOT_AGENT, PHONE, REFUSED, scan } from '../src/scan.ts'
 import { fetched, offline, redirects, seen, SITE, staysOnHttp } from './site.ts'
 
 const pick = <C extends Result['check']>(results: Result[], check: C) => {
@@ -26,6 +26,7 @@ describe('scan', { timeout: 30_000 }, () => {
       resources: 'green',
       forms: 'green',
       disclosure: 'green',
+      mobile: 'green',
       accessibility: 'green',
     })
     expect(pick(results, 'https').http).toBe('redirects')
@@ -148,6 +149,8 @@ describe('scan', { timeout: 30_000 }, () => {
       images: [`${SITE}/team.jpg`],
       fields: ['input mail', 'input mail'],
     })
+    // the table of fixed width sticks out of the window
+    expect(pick(results, 'mobile')).toMatchObject({ level: 'yellow', problems: ['overflow'], mobile: false })
     // set without Secure on an https page
     expect(pick(results, 'cookies').cookies.find(c => c.name === 'session')?.missing).toEqual(['Secure'])
 
@@ -200,6 +203,21 @@ describe('scan', { timeout: 30_000 }, () => {
     // the page's own inline script: yellow
     expect(pick(results, 'fingerprinting')).toMatchObject({ level: 'yellow', findings: [{ api: 'webrtc', script: `${SITE}/socket.html` }] })
     expect(text(s, results, 'de')).toContain('127.0.0.2 – nur preconnect, keine Anfrage')
+  })
+
+  test('--mobile opens the page as a phone: its screen, touch, and Chrome on Android with spurlos in the user agent', async () => {
+    seen.length = 0
+    const s = await scan(`${SITE}/`, { setup: offline, fetch: redirects, mobile: true })
+    expect(s.mobile).toBe(true)
+    expect(s.width.window).toBe(PHONE.width)
+    expect(s.userAgent).toMatch(/^Mozilla\/5\.0 \(Linux; Android 10; K\) .* Mobile Safari\/537\.36 spurlos\/\d+\.\d+\.\d+$/)
+    expect(seen.find(r => r.url === `${SITE}/`)?.ua).toBe(s.userAgent)
+    const results = runChecks(s)
+    expect(pick(results, 'mobile')).toMatchObject({ level: 'green', mobile: true })
+    expect(text(s, results, 'de')).toContain('als Smartphone aufgerufen (--mobile)')
+    // the table of fixed width is far too wide for a phone
+    const wide = await scan(`${SITE}/tracked.html`, { setup: offline, fetch: staysOnHttp, mobile: true })
+    expect(pick(runChecks(wide), 'mobile')).toMatchObject({ problems: ['overflow'], width: { window: PHONE.width } })
   })
 
   test('a screenshot only when asked for', async () => {

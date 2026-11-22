@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-13 requests on load, 3.2 kB; 7 of them with 1 kB to other domains
-7 problems · 4 notes
+13 requests on load, 3.3 kB; 7 of them with 1 kB to other domains
+7 problems · 5 notes
 
 🔴 Third-party servers              7
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
@@ -90,6 +90,13 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → A version number allows a targeted search for known holes.
      → Version numbers can usually be switched off, e.g. with expose_php = Off
        in PHP or server_tokens off in nginx.
+
+🟡 Mobile                           1 note
+  └─ 🟡 The page is 1608 pixels wide, the window 1280: visitors have to scroll sideways
+     → Usually an image, a table or an element with a fixed width sticks out
+       over the edge.
+     → For phones, spurlos checks this with --mobile; some sites also load other
+       trackers and cookie banners there.
 
 🟡 Accessibility                    3 basics missing
   ├─ 🟡 1 image without alt text – https://shop.example/team.jpg

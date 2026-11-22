@@ -41,6 +41,10 @@ const TOOL = {
           'Host names that belong to the site though on another domain, such as its CDN (cdn-company.net), subdomains included. ' +
           'Their requests and cookies are yellow instead of red. Only when the user says these servers are theirs.',
       },
+      mobile: {
+        type: 'boolean',
+        description: 'true: open the site as a phone (screen, touch, user agent of Chrome on Android). Some sites load other trackers and banners there.',
+      },
     },
     required: ['url'],
     additionalProperties: false,
@@ -97,6 +101,7 @@ async function call(params: Record<string, unknown>, context: Context) {
   if (typeof args.url !== 'string') return reply(say.urlMissing, true)
   const url = toUrl(args.url)
   if (!url) return reply(clean(say.invalidUrl(args.url)), true)
+  if (args.mobile !== undefined && typeof args.mobile !== 'boolean') return reply(say.mobileNotBoolean, true)
   const own: string[] = []
   if (args.own !== undefined) {
     for (const value of Array.isArray(args.own) ? args.own : [args.own]) {
@@ -107,7 +112,7 @@ async function call(params: Record<string, unknown>, context: Context) {
   }
 
   try {
-    const options: ScanOptions = { ...(context.userAgent ? { userAgent: context.userAgent } : {}), ...(own.length ? { own } : {}) }
+    const options: ScanOptions = { ...(context.userAgent ? { userAgent: context.userAgent } : {}), ...(own.length ? { own } : {}), ...(args.mobile ? { mobile: true } : {}) }
     const s = await inTurn(() => (context.scan ?? scan)(url, options))
     const results = runChecks(s)
     const report = args.format === 'json' ? json(s, results, lang) : text(s, results, lang, { verbose: true, width: 100 })

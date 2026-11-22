@@ -20,6 +20,7 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 - ob **eingebundene Dateien** über unverschlüsseltes http kommen, und ob fremde Skripte und Stylesheets ohne `integrity` eingebunden sind.
 - wohin **Formulare** senden: verschlüsselt an die eigene Seite, an einen fremden Server oder unverschlüsselt.
 - ob Header oder Seite **die Software dahinter samt Version** verraten, etwa `X-Powered-By: PHP/8.1.2` oder `WordPress 6.2`.
+- ob die Seite **auf dem Handy** passt: Viewport, Querscrollen; mit `--mobile` ruft spurlos sie dafür als Smartphone auf, denn manche Seiten laden dort auch andere Tracker.
 - ein paar **Grundlagen der Barrierefreiheit**: Sprache der Seite, Bilder ohne `alt`, Formularfelder ohne Beschriftung, gesperrtes Zoomen, Link auf eine Erklärung zur Barrierefreiheit.
 - **wie viel die Seite lädt**: Anfragen und Datenmenge beim ersten Aufruf, davon an andere Domains.
 
@@ -65,6 +66,7 @@ npx spurlos <url>
 | `--auth <benutzer:passwort>` | Anmeldung per HTTP Basic Auth, etwa für eine Staging-Seite. Besser über `SPURLOS_AUTH`, siehe [Seiten hinter einer Anmeldung](docs/de/how-it-works.md#seiten-hinter-einer-anmeldung) |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
 | `--own <host>` | Server, die zur Seite gehören, obwohl sie auf einer anderen Domain liegen, etwa ihr CDN: `--own cdn-firma.net`, samt Subdomains; mehrmals oder mit Komma. Siehe [Eigene Server auf anderen Domains](docs/de/checks.md#eigene-server-auf-anderen-domains) |
+| `--mobile` | die Seite als Smartphone aufrufen: Bildschirm eines Pixel 7, Touch und Kennung von Chrome auf Android. Manche Seiten laden dort andere Tracker und Cookie-Banner |
 | `--help`, `-h` | Hilfe |
 
 Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Wo es einen gängigen Weg gibt, nennt der Bericht ihn gleich mit, etwa Schriften selbst auszuliefern oder einen Beispielwert für einen fehlenden Header. Das sind technische Hinweise, keine Rechtsberatung. Im Terminal ist der Bericht farbig. Mit `-o`, in einer Pipe oder mit `NO_COLOR` bleibt es reiner Text. `--html` und `--pdf` gehen auch über die Ausgabe (`--pdf > bericht.pdf`), ein PDF schreibt spurlos aber nicht ins Terminal. Mit Docker landet eine Datei von `-o` im Container; dort leitest du besser um: `docker run --rm ghcr.io/mmohrx/spurlos firma.de --pdf > bericht.pdf`.
@@ -94,13 +96,14 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 | Eingebundene Dateien | keine Auffälligkeiten | Skript oder Stylesheet eines fremden Servers ohne `integrity`; Bild, Video oder Audio über http auf einer https-Seite | Skript, Stylesheet oder iframe über http auf einer https-Seite |
 | Formulare | keine oder alle senden verschlüsselt an die eigene Seite | eines sendet an einen fremden Server | eines sendet unverschlüsselt über http |
 | Verratene Details | nichts, oder nur der Name der Software | eine Versionsnummer in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` oder `<meta name="generator">` | – |
+| Mobil | Viewport mit `width=device-width`, die Seite passt ins Fenster | kein Viewport mit `width=device-width`; die Seite ist breiter als das Fenster, Besucher müssen quer scrollen (für Smartphones mit `--mobile`) | – |
 | Barrierefreiheit | `lang` gesetzt, Bilder mit `alt`, Formularfelder beschriftet, Zoomen erlaubt | eine dieser Grundlagen fehlt | – |
 
 Die genauen Regeln stehen in [docs/de/checks.md](docs/de/checks.md): welche Header geprüft werden, welche Cookies spurlos kennt, wann ein Server auf einer anderen Domain zur Seite gehört und woran es die Plattform erkennt, auf der die Seite läuft.
 
 ## Für KI-Assistenten (MCP)
 
-`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`), `format` (`text` oder `json`) und `own` (eine Liste von Hostnamen wie bei `--own`). Er läuft auf deinem Rechner, wie die CLI: Der Assistent startet ihn selbst und spricht über stdin und stdout mit ihm. Einen offenen Port gibt es nicht, deshalb braucht er auch kein Token.
+`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`), `format` (`text` oder `json`) `own` (eine Liste von Hostnamen wie bei `--own`) und `mobile` (`true` wie `--mobile`). Er läuft auf deinem Rechner, wie die CLI: Der Assistent startet ihn selbst und spricht über stdin und stdout mit ihm. Einen offenen Port gibt es nicht, deshalb braucht er auch kein Token.
 
 In Claude Code:
 

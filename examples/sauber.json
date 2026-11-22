@@ -8,7 +8,7 @@
         "url": "https://shop.example/",
         "host": "shop.example",
         "type": "document",
-        "bytes": 913
+        "bytes": 984
       },
       {
         "url": "https://shop.example/style.css",
@@ -19,7 +19,7 @@
     "cookies": [],
     "storage": [],
     "headers": {
-      "content-length": "621",
+      "content-length": "692",
       "content-security-policy": "default-src 'self'; frame-ancestors 'none'",
       "content-type": "text/html",
       "permissions-policy": "camera=(), microphone=()",
@@ -71,9 +71,14 @@
     "accessibility": {
       "images": [],
       "fields": [],
-      "lang": "de"
+      "lang": "de",
+      "viewport": "width=device-width, initial-scale=1"
     },
     "preconnect": [],
+    "width": {
+      "page": 1280,
+      "window": 1280
+    },
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0",
     "sandbox": true,
     "metaCsp": "default-src 'self'",
@@ -171,6 +176,17 @@
       "check": "disclosure",
       "level": "green",
       "findings": []
+    },
+    {
+      "check": "mobile",
+      "level": "green",
+      "problems": [],
+      "mobile": false,
+      "viewport": "width=device-width, initial-scale=1",
+      "width": {
+        "page": 1280,
+        "window": 1280
+      }
     },
     {
       "check": "accessibility",
