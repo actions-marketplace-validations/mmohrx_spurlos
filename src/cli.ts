@@ -6,7 +6,7 @@ import { compare, findings, runChecks, type Result } from './checks.ts'
 import { LANGS, MESSAGES, pickLang } from './lang/index.ts'
 import { serve } from './mcp.ts'
 import { pdf } from './pdf.ts'
-import { banner, clean, htmlReports, jsonReports, text, type Report } from './report.ts'
+import { banner, clean, htmlReports, jsonReports, sarifReports, text, type Report } from './report.ts'
 import { ownHost, scan, toUrl } from './scan.ts'
 
 // colors only in a terminal that wants them: tty.hasColors() honours NO_COLOR, FORCE_COLOR and TERM
@@ -16,6 +16,7 @@ const OPTIONS = {
   json: { type: 'boolean' },
   html: { type: 'boolean' },
   pdf: { type: 'boolean' },
+  sarif: { type: 'boolean' },
   output: { type: 'string', short: 'o', multiple: true },
   baseline: { type: 'string' },
   verbose: { type: 'boolean', short: 'v' },
@@ -60,7 +61,7 @@ else await check(positionals)
 
 async function mcp() {
   // the format is the client's to choose, per call
-  const ignored = (['json', 'html', 'pdf', 'output', 'baseline', 'auth', 'verbose', 'own', 'mobile'] as const).filter(f => values[f]).map(f => `--${f}`)
+  const ignored = (['json', 'html', 'pdf', 'sarif', 'output', 'baseline', 'auth', 'verbose', 'own', 'mobile'] as const).filter(f => values[f]).map(f => `--${f}`)
   if (ignored.length) {
     console.error(`spurlos: ${say.mcpOnly(ignored.join(', '))}`)
     process.exit(2)
@@ -69,15 +70,16 @@ async function mcp() {
   await serve(ua ? { lang, userAgent: ua } : { lang })
 }
 
-type Format = 'text' | 'json' | 'html' | 'pdf'
+type Format = 'text' | 'json' | 'html' | 'pdf' | 'sarif'
 
 /** the format of a report: the flag, else the file's extension with -o, else text */
 function formatOf(file: string | undefined): Format {
   if (values.json) return 'json'
   if (values.html) return 'html'
   if (values.pdf) return 'pdf'
+  if (values.sarif) return 'sarif'
   const ext = file ? extname(file).toLowerCase() : ''
-  return ext === '.json' ? 'json' : ext === '.html' || ext === '.htm' ? 'html' : ext === '.pdf' ? 'pdf' : 'text'
+  return ext === '.json' ? 'json' : ext === '.html' || ext === '.htm' ? 'html' : ext === '.pdf' ? 'pdf' : ext === '.sarif' ? 'sarif' : 'text'
 }
 
 /**
@@ -116,13 +118,13 @@ async function readBaseline(file: string): Promise<(url: string, finalUrl: strin
 }
 
 async function check(args: string[]) {
-  if ([values.json, values.html, values.pdf].filter(Boolean).length > 1) {
+  if ([values.json, values.html, values.pdf, values.sarif].filter(Boolean).length > 1) {
     console.error(`spurlos: ${say.oneFormat}`)
     process.exit(2)
   }
   // one scan, as many reports as files; without -o one on the output
   // a flag names the format of every file; with several, the extensions decide
-  if ((values.output?.length ?? 0) > 1 && (values.json || values.html || values.pdf)) {
+  if ((values.output?.length ?? 0) > 1 && (values.json || values.html || values.pdf || values.sarif)) {
     console.error(`spurlos: ${say.formatWithOutputs}`)
     process.exit(2)
   }
@@ -204,6 +206,7 @@ async function check(args: string[]) {
     const report =
       format === 'pdf' ? await pdf(htmlReports(reports, lang))
       : format === 'json' ? jsonReports(reports, lang)
+      : format === 'sarif' ? sarifReports(reports, lang)
       : format === 'html' ? htmlReports(reports, lang)
       : reports.map(r => text(r.scan, r.results, lang, { color: color && !file, verbose: values.verbose ?? false, width, ...(r.compare ? { compare: r.compare } : {}) })).join('\n\n\n')
     if (file) {

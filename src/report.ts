@@ -5,7 +5,7 @@ import {
 import { readFileSync } from 'node:fs'
 import { styleText } from 'node:util'
 import { MESSAGES, type Lang, type Messages } from './lang/index.ts'
-import { NO_RESPONSE, VERSION, type Scan } from './scan.ts'
+import { HOME, NO_RESPONSE, VERSION, type Scan } from './scan.ts'
 
 const LIGHT: Record<Level, string> = { green: '🟢', yellow: '🟡', red: '🔴' }
 
@@ -316,6 +316,51 @@ export function json(scan: Scan, results: Result[], lang: Lang, compare?: Report
 export function jsonReports(reports: Report[], lang: Lang): string {
   const out = reports.length === 1 && reports[0] ? data(reports[0], lang) : reports.map(r => data(r, lang))
   return JSON.stringify(out, null, 2).replace(UNSAFE_IN_JSON, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
+}
+
+/**
+ * The findings as SARIF 2.1.0, for GitHub code scanning and other tools that read it: one rule per check, one result
+ * per red (error) or yellow (warning) finding, located at the page's address. The finding's key, with the address
+ * asked for, is its fingerprint, so the tools follow it from one run to the next; with a baseline, baselineState says
+ * whether it is new. Texts in the language of the report, from the page cleaned as in the text report.
+ */
+export function sarifReports(reports: Report[], lang: Lang, now = Date.now()): string {
+  const t = MESSAGES[lang]
+  const checks = [...new Set(reports.flatMap(r => r.results.map(x => x.check)))]
+  const results = reports.flatMap(({ scan, results, compare }) => {
+    const fresh = new Set(compare?.comparison.fresh.map(f => f.key))
+    return results.flatMap(r =>
+      section(t, r, now)
+        .items.filter(i => i.level !== 'green')
+        .map(i => ({
+          ruleId: r.check,
+          level: i.level === 'red' ? 'error' : 'warning',
+          message: { text: clean(i.detail === undefined ? i.label : `${i.label} – ${i.detail}`) },
+          locations: [{ physicalLocation: { artifactLocation: { uri: scan.finalUrl } } }],
+          partialFingerprints: { 'spurlos/v1': `${scan.url} ${i.key}` },
+          ...(compare ? { baselineState: fresh.has(i.key) ? 'new' : 'unchanged' } : {}),
+        })),
+    )
+  })
+  const sarif = {
+    $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
+    version: '2.1.0',
+    runs: [
+      {
+        tool: {
+          driver: {
+            name: 'spurlos',
+            version: VERSION,
+            informationUri: HOME,
+            rules: checks.map(c => ({ id: c, name: c, shortDescription: { text: t.title[c] }, helpUri: `${HOME}/blob/main/docs/${lang}/checks.md` })),
+          },
+        },
+        results,
+        properties: { note: t.disclaimer },
+      },
+    ],
+  }
+  return JSON.stringify(sarif, null, 2).replace(UNSAFE_IN_JSON, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
 }
 
 /** words to lines of at most max characters; a longer word keeps a line of its own */

@@ -6,7 +6,7 @@
 npx spurlos https://staging.company.com --lang en || echo "new traces"
 ```
 
-Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, more than one of `--json`, `--html`, `--pdf`, one of them with several `-o`, a baseline that cannot be read, a login for addresses on different servers, anything but a host name with `--own`) or a file of `-o` could not be written. A missing or rejected login ends with `2` too, and so does a page that turns the request away with `403` or `429`, and one Chromium will not open at all because its certificate is invalid or its server offers only outdated TLS versions such as 1.0 and 1.1; the message then says why. With several addresses the worst case counts; spurlos still writes the reports of the pages it could check.
+Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong (unknown option, invalid URL, unknown language, more than one of `--json`, `--html`, `--pdf`, `--sarif`, one of them with several `-o`, a baseline that cannot be read, a login for addresses on different servers, anything but a host name with `--own`) or a file of `-o` could not be written. A missing or rejected login ends with `2` too, and so does a page that turns the request away with `403` or `429`, and one Chromium will not open at all because its certificate is invalid or its server offers only outdated TLS versions such as 1.0 and 1.1; the message then says why. With several addresses the worst case counts; spurlos still writes the reports of the pages it could check.
 
 With `--json` you get the full result as JSON: `scan` holds the raw data (every request with its transferred size and what it carries of the visitor's, cookies, storage, fingerprinting reads and browser access with their script, the accessibility basics, the width of page and window, `mobile: true` with `--mobile`, headers, certificate with the names in it, links, forms, embedded files, the hosts of `--own`), `results` one object per check with `check` (`third-party`, `cookies`, `leaks`, `fingerprinting`, `access`, `legal`, `https`, `headers`, `resources`, `forms`, `disclosure`, `mobile`, `accessibility`), `level` (`green`, `yellow`, `red`) and the findings, `note` the note that this is not legal advice. Servers and cookies that seem to belong to the site carry `own` with the reason (`option`, `certificate`, `name`, `platform`). Under `third-party`, `selfHosted` lists the known services running on the site itself. With several addresses it is a list of such objects. The red checks, for example:
 
@@ -50,7 +50,7 @@ jobs:
           path: ${{ runner.temp }}/spurlos/
 ```
 
-The action installs spurlos and Chromium from its own checkout, checks, and writes the report into the run's summary. It also puts `report.json`, `report.html` and `report.txt` into `$RUNNER_TEMP/spurlos/`; the paths are in the outputs `json` and `html` too, the exit code in `exit-code`. The step fails as the exit code says.
+The action installs spurlos and Chromium from its own checkout, checks, and writes the report into the run's summary. It also puts `report.json`, `report.html`, `report.txt` and `report.sarif` into `$RUNNER_TEMP/spurlos/`; the paths are in the outputs `json`, `html` and `sarif` too, the exit code in `exit-code`. The step fails as the exit code says.
 
 | Input | |
 |---|---|
@@ -60,4 +60,26 @@ The action installs spurlos and Chromium from its own checkout, checks, and writ
 | `auth` | `user:password` for HTTP basic auth, best from a secret: `${{ secrets.STAGING_AUTH }}` |
 | `own` | own servers on other domains as with `--own`, separated by spaces or new lines |
 | `user-agent` | your own user agent for every request |
-| `args` | further options, such as `--verbose` or `--mobile`, split at spaces; no `--json`, `--html` or `--pdf`, the files go by their extension |
+| `args` | further options, such as `--verbose` or `--mobile`, split at spaces; no `--json`, `--html`, `--pdf` or `--sarif`, the files go by their extension |
+
+## GitHub code scanning
+
+With `--sarif` (or `-o report.sarif`), spurlos writes the findings as SARIF 2.1.0. The action stores the file anyway; uploaded, the findings appear in the repository's “Security” tab, where GitHub follows them across runs:
+
+```yaml
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v5
+      - id: spurlos
+        uses: mmohrx/spurlos@main
+        with:
+          url: https://www.company.com
+      - if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ steps.spurlos.outputs.sarif }}
+          category: spurlos
+```
+
+Each check is a rule (`third-party`, `cookies` …), each red finding an error (`error`), each yellow one a warning (`warning`); green ones are left out. The location is the address of the page, as there is no file in the repository for it. Under `partialFingerprints` is the finding's key as with `--baseline`, with the address checked in front, so the same finding stays the same. With `--baseline`, `baselineState` says whether a finding is new (`new`) or known already (`unchanged`).

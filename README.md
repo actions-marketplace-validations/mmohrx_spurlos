@@ -62,7 +62,8 @@ npx spurlos <url>
 | `--json` | vollständiges Ergebnis als JSON |
 | `--html` | Bericht als eigenständige HTML-Seite, etwa zum Weiterschicken |
 | `--pdf` | Bericht als PDF |
-| `-o`, `--output <datei>` | Bericht in eine Datei statt auf die Ausgabe. Ohne `--json`, `--html` oder `--pdf` entscheidet die Endung: `spurlos firma.de -o bericht.pdf` (`.pdf`, `.html`, `.json`, sonst Text). Mehrmals angegeben, schreibt ein Lauf mehrere Formate: `-o bericht.json -o bericht.html`; dann entscheidet bei jeder Datei die Endung, `--json`, `--html` und `--pdf` gehen damit nicht |
+| `--sarif` | die Befunde als SARIF, etwa für GitHub Code Scanning, siehe [In der CI](#in-der-ci) |
+| `-o`, `--output <datei>` | Bericht in eine Datei statt auf die Ausgabe. Ohne `--json`, `--html`, `--pdf` oder `--sarif` entscheidet die Endung: `spurlos firma.de -o bericht.pdf` (`.pdf`, `.html`, `.json`, sonst Text). Mehrmals angegeben, schreibt ein Lauf mehrere Formate: `-o bericht.json -o bericht.html`; dann entscheidet bei jeder Datei die Endung, `--json`, `--html` und `--pdf` gehen damit nicht |
 | `--baseline <datei>` | mit einer früheren Ausgabe von `--json` vergleichen, siehe [In der CI](docs/de/ci.md) |
 | `--auth <benutzer:passwort>` | Anmeldung per HTTP Basic Auth, etwa für eine Staging-Seite. Besser über `SPURLOS_AUTH`, siehe [Seiten hinter einer Anmeldung](docs/de/how-it-works.md#seiten-hinter-einer-anmeldung) |
 | `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
@@ -129,7 +130,7 @@ Die Sprache richtet sich wie bei der CLI nach `--lang`, `SPURLOS_LANG` oder dem 
 npx spurlos https://staging.firma.de || echo "neue Spuren"
 ```
 
-Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn sich eine Seite nicht prüfen ließ oder der Aufruf falsch war. Alle Fälle, das JSON von `--json`, der Vergleich mit einer Baseline und die GitHub Action stehen in [docs/de/ci.md](docs/de/ci.md).
+Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn sich eine Seite nicht prüfen ließ oder der Aufruf falsch war. Alle Fälle, das JSON von `--json`, der Vergleich mit einer Baseline, die GitHub Action und GitHub Code Scanning mit `--sarif` stehen in [docs/de/ci.md](docs/de/ci.md).
 
 ## Bekannte Dienste ergänzen
 

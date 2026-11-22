@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { compare, type Result } from '../src/checks.ts'
-import { banner, clean, html, htmlReports, json, jsonReports, text } from '../src/report.ts'
+import { banner, clean, html, htmlReports, json, jsonReports, sarifReports, text } from '../src/report.ts'
 import type { Scan } from '../src/scan.ts'
 
 // escapes, so the test shows what it feeds in: ESC, BEL, a right-to-left override, an Arabic letter mark, an 8-bit CSI
@@ -181,4 +181,35 @@ test('a page that is a known service itself names why its servers are its own, a
   expect(de).toContain('🟡 static.hotjar.io – Hotjar, gehört dem Namen nach zur Seite (2 Anfragen)')
   expect(de).not.toContain('Tracker')
   expect(de).not.toContain('Keinen bekannten Cookie-Banner')
+})
+
+test('SARIF: one rule per check, a result per red or yellow finding at the page, its key as fingerprint', () => {
+  const scan = page('https://shop.example/')
+  const results: Result[] = [
+    third('fonts.gstatic.com', 'cdn.anders.de'),
+    { check: 'disclosure', level: 'yellow', findings: [{ source: 'meta', name: 'generator', value: evil, version: true }] },
+    { check: 'headers', level: 'green', missing: [], checked: 5, weak: [] },
+  ] as Result[]
+  const before = [third('cdn.anders.de')]
+  const out = sarifReports([{ scan, results, compare: { file: 'b.json', comparison: compare(results, before), before } }], 'en')
+  expect(out).not.toMatch(/[\u007f-\u009f؜‪-‮]/)
+  const sarif = JSON.parse(out)
+  expect(sarif.version).toBe('2.1.0')
+  const run = sarif.runs[0]
+  expect(run.tool.driver).toMatchObject({ name: 'spurlos', informationUri: 'https://github.com/mmohrx/spurlos' })
+  expect(run.tool.driver.rules.map((r: { id: string }) => r.id)).toEqual(['third-party', 'disclosure', 'headers'])
+  expect(run.tool.driver.rules[0].shortDescription.text).toBe('Third-party servers')
+  expect(run.results.map((r: { ruleId: string; level: string; baselineState: string }) => [r.ruleId, r.level, r.baselineState])).toEqual([
+    ['third-party', 'error', 'new'],
+    ['third-party', 'error', 'unchanged'],
+    ['disclosure', 'warning', 'new'],
+  ])
+  expect(run.results[0]).toMatchObject({
+    message: { text: 'fonts.gstatic.com – 1 request' },
+    locations: [{ physicalLocation: { artifactLocation: { uri: 'https://shop.example/' } } }],
+    partialFingerprints: { 'spurlos/v1': 'https://shop.example/ third-party fonts.gstatic.com' },
+  })
+  // what the page said, cleaned as in the text report
+  expect(run.results[2].message.text).toContain(shown)
+  expect(run.properties.note).toContain('not legal advice')
 })

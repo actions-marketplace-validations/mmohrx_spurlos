@@ -5,7 +5,7 @@ import { carried, legalLinks } from './checks.ts'
 
 // src/ and dist/ both sit next to package.json
 export const VERSION: string = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
-const HOME = 'https://github.com/mmohrx/spurlos'
+export const HOME = 'https://github.com/mmohrx/spurlos'
 
 /** Open about itself, for the requests where a bot check changes nothing: the legal pages. */
 export const BOT_AGENT = `spurlos/${VERSION} (+${HOME})`

@@ -62,7 +62,8 @@ npx spurlos <url> --lang en
 | `--json` | the full result as JSON |
 | `--html` | the report as a self-contained HTML page, e.g. to pass on |
 | `--pdf` | the report as a PDF |
-| `-o`, `--output <file>` | the report into a file instead of the output. Without `--json`, `--html` or `--pdf` the extension decides: `spurlos example.com -o report.pdf` (`.pdf`, `.html`, `.json`, else text). Given more than once, one run writes several formats: `-o report.json -o report.html`; then each file's extension decides, and `--json`, `--html` and `--pdf` do not go with it |
+| `--sarif` | the findings as SARIF, e.g. for GitHub code scanning, see [In CI](#in-ci) |
+| `-o`, `--output <file>` | the report into a file instead of the output. Without `--json`, `--html`, `--pdf` or `--sarif` the extension decides: `spurlos example.com -o report.pdf` (`.pdf`, `.html`, `.json`, else text). Given more than once, one run writes several formats: `-o report.json -o report.html`; then each file's extension decides, and `--json`, `--html` and `--pdf` do not go with it |
 | `--baseline <file>` | compare with an earlier output of `--json`, see [In CI](docs/en/ci.md) |
 | `--auth <user:password>` | login by HTTP basic auth, e.g. for a staging site. Better through `SPURLOS_AUTH`, see [Sites behind a login](docs/en/how-it-works.md#sites-behind-a-login) |
 | `--user-agent <string>` | your own user agent for every request |
@@ -129,7 +130,7 @@ As with the CLI, the language follows `--lang`, `SPURLOS_LANG` or the system, an
 npx spurlos https://staging.company.com --lang en || echo "new traces"
 ```
 
-Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong. All cases, the JSON of `--json`, comparing with a baseline and the GitHub Action are in [docs/en/ci.md](docs/en/ci.md).
+Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong. All cases, the JSON of `--json`, comparing with a baseline, the GitHub Action and GitHub code scanning with `--sarif` are in [docs/en/ci.md](docs/en/ci.md).
 
 ## Adding known services
 

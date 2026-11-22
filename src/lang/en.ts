@@ -4,9 +4,9 @@ import { plural } from './plural.ts'
 
 
 const en: Messages = {
-  usage: langs => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <file> …]
-        [--baseline <file>] [--auth <user:password>] [--user-agent <string>]
-        [--own <host> …] [--mobile]
+  usage: langs => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf | --sarif]
+        [-o <file> …] [--baseline <file>] [--auth <user:password>]
+        [--user-agent <string>] [--own <host> …] [--mobile]
 spurlos mcp [--lang ${langs}] [--user-agent <string>]
 
 Opens the site like a new visitor who clicks nothing, and shows which
@@ -19,10 +19,11 @@ Several addresses are checked one after the other, with a report each.
   --json        the result as JSON instead of text
   --html        the report as an HTML page, e.g.: spurlos <url> --html > report.html
   --pdf         the report as a PDF, e.g.: spurlos <url> --pdf > report.pdf
+  --sarif       the findings as SARIF, e.g. for GitHub code scanning
   -o, --output  into a file instead of the output, the format by its
-                extension (.pdf, .html, .json, else text): -o report.pdf;
+                extension (.pdf, .html, .json, .sarif, else text): -o report.pdf;
                 more than once for several formats from one run, then
-                without --json, --html and --pdf
+                without --json, --html, --pdf and --sarif
   --baseline    compare with an earlier output of --json: the report
                 marks new findings, exit code 1 only for new red
                 findings
@@ -49,8 +50,8 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   asPhone: 'opened as a phone (--mobile)',
   unknownLang: (from, value, langs) => `${from} only knows ${langs}, not ${value}.`,
   invalidUrl: arg => `${arg} is not a valid address.`,
-  oneFormat: '--json, --html and --pdf only go one at a time.',
-  formatWithOutputs: 'With several -o each file’s extension decides its format, without --json, --html or --pdf.',
+  oneFormat: '--json, --html, --pdf and --sarif only go one at a time.',
+  formatWithOutputs: 'With several -o each file’s extension decides its format, without --json, --html, --pdf or --sarif.',
   authOneOrigin: '--auth and SPURLOS_AUTH only apply to one address (scheme, host, port); several addresses have to share it.',
   pdfToTerminal: 'The PDF belongs in a file, not in the terminal: spurlos <url> -o report.pdf',
   written: file => `Report written to ${file}.`,

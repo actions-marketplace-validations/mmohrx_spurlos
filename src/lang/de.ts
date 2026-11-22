@@ -7,9 +7,9 @@ import { plural } from './plural.ts'
 // Deutsch mit „du“, Anführungszeichen als Paar „…“.
 
 const de = {
-  usage: (langs: string) => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf] [-o <datei> …]
-        [--baseline <datei>] [--auth <benutzer:passwort>] [--user-agent <kennung>]
-        [--own <host> …] [--mobile]
+  usage: (langs: string) => `spurlos <url> [<url> …] [--lang ${langs}] [--verbose] [--json | --html | --pdf | --sarif]
+        [-o <datei> …] [--baseline <datei>] [--auth <benutzer:passwort>]
+        [--user-agent <kennung>] [--own <host> …] [--mobile]
 spurlos mcp [--lang ${langs}] [--user-agent <kennung>]
 
 Ruft die Seite wie ein neuer Besucher auf, der nichts anklickt, und zeigt,
@@ -22,10 +22,11 @@ Mehrere Adressen prüft spurlos nacheinander, mit je einem Bericht.
   --json        Ergebnis als JSON statt als Text
   --html        Bericht als HTML-Seite, etwa: spurlos <url> --html > bericht.html
   --pdf         Bericht als PDF, etwa: spurlos <url> --pdf > bericht.pdf
+  --sarif       Befunde als SARIF, etwa für GitHub Code Scanning
   -o, --output  in eine Datei statt auf die Ausgabe, das Format nach der
-                Endung (.pdf, .html, .json, sonst Text): -o bericht.pdf;
+                Endung (.pdf, .html, .json, .sarif, sonst Text): -o bericht.pdf;
                 mehrmals für mehrere Formate aus einem Lauf, dann ohne
-                --json, --html und --pdf
+                --json, --html, --pdf und --sarif
   --baseline    mit einer früheren Ausgabe von --json vergleichen: Der
                 Bericht markiert neue Befunde, Exit-Code 1 nur bei neuen
                 roten Befunden
@@ -52,8 +53,8 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   asPhone: 'als Smartphone aufgerufen (--mobile)',
   unknownLang: (from: string, value: string, langs: string) => `${from} kennt nur ${langs}, nicht ${value}.`,
   invalidUrl: (arg: string) => `${arg} ist keine gültige Adresse.`,
-  oneFormat: '--json, --html und --pdf gehen nur einzeln.',
-  formatWithOutputs: 'Mit mehreren -o entscheidet die Endung jeder Datei über ihr Format, ohne --json, --html oder --pdf.',
+  oneFormat: '--json, --html, --pdf und --sarif gehen nur einzeln.',
+  formatWithOutputs: 'Mit mehreren -o entscheidet die Endung jeder Datei über ihr Format, ohne --json, --html, --pdf oder --sarif.',
   authOneOrigin: '--auth und SPURLOS_AUTH gelten nur für eine Adresse (Schema, Host, Port); mehrere Adressen müssen sie teilen.',
   pdfToTerminal: 'Das PDF gehört in eine Datei, nicht ins Terminal: spurlos <url> -o bericht.pdf',
   written: (file: string) => `Bericht in ${file} geschrieben.`,

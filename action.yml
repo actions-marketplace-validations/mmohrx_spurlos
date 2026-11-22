@@ -43,6 +43,9 @@ outputs:
   html:
     description: Path of the report as an HTML page.
     value: ${{ steps.run.outputs.html }}
+  sarif:
+    description: Path of the findings as SARIF, for github/codeql-action/upload-sarif.
+    value: ${{ steps.run.outputs.sarif }}
   exit-code:
     description: 0 without a red finding, 1 with one (with a baseline only new ones), 2 if a page could not be checked.
     value: ${{ steps.run.outputs.exit-code }}
@@ -80,7 +83,7 @@ runs:
         mkdir -p "$out"
         read -r -d '' -a urls <<< "$URLS" || true
         read -r -a extra <<< "$ARGS" || true
-        options=(-o "$out/report.json" -o "$out/report.html" -o "$out/report.txt")
+        options=(-o "$out/report.json" -o "$out/report.html" -o "$out/report.txt" -o "$out/report.sarif")
         if [ -n "$BASELINE" ]; then options+=(--baseline "$BASELINE"); fi
         if [ -n "$USER_AGENT" ]; then options+=(--user-agent "$USER_AGENT"); fi
         read -r -d '' -a own <<< "$OWN" || true
@@ -96,6 +99,7 @@ runs:
         {
           echo "json=$out/report.json"
           echo "html=$out/report.html"
+          echo "sarif=$out/report.sarif"
           echo "exit-code=$code"
         } >> "$GITHUB_OUTPUT"
         exit "$code"

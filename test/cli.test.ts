@@ -47,3 +47,7 @@ test('--own takes host names only', () => {
   }
   expect(cli('shop.example', '--own', 'ztat.net,cdn')).toMatchObject({ status: 2, stderr: expect.stringContaining('nicht cdn.') })
 })
+
+test('--sarif is one format among the others', () => {
+  expect(cli('shop.example', '--json', '--sarif')).toMatchObject({ status: 2, stderr: expect.stringContaining('--json, --html, --pdf und --sarif gehen nur einzeln.') })
+})
