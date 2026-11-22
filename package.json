@@ -15,7 +15,10 @@
   ],
   "type": "module",
   "license": "MIT",
-  "author": "Martin Mohr",
+  "author": {
+    "name": "Martin Mohr",
+    "url": "https://mohrwurm.de/projekte/spurlos/"
+  },
   "homepage": "https://github.com/mmohrx/spurlos#readme",
   "repository": {
     "type": "git",

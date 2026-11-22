@@ -168,4 +168,4 @@ spurlos ist ein Hobbyprojekt. Wenn es dir hilft, kannst du es auf [Ko-fi](https:
 
 ## Lizenz
 
-MIT, © 2026 Martin Mohr
+MIT, © 2026 [Martin Mohr](https://mohrwurm.de/projekte/spurlos/)
