@@ -183,6 +183,11 @@
       "findings": []
     },
     {
+      "check": "indexing",
+      "level": "green",
+      "noindex": []
+    },
+    {
       "check": "mobile",
       "level": "green",
       "problems": [],

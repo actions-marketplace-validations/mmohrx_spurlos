@@ -21,6 +21,7 @@ Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat,
 - ob **eingebundene Dateien** über unverschlüsseltes http kommen, und ob fremde Skripte und Stylesheets ohne `integrity` eingebunden sind.
 - wohin **Formulare** senden: verschlüsselt an die eigene Seite, an einen fremden Server oder unverschlüsselt.
 - ob Header oder Seite **die Software dahinter samt Version** verraten, etwa `X-Powered-By: PHP/8.1.2` oder `WordPress 6.2`.
+- ob die Seite **Suchmaschinen aussperrt** (`noindex` in `X-Robots-Tag` oder `<meta name="robots">`), etwa vergessen nach dem Livegang.
 - ob die Seite **auf dem Handy** passt: Viewport, Querscrollen; mit `--mobile` ruft spurlos sie dafür als Smartphone auf, denn manche Seiten laden dort auch andere Tracker.
 - ein paar **Grundlagen der Barrierefreiheit**: Sprache der Seite, Bilder ohne `alt`, Formularfelder ohne Beschriftung, gesperrtes Zoomen, Link auf eine Erklärung zur Barrierefreiheit.
 - **wie viel die Seite lädt**: Anfragen und Datenmenge beim ersten Aufruf, davon an andere Domains.
@@ -99,6 +100,7 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 | Eingebundene Dateien | keine Auffälligkeiten | Skript oder Stylesheet eines fremden Servers ohne `integrity`; Bild, Video oder Audio über http auf einer https-Seite | Skript, Stylesheet oder iframe über http auf einer https-Seite |
 | Formulare | keine oder alle senden verschlüsselt an die eigene Seite | eines sendet an einen fremden Server | eines sendet unverschlüsselt über http |
 | Verratene Details | nichts, oder nur der Name der Software | eine Versionsnummer in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` oder `<meta name="generator">` | – |
+| Suchmaschinen | kein `noindex` | `noindex` oder `none` in `X-Robots-Tag` oder `<meta name="robots">` (auch `googlebot`) | – |
 | Mobil | Viewport mit `width=device-width`, die Seite passt ins Fenster | kein Viewport mit `width=device-width`; die Seite ist breiter als das Fenster, Besucher müssen quer scrollen (für Smartphones mit `--mobile`) | – |
 | Barrierefreiheit | `lang` gesetzt, Bilder mit `alt`, Formularfelder beschriftet, Zoomen erlaubt | eine dieser Grundlagen fehlt | – |
 

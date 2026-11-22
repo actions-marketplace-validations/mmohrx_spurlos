@@ -27,6 +27,7 @@ describe('scan', { timeout: 30_000 }, () => {
       resources: 'green',
       forms: 'green',
       disclosure: 'green',
+      indexing: 'green',
       mobile: 'green',
       accessibility: 'green',
     })
@@ -128,6 +129,7 @@ describe('scan', { timeout: 30_000 }, () => {
       'x-powered-by: PHP/8.1.2',
       'generator: WordPress 6.2',
     ])
+    expect(pick(results, 'indexing').noindex).toEqual([{ source: 'meta', value: 'noindex, nofollow' }])
     // the foreign script reads canvas, audio and, where Chromium has WebGL, the graphics card; the inline emoji test is none
     const fp = pick(results, 'fingerprinting')
     expect(fp.level).toBe('red')

@@ -47,6 +47,8 @@ export type FingerprintFinding = Fingerprint & Caller
 export type AccessFinding = Access & Caller
 /** what a server of another site got of the visitor's: an email address, or the value of the page's query parameter param */
 export type Leak = { host: string; what: 'email' | 'query'; param?: string; requests: number; service: Service | undefined; own?: OwnReason }
+/** where the page tells search engines to leave it out: the X-Robots-Tag header or <meta name="robots"> (or googlebot) */
+export type Noindex = { source: 'header' | 'meta'; value: string }
 /** what of the accessibility basics is missing; statement: the link to an accessibility statement */
 export type AccessibilityProblem = 'lang' | 'images' | 'fields' | 'zoom'
 /** viewport: no width=device-width, so a phone shows the desktop page shrunk · overflow: the page is wider than the window */
@@ -60,6 +62,7 @@ export type Result =
   | { check: 'headers'; level: Level; missing: string[]; checked: number; weak: string[] }
   | { check: 'forms'; level: Level; forms: FormFinding[] }
   | { check: 'disclosure'; level: Level; findings: Disclosure[] }
+  | { check: 'indexing'; level: Level; noindex: Noindex[] }
   | { check: 'resources'; level: Level; findings: ResourceFinding[] }
   | { check: 'fingerprinting'; level: Level; findings: FingerprintFinding[] }
   | { check: 'access'; level: Level; findings: AccessFinding[] }
@@ -485,6 +488,21 @@ export function disclosure(scan: Scan): Result {
   return { check: 'disclosure', level: worst(findings.map(disclosureLevel)), findings }
 }
 
+/** noindex, or none, which means noindex and nofollow; for every robot or, as in X-Robots-Tag: googlebot: noindex, one */
+const NOINDEX = /(^|[\s,:])(noindex|none)(?=$|[\s,;])/i
+
+/**
+ * Whether search engines may take the page in: a noindex in the X-Robots-Tag header or in <meta name="robots"> (or
+ * googlebot) is yellow. Wanted on a staging site, an oversight on a public one, often left over from before it went live.
+ */
+export function indexing(scan: Scan): Result {
+  const noindex: Noindex[] = [
+    ...(NOINDEX.test(scan.headers['x-robots-tag'] ?? '') ? [{ source: 'header' as const, value: scan.headers['x-robots-tag'] ?? '' }] : []),
+    ...(NOINDEX.test(scan.metaRobots ?? '') ? [{ source: 'meta' as const, value: scan.metaRobots ?? '' }] : []),
+  ]
+  return { check: 'indexing', level: noindex.length ? 'yellow' : 'green', noindex }
+}
+
 /**
  * Files the page embeds: over http on an https page, or a script or stylesheet of another site without
  * integrity="…", so that site may change it at will and the page runs whatever it sends.
@@ -690,7 +708,7 @@ export function mobile(scan: Scan): Result {
 }
 
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan, now), leaks(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), mobile(scan), accessibility(scan)]
+  return [thirdParty(scan), cookies(scan, now), leaks(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), indexing(scan), mobile(scan), accessibility(scan)]
 }
 
 /**
@@ -708,6 +726,7 @@ export const key = {
   csp: (weakness: string) => `csp ${weakness}`,
   form: (f: { method: string; action: string }) => `form ${f.method} ${f.action}`,
   disclosure: (d: { name: string }) => `disclosure ${d.name}`,
+  noindex: (n: { source: string }) => `indexing ${n.source}`,
   /** by host, not by script: a fingerprinting service may serve its script under a new path on every visit */
   fingerprint: (f: { api: string; host: string }) => `fingerprinting ${f.api} ${hostKey(f.host)}`,
   access: (a: { api: string; host: string }) => `access ${a.api} ${hostKey(a.host)}`,
@@ -792,6 +811,8 @@ function unnumbered(r: Result): Finding[] {
       return list(r.forms).map(f => ({ key: key.form(f), level: formLevel(f) }))
     case 'disclosure':
       return list(r.findings).map(d => ({ key: key.disclosure(d), level: disclosureLevel(d) }))
+    case 'indexing':
+      return list(r.noindex).map(n => ({ key: key.noindex(n), level: 'yellow' as const }))
     default:
       return []
   }

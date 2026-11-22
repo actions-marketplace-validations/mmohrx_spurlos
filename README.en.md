@@ -21,6 +21,7 @@
 - whether **embedded files** come over unencrypted http, and whether third-party scripts and stylesheets are embedded without `integrity`.
 - where **forms** send their data: encrypted to the site itself, to a third-party server, or unencrypted.
 - whether headers or the page **reveal the software behind it, version included**, e.g. `X-Powered-By: PHP/8.1.2` or `WordPress 6.2`.
+- whether the page **keeps search engines out** (`noindex` in `X-Robots-Tag` or `<meta name="robots">`), left over from before going live, say.
 - whether the page fits **a phone**: viewport, scrolling sideways; with `--mobile` spurlos opens it as a phone for that, as some sites load other trackers there too.
 - a few **accessibility basics**: the page's language, images without `alt`, form fields without a label, zooming locked, a link to an accessibility statement.
 - **how much the page loads**: requests and data on first load, and how much of it goes to other domains.
@@ -99,6 +100,7 @@ spurlos itself does not phone home: no telemetry, no statistics. It requests onl
 | Embedded files | nothing to note | a script or stylesheet from a third-party server without `integrity`; an image, video or audio over http on an https page | a script, stylesheet or iframe over http on an https page |
 | Forms | none, or all send encrypted to the site itself | one sends to a third-party server | one sends unencrypted over http |
 | Software details | nothing, or only the software's name | a version number in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` or `<meta name="generator">` | – |
+| Search engines | no `noindex` | `noindex` or `none` in `X-Robots-Tag` or `<meta name="robots">` (also `googlebot`) | – |
 | Mobile | viewport with `width=device-width`, the page fits the window | no viewport with `width=device-width`; the page is wider than the window, visitors have to scroll sideways (for phones with `--mobile`) | – |
 | Accessibility | `lang` set, images with `alt`, form fields labelled, zooming allowed | one of these basics is missing | – |
 

@@ -8,7 +8,7 @@
         "url": "https://shop.example/tracked.html",
         "host": "shop.example",
         "type": "document",
-        "bytes": 2489
+        "bytes": 2540
       },
       {
         "url": "https://fonts.googleapis.com/css2?family=Inter",
@@ -100,7 +100,7 @@
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829904675.699277,
+        "expires": 1829909736.527281,
         "secure": false,
         "httpOnly": false,
         "sameSite": "Lax"
@@ -108,7 +108,7 @@
       {
         "name": "prefs",
         "domain": "shop.example",
-        "expires": 1829904675.699319,
+        "expires": 1829909736.527323,
         "secure": true,
         "httpOnly": false,
         "sameSite": "None"
@@ -116,7 +116,7 @@
       {
         "name": "_fbp",
         "domain": "shop.example",
-        "expires": 1803120676.330268,
+        "expires": 1803125737.157734,
         "secure": true,
         "httpOnly": false,
         "sameSite": "Lax",
@@ -130,7 +130,7 @@
       }
     ],
     "headers": {
-      "content-length": "2335",
+      "content-length": "2386",
       "content-type": "text/html",
       "server": "Apache/2.4.41 (Ubuntu)",
       "x-powered-by": "PHP/8.1.2"
@@ -267,6 +267,7 @@
     "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.4.0",
     "sandbox": true,
     "generator": "WordPress 6.2",
+    "metaRobots": "noindex, nofollow",
     "http": {
       "url": "http://shop.example/tracked.html",
       "status": 200,
@@ -402,7 +403,7 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829904675.699277,
+          "expires": 1829909736.527281,
           "secure": false,
           "httpOnly": false,
           "sameSite": "Lax",
@@ -428,7 +429,7 @@
         {
           "name": "prefs",
           "domain": "shop.example",
-          "expires": 1829904675.699319,
+          "expires": 1829909736.527323,
           "secure": true,
           "httpOnly": false,
           "sameSite": "None",
@@ -439,7 +440,7 @@
         {
           "name": "_fbp",
           "domain": "shop.example",
-          "expires": 1803120676.330268,
+          "expires": 1803125737.157734,
           "secure": true,
           "httpOnly": false,
           "sameSite": "Lax",
@@ -645,6 +646,16 @@
           "name": "generator",
           "value": "WordPress 6.2",
           "version": true
+        }
+      ]
+    },
+    {
+      "check": "indexing",
+      "level": "yellow",
+      "noindex": [
+        {
+          "source": "meta",
+          "value": "noindex, nofollow"
         }
       ]
     },

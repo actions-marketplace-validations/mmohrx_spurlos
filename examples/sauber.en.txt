@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/
 2 requests on load, 1 kB; none to other domains
-13 fine
+14 fine
 
 🟢 Third-party servers              none
   → Opening the page sent no request to another server.
@@ -34,6 +34,9 @@ spurlos 0.4.0  https://shop.example/
 
 🟢 Software details                 none
   → Neither headers nor the page name the software behind it.
+
+🟢 Search engines                   may list the page
+  → Neither X-Robots-Tag nor <meta name="robots"> says noindex.
 
 🟢 Mobile                           in order
   → For phones, spurlos checks this with --mobile; some sites also load other

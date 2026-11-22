@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/tracked.html
 beim Aufruf 14 Anfragen, 3,8 kB; davon 8 mit 1 kB an andere Domains
-7 Mängel · 5 Hinweise · 1 in Ordnung
+7 Mängel · 6 Hinweise · 1 in Ordnung
 
 🔴 Fremde Server              8
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
@@ -109,6 +109,12 @@ beim Aufruf 14 Anfragen, 3,8 kB; davon 8 mit 1 kB an andere Domains
      → Mit der Versionsnummer lässt sich gezielt nach bekannten Lücken suchen.
      → Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off
        in PHP oder server_tokens off in nginx.
+
+🟡 Suchmaschinen              sollen die Seite nicht aufnehmen (noindex)
+  └─ 🟡 <meta name="robots">: noindex, nofollow
+     → Mit noindex nehmen Suchmaschinen die Seite nicht auf. Gewollt auf einer
+       Staging-Seite, auf einer öffentlichen meist ein Überbleibsel aus der Zeit
+       vor dem Livegang.
 
 🟡 Mobil                      1 Hinweis
   └─ 🟡 Die Seite ist 1608 Pixel breit, das Fenster 1280: Besucher müssen quer scrollen

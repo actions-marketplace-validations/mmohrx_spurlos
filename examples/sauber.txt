@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/
 beim Aufruf 2 Anfragen, 1 kB; keine an andere Domains
-13 in Ordnung
+14 in Ordnung
 
 🟢 Fremde Server              keine
   → Beim Aufruf ging keine Anfrage an einen anderen Server.
@@ -34,6 +34,9 @@ beim Aufruf 2 Anfragen, 1 kB; keine an andere Domains
 
 🟢 Verratene Details          keine
   → Weder Header noch Seite nennen die Software dahinter.
+
+🟢 Suchmaschinen              dürfen die Seite aufnehmen
+  → Weder X-Robots-Tag noch <meta name="robots"> sagen noindex.
 
 🟢 Mobil                      in Ordnung
   → Auf dem Handy prüft spurlos das mit --mobile; manche Seiten laden dort auch

@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- Neue Prüfung „Suchmaschinen“ (`indexing`): `noindex` oder `none` in `X-Robots-Tag` oder `<meta name="robots">` (auch `googlebot`) ist gelb, etwa vergessen nach dem Livegang.
 - `--sarif` (und `-o bericht.sarif`): die Befunde als SARIF 2.1.0 für GitHub Code Scanning, mit dem Schlüssel jedes Befunds als Fingerabdruck und, mit `--baseline`, `baselineState`. Die Action legt `report.sarif` ab, Pfad in der Ausgabe `sarif`.
 - Neue Prüfung „Weitergegebene Daten“ (`leaks`): E-Mail-Adressen in Anfragen an fremde Server rot, Werte aus der Query der geprüften Adresse gelb (ohne Kampagnen-Parameter und Klick-IDs), etwa von einer Danke-Seite an Analytics. In `--json` je Anfrage unter `carries`.
 - Nach dem Laden bewegt spurlos einmal die Maus und scrollt, ohne zu klicken: Viele Seiten halten Skripte, auch Tracker, bis zur ersten Bewegung zurück (etwa WP Rocket), und spurlos sah sie bisher nicht. Was erst dann kommt, markiert der Bericht mit „erst nach der ersten Bewegung“, `--json` mit `afterMove: true`.

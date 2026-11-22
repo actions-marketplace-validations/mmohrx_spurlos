@@ -268,6 +268,8 @@ export type Scan = {
   mobile?: true
   /** what <meta name="generator"> says, often the CMS and its version */
   generator?: string
+  /** what <meta name="robots"> and <meta name="googlebot"> say, joined by a comma */
+  metaRobots?: string
   /** the user agent the page was opened with */
   userAgent: string
   /** whether Chromium ran in its own sandbox; without it, an exploit in the page reaches the user running spurlos */
@@ -438,7 +440,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       sameSite: c.sameSite,
       ...(early.has(cookieKey(c)) ? {} : { afterMove: true as const }),
     }))
-    const { storage, links, forms, resources, metaCsp, metaReferrer, generator, accessibility, preconnect, width } = await page.evaluate(() => {
+    const { storage, links, forms, resources, metaCsp, metaReferrer, generator, robots, accessibility, preconnect, width } = await page.evaluate(() => {
       const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
         const s = window[area]
@@ -484,6 +486,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const meta = [...document.querySelectorAll('meta[http-equiv]')].find(m => m.getAttribute('http-equiv')?.toLowerCase() === 'content-security-policy')
       const referrer = document.querySelector('meta[name="referrer" i]')?.getAttribute('content') ?? null
       const generator = document.querySelector('meta[name="generator" i]')?.getAttribute('content') ?? null
+      const robots = [...document.querySelectorAll('meta[name="robots" i], meta[name="googlebot" i]')].map(m => m.getAttribute('content')?.trim() ?? '').filter(c => c).join(', ')
       // what a screen reader meets: visible, and not hidden from it
       const perceived = (el: Element) => el.getClientRects().length > 0 && !el.closest('[aria-hidden="true" i]')
       const named = (el: Element) => ['aria-label', 'aria-labelledby', 'title'].some(a => (el.getAttribute(a) ?? '').trim() !== '')
@@ -496,7 +499,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const lang = document.documentElement.getAttribute('lang')
       const viewport = document.querySelector('meta[name="viewport" i]')?.getAttribute('content')
       const accessibility: Accessibility = { images, fields, ...(lang !== null ? { lang } : {}), ...(viewport != null ? { viewport } : {}) }
-      return { storage, links, forms, resources, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator, accessibility, preconnect, width: { page: document.documentElement.scrollWidth, window: window.innerWidth } }
+      return { storage, links, forms, resources, metaCsp: meta?.getAttribute('content') ?? null, metaReferrer: referrer, generator, robots, accessibility, preconnect, width: { page: document.documentElement.scrollWidth, window: window.innerWidth } }
     })
 
     const headers = await response.allHeaders()
@@ -532,6 +535,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     if (metaCsp) result.metaCsp = metaCsp
     if (metaReferrer) result.metaReferrer = metaReferrer
     if (generator) result.generator = generator
+    if (robots) result.metaRobots = robots
     if (screenshot) result.screenshot = screenshot
     // the http probe and the legal pages do not depend on each other: ask them all at once.
     // http:// as the page was asked: some servers answer a bot there with the page and a browser with a redirect.

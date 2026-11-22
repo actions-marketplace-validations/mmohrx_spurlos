@@ -238,6 +238,14 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       }
     }
 
+    case 'indexing':
+      if (!r.noindex.length) return { value: t.indexingOk, items: [], notes: [t.indexingNone] }
+      return {
+        value: t.indexingNo,
+        items: r.noindex.map(n => item(key.noindex(n), 'yellow', n.source === 'header' ? `Header X-Robots-Tag: ${n.value}` : `<meta name="robots">: ${n.value}`)),
+        notes: [t.indexingWhy],
+      }
+
     case 'forms':
       if (!r.forms.length) return { value: t.formsNone, items: [], notes: [] }
     {

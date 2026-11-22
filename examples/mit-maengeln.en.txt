@@ -1,6 +1,6 @@
 spurlos 0.4.0  https://shop.example/tracked.html
 14 requests on load, 3.8 kB; 8 of them with 1 kB to other domains
-7 problems · 5 notes · 1 fine
+7 problems · 6 notes · 1 fine
 
 🔴 Third-party servers              8
   ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
@@ -108,6 +108,11 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → A version number allows a targeted search for known holes.
      → Version numbers can usually be switched off, e.g. with expose_php = Off
        in PHP or server_tokens off in nginx.
+
+🟡 Search engines                   are told not to list the page (noindex)
+  └─ 🟡 <meta name="robots">: noindex, nofollow
+     → With noindex, search engines leave the page out. Wanted on a staging
+       site, on a public one usually a leftover from before it went live.
 
 🟡 Mobile                           1 note
   └─ 🟡 The page is 1608 pixels wide, the window 1280: visitors have to scroll sideways

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
-  access, accessibility, blocksZoom, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
+  access, accessibility, blocksZoom, indexing, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
   thirdParty, weakCsp, type Result,
 } from '../src/checks.ts'
 import { iceHost, type Scan, type Visit } from '../src/scan.ts'
@@ -719,5 +719,19 @@ describe('disclosure', () => {
 
   test('nothing named is green', () => {
     expect(disclosure({ ...base, headers: { 'content-type': 'text/html' } })).toEqual({ check: 'disclosure', level: 'green', findings: [] })
+  })
+})
+
+describe('indexing', () => {
+  test('noindex in the header or the robots meta tag is yellow, each with its own key', () => {
+    const r = indexing({ ...base, headers: { 'x-robots-tag': 'googlebot: noindex' }, metaRobots: 'noindex, nofollow' })
+    expect(r).toMatchObject({ level: 'yellow', noindex: [{ source: 'header', value: 'googlebot: noindex' }, { source: 'meta', value: 'noindex, nofollow' }] })
+    expect(findings(r).map(f => f.key)).toEqual(['indexing header', 'indexing meta'])
+    expect(indexing({ ...base, metaRobots: 'none' }).level).toBe('yellow')
+  })
+
+  test('index, nofollow and other rules are green', () => {
+    expect(indexing({ ...base, headers: { 'x-robots-tag': 'noarchive, max-snippet:-1' }, metaRobots: 'index, nofollow' })).toEqual({ check: 'indexing', level: 'green', noindex: [] })
+    expect(indexing(base).level).toBe('green')
   })
 })
