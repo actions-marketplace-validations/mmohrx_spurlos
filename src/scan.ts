@@ -60,7 +60,8 @@ export function browserAgent(chromeVersion: string, platform = process.platform,
  * server, which Playwright does not report as requests; url is then the server's address as the page gave it. bytes: what went over the wire for the answer, headers and encoded body; missing where none came
  */
 export type Request = { url: string; host: string; type: string; bytes?: number }
-export type Cookie = { name: string; domain: string; expires: number; secure: boolean; httpOnly: boolean }
+/** expires: in seconds since 1970, -1 for a session cookie; sameSite: missing in a scan of an older spurlos */
+export type Cookie = { name: string; domain: string; expires: number; secure: boolean; httpOnly: boolean; sameSite?: 'Strict' | 'Lax' | 'None' }
 export type StorageEntry = { area: 'localStorage' | 'sessionStorage'; key: string }
 export type Link = { text: string; href: string }
 export type Form = { action: string; method: string }
@@ -418,6 +419,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       expires: c.expires,
       secure: c.secure,
       httpOnly: c.httpOnly,
+      sameSite: c.sameSite,
     }))
     // what a visitor sees first, cookie banner included; a page that cannot be pictured still gets its report
     const screenshot = options.screenshot ? await page.screenshot({ type: 'jpeg', quality: 70 }).then(b => b.toString('base64'), () => undefined) : undefined

@@ -22,9 +22,9 @@ export type OwnReason = 'option' | 'certificate' | 'name' | 'platform'
 export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason; preconnect?: true }
 /**
  * missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie ·
- * own: set on another site's domain that seems to belong to the page
+ * own: set on another site's domain that seems to belong to the page · long: it lives longer than 13 months
  */
-export type CookieFinding = Cookie & { thirdParty: boolean; service: Service | undefined; missing: ('Secure' | 'HttpOnly')[]; own?: OwnReason }
+export type CookieFinding = Cookie & { thirdParty: boolean; service: Service | undefined; missing: ('Secure' | 'HttpOnly')[]; own?: OwnReason; long?: true }
 export type StorageFinding = Scan['storage'][number] & { service: Service | undefined }
 /** a header or meta tag that names the software behind the page; version: it names its version too */
 export type Disclosure = { source: 'header' | 'meta'; name: string; value: string; version: boolean }
@@ -258,10 +258,14 @@ const ok = (v: Visit | undefined) => v !== undefined && 'status' in v && v.statu
 
 /**
  * A third-party cookie or a known tracker's is red, unless the other site seems to belong to the page; a known session,
- * security or consent cookie green, unless it lacks Secure or HttpOnly; any other yellow, a chat's or a payment provider's too.
+ * security or consent cookie green, unless it lacks Secure or HttpOnly or lives longer than 13 months; any other yellow,
+ * a chat's or a payment provider's too.
  */
 export const cookieLevel = (c: CookieFinding): Level =>
-  (c.thirdParty && !c.own) || isTracker(c.service) ? 'red' : isNecessary(c.service) && !c.missing.length ? 'green' : 'yellow'
+  (c.thirdParty && !c.own) || isTracker(c.service) ? 'red' : isNecessary(c.service) && !c.missing.length && !c.long ? 'green' : 'yellow'
+
+/** 13 months, in days: what a cookie should not outlive. Chrome cuts any lifetime to 400 days. */
+export const LONG_COOKIE_DAYS = 395
 /** a version number tells an attacker which known holes to try; the bare name of the software is only a hint */
 export const disclosureLevel = (d: Disclosure): Level => (d.version ? 'yellow' : 'green')
 /** what a framework keeps there to run is green; anything else an app stores wants a look */
@@ -298,9 +302,10 @@ export const accessLevel = (a: AccessFinding): Level =>
 /**
  * Cookies and storage present before any click. A third-party cookie or a known tracker's is red; known session,
  * security and consent cookies (Laravel's XSRF-TOKEN, PHPSESSID, Cloudflare's __cf_bm …) are green; any other own
- * cookie or storage entry is yellow, as it may be needed to run the site and wants a look.
+ * cookie or storage entry is yellow, as it may be needed to run the site and wants a look. One that lives longer than
+ * 13 months is yellow at least.
  */
-export function cookies(scan: Scan): Result {
+export function cookies(scan: Scan, now = Date.now()): Result {
   const own = ownSites(scan)
   const owner = ownership(scan)
   const https = isHttps(scan)
@@ -311,7 +316,8 @@ export function cookies(scan: Scan): Result {
     if (service?.httpOnly && !c.httpOnly) missing.push('HttpOnly')
     const thirdParty = !own.has(site(c.domain))
     const reason = thirdParty ? owner(c.domain) : undefined
-    return { ...c, thirdParty, service, missing, ...(reason ? { own: reason } : {}) }
+    const long = c.expires > 0 && c.expires * 1000 - now > LONG_COOKIE_DAYS * 86_400_000
+    return { ...c, thirdParty, service, missing, ...(reason ? { own: reason } : {}), ...(long ? { long: true as const } : {}) }
   })
   const storage = scan.storage.map(e => ({ ...e, service: serviceOfStorage(e.key) }))
   const level = worst([...found.map(cookieLevel), ...storage.map(storageLevel)])
@@ -606,7 +612,7 @@ export function mobile(scan: Scan): Result {
 }
 
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), mobile(scan), accessibility(scan)]
+  return [thirdParty(scan), cookies(scan, now), fingerprinting(scan), access(scan), legal(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), mobile(scan), accessibility(scan)]
 }
 
 /**

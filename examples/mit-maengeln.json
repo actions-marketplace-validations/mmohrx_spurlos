@@ -26,7 +26,7 @@
         "url": "https://shop.example/tracker.js",
         "host": "shop.example",
         "type": "script",
-        "bytes": 174
+        "bytes": 257
       },
       {
         "url": "https://app.usercentrics.eu/browser-ui/latest/loader.js",
@@ -87,14 +87,24 @@
         "domain": "shop.example",
         "expires": -1,
         "secure": false,
-        "httpOnly": true
+        "httpOnly": true,
+        "sameSite": "Lax"
       },
       {
         "name": "_ga",
         "domain": "shop.example",
-        "expires": 1829903498.235919,
+        "expires": 1829903717.12516,
         "secure": false,
-        "httpOnly": false
+        "httpOnly": false,
+        "sameSite": "Lax"
+      },
+      {
+        "name": "prefs",
+        "domain": "shop.example",
+        "expires": 1829903717.125205,
+        "secure": true,
+        "httpOnly": false,
+        "sameSite": "None"
       }
     ],
     "storage": [
@@ -346,6 +356,7 @@
           "expires": -1,
           "secure": false,
           "httpOnly": true,
+          "sameSite": "Lax",
           "thirdParty": false,
           "missing": [
             "Secure"
@@ -354,9 +365,10 @@
         {
           "name": "_ga",
           "domain": "shop.example",
-          "expires": 1829903498.235919,
+          "expires": 1829903717.12516,
           "secure": false,
           "httpOnly": false,
+          "sameSite": "Lax",
           "thirdParty": false,
           "service": {
             "name": "Google Analytics",
@@ -373,7 +385,19 @@
           },
           "missing": [
             "Secure"
-          ]
+          ],
+          "long": true
+        },
+        {
+          "name": "prefs",
+          "domain": "shop.example",
+          "expires": 1829903717.125205,
+          "secure": true,
+          "httpOnly": false,
+          "sameSite": "None",
+          "thirdParty": false,
+          "missing": [],
+          "long": true
         }
       ],
       "storage": [

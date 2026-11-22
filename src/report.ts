@@ -96,8 +96,10 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           const about = [
             c.own ? t.ownBy[c.own] : c.thirdParty ? t.cookieForeign : t.cookieOwn,
             c.service?.name ?? t.unknown,
-            lifetime(t, c.expires, now),
+            lifetime(t, c.expires, now) + (c.long ? ` (${t.cookieLong})` : ''),
             ...(c.missing.length ? [t.cookieMissing(c.missing)] : []),
+            // a third-party cookie needs it to be sent at all
+            ...(c.sameSite === 'None' && !c.thirdParty ? ['SameSite=None'] : []),
           ]
           return item(key.cookie(c), cookieLevel(c), `Cookie ${c.name} (${c.domain})`, about.join(', '))
         }),
@@ -106,7 +108,9 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       const unknown = r.storage.some(s => !s.service) || r.cookies.some(c => !c.service && !c.thirdParty)
       const note = unknown && r.level !== 'red' ? t.cookiesReview : r.level === 'green' ? t.cookiesNecessary : null
       const missing = r.cookies.some(c => c.missing.length) ? t.cookieMissingNote : null
-      return { value: t.cookies(r.cookies.length, r.storage.length), items, notes: [t.cookiesBefore, note, missing].filter(n => n !== null) }
+      const long = r.cookies.some(c => c.long) ? t.cookieLongNote : null
+      const sameSite = r.cookies.some(c => c.sameSite === 'None' && !c.thirdParty) ? t.cookieSameSiteNote : null
+      return { value: t.cookies(r.cookies.length, r.storage.length), items, notes: [t.cookiesBefore, note, missing, long, sameSite].filter(n => n !== null) }
     }
 
     case 'legal':

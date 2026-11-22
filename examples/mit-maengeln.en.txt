@@ -1,5 +1,5 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-13 requests on load, 3.3 kB; 7 of them with 1 kB to other domains
+13 requests on load, 3.4 kB; 7 of them with 1 kB to other domains
 7 problems · 5 notes
 
 🔴 Third-party servers              7
@@ -25,13 +25,20 @@ spurlos 0.4.0  https://shop.example/tracked.html
      → Trackers can be embedded so that they only load once someone agrees in
        the cookie banner.
 
-🔴 Cookies and storage              2 cookies, 1 entry in browser storage
+🔴 Cookies and storage              3 cookies, 1 entry in browser storage
   ├─ 🟡 Cookie session (shop.example) – first-party, unknown, until the session ends, without Secure
-  ├─ 🔴 Cookie _ga (shop.example) – first-party, Google Analytics, 400 days, without Secure
+  ├─ 🔴 Cookie _ga (shop.example) – first-party, Google Analytics, 400 days (longer than 13 months), without Secure
+  ├─ 🟡 Cookie prefs (shop.example) – first-party, unknown, 400 days (longer than 13 months), SameSite=None
   └─ 🟡 localStorage: theme – unknown
      → Set on the first visit, before any click.
      → Secure: the cookie also travels over unencrypted http. HttpOnly: scripts
        on the page can read the session.
+     → Hardly any cookie needs to last longer than 13 months; Chrome cuts every
+       lifetime to 400 days anyway. For trackers it weighs more, as they
+       recognize the visitor over a long time that way.
+     → SameSite=None: the browser sends the cookie along even when other sites
+       embed the site or send requests to it. If it does not need that,
+       SameSite=Lax is the better choice.
 
 🔴 Fingerprinting                   3
   ├─ 🔴 https://fp.unbekannt.example/fp.js – reads back a canvas with text, third-party

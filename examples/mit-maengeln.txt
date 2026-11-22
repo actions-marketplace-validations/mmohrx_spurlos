@@ -1,5 +1,5 @@
 spurlos 0.4.0  https://shop.example/tracked.html
-beim Aufruf 13 Anfragen, 3,3 kB; davon 7 mit 1 kB an andere Domains
+beim Aufruf 13 Anfragen, 3,4 kB; davon 7 mit 1 kB an andere Domains
 7 Mängel · 5 Hinweise
 
 🔴 Fremde Server              7
@@ -26,13 +26,20 @@ beim Aufruf 13 Anfragen, 3,3 kB; davon 7 mit 1 kB an andere Domains
      → Tracker lassen sich so einbinden, dass sie erst laden, wenn jemand im
        Cookie-Banner zustimmt.
 
-🔴 Cookies und Speicher       2 Cookies, 1 Eintrag im Browser-Speicher
+🔴 Cookies und Speicher       3 Cookies, 1 Eintrag im Browser-Speicher
   ├─ 🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure
-  ├─ 🔴 Cookie _ga (shop.example) – eigen, Google Analytics, 400 Tage, ohne Secure
+  ├─ 🔴 Cookie _ga (shop.example) – eigen, Google Analytics, 400 Tage (länger als 13 Monate), ohne Secure
+  ├─ 🟡 Cookie prefs (shop.example) – eigen, unbekannt, 400 Tage (länger als 13 Monate), SameSite=None
   └─ 🟡 localStorage: theme – unbekannt
      → Gesetzt beim ersten Aufruf, bevor jemand etwas anklickt.
      → Secure: Das Cookie geht auch über unverschlüsseltes http. HttpOnly:
        Skripte auf der Seite können die Sitzung auslesen.
+     → Länger als 13 Monate muss sich kaum ein Cookie halten; Chrome kürzt jede
+       Laufzeit ohnehin auf 400 Tage. Bei Trackern wiegt das schwerer, weil sie
+       den Besucher so über lange Zeit wiedererkennen.
+     → SameSite=None: Der Browser schickt das Cookie auch mit, wenn andere
+       Seiten die Seite einbetten oder Anfragen an sie stellen. Braucht es das
+       nicht, ist SameSite=Lax die bessere Wahl.
 
 🔴 Fingerprinting             3
   ├─ 🔴 https://fp.unbekannt.example/fp.js – liest ein Canvas mit Text aus, fremd

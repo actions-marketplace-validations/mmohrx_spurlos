@@ -95,7 +95,7 @@ describe('scan', { timeout: 30_000 }, () => {
 
     const cookies = pick(results, 'cookies')
     expect(cookies.level).toBe('red')
-    expect(cookies.cookies.map(c => c.name).sort()).toEqual(['_ga', 'session'])
+    expect(cookies.cookies.map(c => c.name).sort()).toEqual(['_ga', 'prefs', 'session'])
     expect(cookies.storage).toEqual([{ area: 'localStorage', key: 'theme', service: undefined }])
 
     const legal = pick(results, 'legal')
@@ -165,6 +165,8 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(report).toContain('🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure')
     expect(report).toContain('🟡 Header x-powered-by: PHP/8.1.2')
     expect(report).toContain('🟡 localStorage: theme – unbekannt')
+    // set for two years, cut by Chrome to 400 days, and sent along to other sites
+    expect(report).toContain('🟡 Cookie prefs (shop.example) – eigen, unbekannt, 400 Tage (länger als 13 Monate), SameSite=None')
     expect(report).toContain('Datenschutzerklärung: kein Link auf der Seite gefunden')
     expect(report).toContain('http://shop.example/newsletter – sendet unverschlüsselt über http')
     expect(report).toContain('Cookie-Banner erkannt: Usercentrics.')

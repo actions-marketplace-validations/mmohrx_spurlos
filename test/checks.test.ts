@@ -316,6 +316,18 @@ describe('cookies', () => {
     expect(cookies(base).level).toBe('green')
   })
 
+  test('a known cookie that lives longer than 13 months is yellow; SameSite=None changes no light', () => {
+    const now = Date.UTC(2026, 10, 22)
+    const days = (n: number) => now / 1000 + n * 86_400
+    const session = (expires: number, sameSite?: 'None') => ({ ...cookie('PHPSESSID'), expires, ...(sameSite ? { sameSite } : {}) })
+    expect(cookies({ ...base, cookies: [session(days(365), 'None')] }, now)).toMatchObject({ level: 'green', cookies: [{ sameSite: 'None' }] })
+    const long = cookies({ ...base, cookies: [session(days(400))] }, now)
+    expect(long).toMatchObject({ level: 'yellow', cookies: [{ long: true }] })
+    expect(findings(long)).toEqual([{ key: 'cookie PHPSESSID www.firma.de', level: 'yellow' }])
+    // a session cookie lives as long as the browser
+    expect(cookies({ ...base, cookies: [session(-1)] }, now).level).toBe('green')
+  })
+
   test('own cookies and storage without a known tracker are yellow', () => {
     expect(cookies({ ...base, cookies: [cookie('warenkorb')] }).level).toBe('yellow')
     expect(cookies({ ...base, storage: [{ area: 'localStorage', key: 'theme' }] }).level).toBe('yellow')

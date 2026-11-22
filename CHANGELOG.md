@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- Cookies: Eines, das länger als 13 Monate gilt, ist mindestens gelb (`long: true` in `--json`); `SameSite=None` bei eigenen Cookies nennt der Bericht, ohne dass sich die Ampel ändert. In `--json` hat jedes Cookie `sameSite`.
 - `--mobile`: die Seite als Smartphone aufrufen (Bildschirm eines Pixel 7, Touch, Kennung von Chrome auf Android mit `spurlos/<version>`); im MCP-Werkzeug `mobile`. Manche Seiten laden dort andere Tracker und Cookie-Banner.
 - Neue Prüfung „Mobil“ (`mobile`): kein Viewport mit `width=device-width` und eine Seite, die breiter ist als das Fenster, je gelb.
 - Fingerprinting erkennt auch WebRTC: Ein Skript, das über STUN oder TURN die IP-Adresse erfragt, ist ein Befund, die STUN- und TURN-Server zählen als fremde Server (`type: "webrtc"`).
