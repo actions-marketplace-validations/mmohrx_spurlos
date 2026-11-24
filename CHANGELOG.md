@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.3 – 2026-11-24
 
 - Without `--lang`, `SPURLOS_LANG` or a system language spurlos knows, the report is now in English instead of German. This applies in Docker, on CI runners (`C.UTF-8`), often for the MCP server, and for locales without texts such as `fr_FR`. A German system still gets German; elsewhere use `--lang de` or `SPURLOS_LANG=de`, and `lang: de` in the action.
 - The README on GitHub and npm is now English; the German one is `README.de.md`. `CONTRIBUTING.md`, `SECURITY.md` and the issue and pull request templates are in English.
