@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1 – 2026-11-24
+
+- spurlos steht in der offiziellen MCP Registry als `io.github.mmohrx/spurlos`: `mcpName` in `package.json`, der Eintrag in `server.json`. Jedes Release veröffentlicht ihn nach dem npm-Paket.
+
 ## 0.5.0 – 2026-11-22
 
 - Neue Prüfung „Datenschutzerklärung“ (`policy`): spurlos liest den Text der Datenschutzerklärung und sucht darin nach den bekannten Diensten, die vor dem ersten Klick laden; jeder, den er nicht nennt, ist gelb. Lässt sie sich nicht als Text lesen (PDF, per JavaScript geladen), bleibt es offen. In `services.json` neu `aliases` für andere Namen (`Facebook` für Meta Pixel). In `--json` unter `scan.policy` nur die Adresse und die genannten Dienste, nicht der Text.

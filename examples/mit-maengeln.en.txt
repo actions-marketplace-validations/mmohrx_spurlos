@@ -1,4 +1,4 @@
-spurlos 0.5.0  https://shop.example/tracked.html
+spurlos 0.5.1  https://shop.example/tracked.html
 15 requests on load, 4 kB; 9 of them with 1 kB to other domains
 7 problems · 6 notes · 2 fine
 
