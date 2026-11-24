@@ -3,6 +3,7 @@ name: Release
 # Pushing a tag like v1.2.3 runs CI and publishes the image to GHCR:
 # ghcr.io/<owner>/<repo>:1.2.3, :1.2, :1 and :latest (amd64 + arm64).
 # Once the repo is public it also publishes the package to npm and the MCP server to the MCP Registry.
+# Last it creates the GitHub release, with the entry for the version in CHANGELOG.md as its notes.
 # The tag has to match the version in package.json, as spurlos names that version in its user agent.
 on:
   push:
@@ -109,5 +110,36 @@ jobs:
       - run: |
           version=${GITHUB_REF_NAME#v}
           jq --arg v "$version" '.version = $v | .packages[0].version = $v' server.json > server.tmp && mv server.tmp server.json
+      # the registry asks npm for the version, which takes a moment after npm publish; wait up to 5 minutes
+      - run: |
+          for i in $(seq 30); do
+            curl -fs "https://registry.npmjs.org/spurlos/${GITHUB_REF_NAME#v}" > /dev/null && exit 0
+            sleep 10
+          done
+          echo "::error::npm does not know spurlos@${GITHUB_REF_NAME#v} after 5 minutes"
+          exit 1
       - run: ./mcp-publisher login github-oidc
       - run: ./mcp-publisher publish
+
+  release:
+    name: GitHub release
+    # once the action is listed on the GitHub Marketplace, each release updates the listing
+    needs: [image, npm]
+    # without the npm job (private repo) it is skipped, and with it the release still follows the image
+    if: ${{ !cancelled() && needs.image.result == 'success' && needs.npm.result != 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # the notes are the entry for this version in CHANGELOG.md, without its heading
+      - run: |
+          version=${GITHUB_REF_NAME#v}
+          awk -v h="## $version " 'index($0, h) == 1 { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::CHANGELOG.md has no entry for $version"
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}
