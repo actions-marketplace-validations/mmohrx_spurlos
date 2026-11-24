@@ -23,7 +23,7 @@ for (const p of pages) {
   // offline the times are a few ms and differ on every run: left out, so examples/ changes only with the code
   delete s.timing
   const results = runChecks(s)
-  // the default language keeps the bare name: mit-maengeln.txt, mit-maengeln.en.txt
+  // the default language keeps the bare name: mit-maengeln.txt, mit-maengeln.de.txt
   for (const lang of LANGS) {
     const suffix = lang === DEFAULT_LANG ? '' : `.${lang}`
     await writeFile(new URL(`${p.name}${suffix}.txt`, out), text(s, results, lang, { verbose: true }) + '\n')
@@ -61,7 +61,7 @@ function html(ansi: string): string {
 }
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1400, height: 400 }, deviceScaleFactor: 2 })
-// like the reports, the default language keeps the bare name: vorschau.png (README.de.md), vorschau.en.png (README.md)
+// like the reports, the default language keeps the bare name: vorschau.png (README.md), vorschau.de.png (README.de.md)
 for (const [lang, reports] of colored) {
   await page.setContent(`<!doctype html><meta charset="utf-8"><style>
   body { margin: 0; padding: 20px; background: #fff; display: flex; gap: 20px; align-items: flex-start; width: max-content }

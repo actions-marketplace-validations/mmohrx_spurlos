@@ -1,157 +1,154 @@
 spurlos 0.5.2  https://shop.example/tracked.html
-beim Aufruf 15 Anfragen, 4 kB; davon 9 mit 1 kB an andere Domains
-7 Mängel · 6 Hinweise · 2 in Ordnung
+15 requests on load, 4 kB; 9 of them with 1 kB to other domains
+7 problems · 6 notes · 2 fine
 
-🔴 Fremde Server              9
-  ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
-  ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 Anfrage)
-  ├─ 🔴 cdn.unbekannt.example – 1 Anfrage
-  ├─ 🔴 connect.facebook.net – Meta Pixel (1 Anfrage, erst nach der ersten Bewegung)
-  ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
-  ├─ 🔴 fp.unbekannt.example – 1 Anfrage
-  ├─ 🔴 www.google-analytics.com – Google Analytics (1 Anfrage)
-  ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 Anfrage)
-  ├─ 🔴 www.youtube.com – YouTube (1 Anfrage)
-  └─ 🔴 Google Consent Mode (gcs=G111) – meldet Google Zustimmung zu Werbung und Analyse, bevor jemand etwas gewählt hat
-     → Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor
-       er etwas anklickt.
-     → „Erst nach der ersten Bewegung“ kam, als spurlos die Maus bewegte und
-       scrollte, ohne zu klicken. Optimierungen wie WP Rocket halten Skripte bis
-       dahin zurück; jeder echte Besucher löst sie aus, lange bevor er im
-       Cookie-Banner etwas wählt.
-     → Cookie-Banner erkannt: Usercentrics.
-     → Die Tracker oben laden trotzdem schon, bevor jemand im Banner etwas
-       wählt.
-     → Google Consent Mode sagt den Google-Tags, ob der Besucher zugestimmt hat.
-       Steht es vorab auf „granted“, setzen sie Cookies und nutzen die Daten,
-       als hätte er zugestimmt. Üblich ist „denied“, bis der Cookie-Banner die
-       Wahl meldet.
-     → Schriften lassen sich vom eigenen Server ausliefern, dann geht dafür
-       keine Anfrage nach außen.
-     → Bibliotheken von einem CDN lassen sich ebenso vom eigenen Server
-       ausliefern.
-     → Den Cookie-Banner braucht die Seite, bevor jemand zustimmen kann. Es gibt
-       auch Banner zum Selbsthosten, dann geht dafür keine Anfrage nach außen.
-     → Videos, Karten, Chats und Beiträge aus sozialen Netzwerken lassen sich so
-       einbinden, dass sie erst nach einem Klick laden.
-     → Tracker lassen sich so einbinden, dass sie erst laden, wenn jemand im
-       Cookie-Banner zustimmt.
+🔴 Third-party servers              9
+  ├─ 🟡 app.usercentrics.eu – Usercentrics (1 request)
+  ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 request)
+  ├─ 🔴 cdn.unbekannt.example – 1 request
+  ├─ 🔴 connect.facebook.net – Meta Pixel (1 request, only after the first move)
+  ├─ 🔴 fonts.googleapis.com – Google Fonts (1 request)
+  ├─ 🔴 fp.unbekannt.example – 1 request
+  ├─ 🔴 www.google-analytics.com – Google Analytics (1 request)
+  ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 request)
+  ├─ 🔴 www.youtube.com – YouTube (1 request)
+  └─ 🔴 Google Consent Mode (gcs=G111) – tells Google consent was given for ads and analytics before anyone chose anything
+     → Each of them learns the visitor's IP address on opening the page, before
+       any click.
+     → “Only after the first move” came when spurlos moved the mouse and
+       scrolled, without clicking. Optimizers such as WP Rocket hold scripts
+       back until then; every real visitor sets them off, long before choosing
+       anything in the cookie banner.
+     → Cookie banner found: Usercentrics.
+     → The trackers above still load before anyone chooses anything in the
+       banner.
+     → Google Consent Mode tells Google's tags whether the visitor agreed. Set
+       to “granted” up front, they set cookies and use the data as if the
+       visitor had agreed. The usual default is “denied” until the cookie banner
+       reports the choice.
+     → Fonts can be served from the own server, then no request goes out for
+       them.
+     → Libraries from a CDN can be served from the own server as well.
+     → The site needs the cookie banner before anyone can agree. There are also
+       banners to host yourself, then no request goes out for it.
+     → Videos, maps, chats and social media posts can be embedded so that they
+       only load after a click.
+     → Trackers can be embedded so that they only load once someone agrees in
+       the cookie banner.
 
-🔴 Cookies und Speicher       4 Cookies, 1 Eintrag im Browser-Speicher
-  ├─ 🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure
-  ├─ 🔴 Cookie _ga (shop.example) – eigen, Google Analytics, 400 Tage (länger als 13 Monate), ohne Secure
-  ├─ 🟡 Cookie prefs (shop.example) – eigen, unbekannt, 400 Tage (länger als 13 Monate), SameSite=None
-  ├─ 🔴 Cookie _fbp (shop.example) – eigen, Meta Pixel, 90 Tage, erst nach der ersten Bewegung
-  └─ 🟡 localStorage: theme – unbekannt
-     → Gesetzt beim ersten Aufruf, bevor jemand etwas anklickt.
-     → Secure: Das Cookie geht auch über unverschlüsseltes http. HttpOnly:
-       Skripte auf der Seite können die Sitzung auslesen.
-     → Länger als 13 Monate muss sich kaum ein Cookie halten; Chrome kürzt jede
-       Laufzeit ohnehin auf 400 Tage. Bei Trackern wiegt das schwerer, weil sie
-       den Besucher so über lange Zeit wiedererkennen.
-     → SameSite=None: Der Browser schickt das Cookie auch mit, wenn andere
-       Seiten die Seite einbetten oder Anfragen an sie stellen. Braucht es das
-       nicht, ist SameSite=Lax die bessere Wahl.
-     → „Erst nach der ersten Bewegung“ kam, als spurlos die Maus bewegte und
-       scrollte, ohne zu klicken. Optimierungen wie WP Rocket halten Skripte bis
-       dahin zurück; jeder echte Besucher löst sie aus, lange bevor er im
-       Cookie-Banner etwas wählt.
+🔴 Cookies and storage              4 cookies, 1 entry in browser storage
+  ├─ 🟡 Cookie session (shop.example) – first-party, unknown, until the session ends, without Secure
+  ├─ 🔴 Cookie _ga (shop.example) – first-party, Google Analytics, 400 days (longer than 13 months), without Secure
+  ├─ 🟡 Cookie prefs (shop.example) – first-party, unknown, 400 days (longer than 13 months), SameSite=None
+  ├─ 🔴 Cookie _fbp (shop.example) – first-party, Meta Pixel, 90 days, only after the first move
+  └─ 🟡 localStorage: theme – unknown
+     → Set on the first visit, before any click.
+     → Secure: the cookie also travels over unencrypted http. HttpOnly: scripts
+       on the page can read the session.
+     → Hardly any cookie needs to last longer than 13 months; Chrome cuts every
+       lifetime to 400 days anyway. For trackers it weighs more, as they
+       recognize the visitor over a long time that way.
+     → SameSite=None: the browser sends the cookie along even when other sites
+       embed the site or send requests to it. If it does not need that,
+       SameSite=Lax is the better choice.
+     → “Only after the first move” came when spurlos moved the mouse and
+       scrolled, without clicking. Optimizers such as WP Rocket hold scripts
+       back until then; every real visitor sets them off, long before choosing
+       anything in the cookie banner.
 
-🔴 Fingerprinting             3
-  ├─ 🔴 https://fp.unbekannt.example/fp.js – liest ein Canvas mit Text aus, fremd
-  ├─ 🔴 https://fp.unbekannt.example/fp.js – liest die Grafikkarte über WebGL aus, fremd
-  └─ 🔴 https://fp.unbekannt.example/fp.js – rechnet Audio im OfflineAudioContext, fremd
-     → Aus solchen Werten lässt sich ein Merkmal bilden, das den Browser auch
-       ohne Cookie wiedererkennt, noch bevor jemand etwas anklickt.
+🔴 Fingerprinting                   3
+  ├─ 🔴 https://fp.unbekannt.example/fp.js – reads back a canvas with text, third-party
+  ├─ 🔴 https://fp.unbekannt.example/fp.js – reads the graphics card via WebGL, third-party
+  └─ 🔴 https://fp.unbekannt.example/fp.js – renders audio in an OfflineAudioContext, third-party
+     → Such values make up a trait that recognizes the browser without any
+       cookie, before anyone clicks anything.
 
-🔴 Impressum und Datenschutz  nicht vollständig
-  ├─ 🔴 Impressum: „Impressum“ → https://shop.example/rechtliches – antwortet mit Status 404
-  └─ 🔴 Datenschutzerklärung: kein Link auf der Seite gefunden
+🔴 Legal notice and privacy policy  incomplete
+  ├─ 🔴 Legal notice (Impressum): “Impressum” → https://shop.example/rechtliches – answers with status 404
+  └─ 🔴 Privacy policy: no link found on the page
 
-🔴 HTTPS                      mit Mängeln
-  ├─ 🔴 http:// liefert die Seite ohne Weiterleitung auf https:// aus.
-  └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen. – etwa Strict-Transport-Security: max-age=31536000
+🔴 HTTPS                            with problems
+  ├─ 🔴 http:// serves the page without redirecting to https://.
+  └─ 🟡 No HSTS header (Strict-Transport-Security): browsers do not remember to use https only. – e.g. Strict-Transport-Security: max-age=31536000
 
-🔴 Eingebundene Dateien       7
-  ├─ 🟡 script https://www.googletagmanager.com/gtag/js?… – von einem fremden Server, ohne integrity
-  ├─ 🟡 script https://app.usercentrics.eu/browser-ui/latest/loader.js – von einem fremden Server, ohne integrity
-  ├─ 🔴 script http://shop.example/alt.js – über http auf einer https-Seite
-  ├─ 🟡 script https://cdn.jsdelivr.net/npm/slider.js – von einem fremden Server, ohne integrity
-  ├─ 🟡 script https://fp.unbekannt.example/fp.js – von einem fremden Server, ohne integrity
-  ├─ 🟡 script https://connect.facebook.net/en_US/fbevents.js – von einem fremden Server, ohne integrity
-  └─ 🟡 stylesheet https://fonts.googleapis.com/css2?… – von einem fremden Server, ohne integrity
-     → Skripte, Stylesheets und Frames über http blockiert der Browser auf einer
-       https-Seite, Bilder und Videos lädt er über https oder gar nicht.
-     → Ohne integrity-Attribut kann der fremde Server die Datei jederzeit
-       austauschen, und die Seite führt aus, was er liefert. Bei Dateien, die
-       der Anbieter laufend ändert, etwa einem Tag Manager, geht das nicht; dann
-       hilft nur, sie selbst auszuliefern.
+🔴 Embedded files                   7
+  ├─ 🟡 script https://www.googletagmanager.com/gtag/js?… – from a third-party server, without integrity
+  ├─ 🟡 script https://app.usercentrics.eu/browser-ui/latest/loader.js – from a third-party server, without integrity
+  ├─ 🔴 script http://shop.example/alt.js – over http on an https page
+  ├─ 🟡 script https://cdn.jsdelivr.net/npm/slider.js – from a third-party server, without integrity
+  ├─ 🟡 script https://fp.unbekannt.example/fp.js – from a third-party server, without integrity
+  ├─ 🟡 script https://connect.facebook.net/en_US/fbevents.js – from a third-party server, without integrity
+  └─ 🟡 stylesheet https://fonts.googleapis.com/css2?… – from a third-party server, without integrity
+     → On an https page the browser blocks scripts, stylesheets and frames over
+       http, and loads images and videos over https or not at all.
+     → Without an integrity attribute the third-party server can swap the file
+       at any time, and the page runs whatever it sends. For files the provider
+       keeps changing, such as a tag manager, that is not possible; then the
+       only way is to serve them yourself.
 
-🔴 Formulare                  2
-  ├─ 🔴 POST http://shop.example/newsletter – sendet unverschlüsselt über http
-  └─ 🟡 POST https://formspree.io/f/abc – sendet an einen fremden Server
+🔴 Forms                            2
+  ├─ 🔴 POST http://shop.example/newsletter – sends unencrypted over http
+  └─ 🟡 POST https://formspree.io/f/abc – sends to a third-party server
 
-🟡 Browser-Zugriffe           2
-  ├─ 🟡 https://shop.example/tracked.html – fragt nach dem Standort, eigen
-  ├─ 🟡 https://shop.example/tracked.html – fragt, ob es Benachrichtigungen schicken darf, eigen
-  └─ 🟢 https://shop.example/tracked.html – registriert einen Service Worker, eigen
-     → Gefragt schon beim Laden, bevor jemand etwas anklickt: Der Besucher weiß
-       dann nicht, wozu die Seite das will. Firefox zeigt die Frage nach
-       Benachrichtigungen ohne Klick gar nicht erst an.
-     → Ein Service Worker bleibt im Browser und kann auch nach dem Besuch
-       laufen, etwa für Push-Nachrichten oder damit die Seite offline geht.
+🟡 Browser access                   2
+  ├─ 🟡 https://shop.example/tracked.html – asks for the location, first-party
+  ├─ 🟡 https://shop.example/tracked.html – asks whether it may send notifications, first-party
+  └─ 🟢 https://shop.example/tracked.html – registers a service worker, first-party
+     → Asked right on load, before anyone clicks anything: the visitor does not
+       know what the site wants it for. Firefox does not even show the
+       notification prompt without a click.
+     → A service worker stays in the browser and can run after the visit too,
+       for push messages, say, or so the site works offline.
 
-🟡 Sicherheits-Header         5 von 5 fehlen
-  ├─ 🟡 Content-Security-Policy fehlt – erst als Content-Security-Policy-Report-Only ausprobieren
-  ├─ 🟡 X-Frame-Options fehlt – etwa SAMEORIGIN, oder frame-ancestors in der CSP
-  ├─ 🟡 X-Content-Type-Options fehlt – Wert: nosniff
-  ├─ 🟡 Referrer-Policy fehlt – etwa strict-origin-when-cross-origin
-  └─ 🟡 Permissions-Policy fehlt – etwa camera=(), microphone=(), geolocation=()
+🟡 Security headers                 5 of 5 missing
+  ├─ 🟡 Content-Security-Policy missing – try it as Content-Security-Policy-Report-Only first
+  ├─ 🟡 X-Frame-Options missing – e.g. SAMEORIGIN, or frame-ancestors in the CSP
+  ├─ 🟡 X-Content-Type-Options missing – value: nosniff
+  ├─ 🟡 Referrer-Policy missing – e.g. strict-origin-when-cross-origin
+  └─ 🟡 Permissions-Policy missing – e.g. camera=(), microphone=(), geolocation=()
 
-🟡 Verratene Details          3 Angaben mit Versionsnummer
+🟡 Software details                 3 entries with a version number
   ├─ 🟡 Header server: Apache/2.4.41 (Ubuntu)
   ├─ 🟡 Header x-powered-by: PHP/8.1.2
   └─ 🟡 <meta name="generator">: WordPress 6.2
-     → Mit der Versionsnummer lässt sich gezielt nach bekannten Lücken suchen.
-     → Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off
-       in PHP oder server_tokens off in nginx.
+     → A version number allows a targeted search for known holes.
+     → Version numbers can usually be switched off, e.g. with expose_php = Off
+       in PHP or server_tokens off in nginx.
 
-🟡 Suchmaschinen              sollen die Seite nicht aufnehmen (noindex)
+🟡 Search engines                   are told not to list the page (noindex)
   └─ 🟡 <meta name="robots">: noindex, nofollow
-     → Mit noindex nehmen Suchmaschinen die Seite nicht auf. Gewollt auf einer
-       Staging-Seite, auf einer öffentlichen meist ein Überbleibsel aus der Zeit
-       vor dem Livegang.
+     → With noindex, search engines leave the page out. Wanted on a staging
+       site, on a public one usually a leftover from before it went live.
 
-🟡 Mobil                      1 Hinweis
-  └─ 🟡 Die Seite ist 1608 Pixel breit, das Fenster 1280: Besucher müssen quer scrollen
-     → Meist ragt ein Bild, eine Tabelle oder ein Element mit fester Breite über
-       den Rand.
-     → Auf dem Handy prüft spurlos das mit --mobile; manche Seiten laden dort
-       auch andere Tracker und Cookie-Banner.
+🟡 Mobile                           1 note
+  └─ 🟡 The page is 1608 pixels wide, the window 1280: visitors have to scroll sideways
+     → Usually an image, a table or an element with a fixed width sticks out
+       over the edge.
+     → For phones, spurlos checks this with --mobile; some sites also load other
+       trackers and cookie banners there.
 
-🟡 Barrierefreiheit           3 Grundlagen fehlen
-  ├─ 🟡 1 Bild ohne alt-Text – https://shop.example/team.jpg
-  ├─ 🟡 2 Formularfelder ohne Beschriftung – input mail, input mail
-  └─ 🟡 Der Viewport verhindert das Vergrößern – width=device-width, initial-scale=1, user-scalable=no
-     → Ohne alt lesen Screenreader den Dateinamen vor. Bilder, die nur
-       schmücken, bekommen alt="".
-     → Ohne <label>, aria-label oder title sagen Screenreader nicht, was in ein
-       Feld gehört; ein placeholder ersetzt keine Beschriftung.
-     → Mit user-scalable=no oder maximum-scale unter 2 lässt sich die Seite auf
-       dem Handy nicht auf das Doppelte vergrößern.
-     → Keine Erklärung zur Barrierefreiheit verlinkt.
-     → Das sind nur Grundlagen, die sich ohne Klick prüfen lassen. Ob die Seite
-       barrierefrei ist, sagt das nicht; dafür braucht es Werkzeuge wie axe und
-       Menschen, die sie mit Screenreader und Tastatur bedienen.
+🟡 Accessibility                    3 basics missing
+  ├─ 🟡 1 image without alt text – https://shop.example/team.jpg
+  ├─ 🟡 2 form fields without a label – input mail, input mail
+  └─ 🟡 The viewport keeps people from zooming in – width=device-width, initial-scale=1, user-scalable=no
+     → Without alt, screen readers read out the file name. Images that only
+       decorate get alt="".
+     → Without <label>, aria-label or title, screen readers do not say what goes
+       into a field; a placeholder is no label.
+     → With user-scalable=no or a maximum-scale under 2, the page cannot be
+       zoomed to twice its size on a phone.
+     → No accessibility statement linked.
+     → These are only basics that can be checked without a click. They do not
+       say whether the site is accessible; that takes tools such as axe and
+       people using it with a screen reader and keyboard.
 
-🟢 Weitergegebene Daten       keine
-  → In den Anfragen an fremde Server steht keine E-Mail-Adresse, kein Wert aus
-    der Adresse der Seite und keine ID aus dem Cookie eines anderen Servers.
+🟢 Data passed on                   none
+  → No email address, no value from the address of the page and no ID from
+    another server's cookie in the requests to third-party servers.
 
-🟢 Datenschutzerklärung       nicht gelesen
-  → Die Datenschutzerklärung ließ sich nicht als Text lesen: kein Link, nicht
-    erreichbar, ein PDF oder eine Seite, die ihren Text erst per JavaScript
-    lädt.
+🟢 Privacy policy text              not read
+  → The privacy policy could not be read as text: no link, not reachable, a PDF,
+    or a page that only loads its text by JavaScript.
 
-Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die
-Seite DSGVO-konform ist.
+Technical pre-check – not legal advice, and no statement on whether the site
+complies with the GDPR.

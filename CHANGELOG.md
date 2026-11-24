@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Without `--lang`, `SPURLOS_LANG` or a system language spurlos knows, the report is now in English instead of German. This applies in Docker, on CI runners (`C.UTF-8`), often for the MCP server, and for locales without texts such as `fr_FR`. A German system still gets German; elsewhere use `--lang de` or `SPURLOS_LANG=de`, and `lang: de` in the action.
+- The README on GitHub and npm is now English; the German one is `README.de.md`. `CONTRIBUTING.md`, `SECURITY.md` and the issue and pull request templates are in English.
+- The examples in `examples/` keep the bare names for English (`mit-maengeln.txt`, `vorschau.png`) and `.de` for German.
+
 ## 0.5.2 – 2026-11-24
 
 - Die Action heißt jetzt „spurlos website check“, denn im GitHub Marketplace ist der Name „spurlos“ vergeben. `uses: mmohrx/spurlos@…` bleibt gleich.

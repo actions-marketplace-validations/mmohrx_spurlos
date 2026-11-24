@@ -14,7 +14,7 @@ third-party servers it contacts and which cookies it sets.
 Several addresses are checked one after the other, with a report each.
 
   --lang        language: ${langs}. Without it, SPURLOS_LANG applies, then
-                the system language (LC_ALL, LC_MESSAGES, LANG), else de
+                the system language (LC_ALL, LC_MESSAGES, LANG), else en
   --verbose     details for the green checks too
   --json        the result as JSON instead of text
   --html        the report as an HTML page, e.g.: spurlos <url> --html > report.html

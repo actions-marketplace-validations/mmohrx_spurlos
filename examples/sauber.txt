@@ -1,54 +1,54 @@
 spurlos 0.5.2  https://shop.example/
-beim Aufruf 2 Anfragen, 1 kB; keine an andere Domains
-15 in Ordnung
+2 requests on load, 1 kB; none to other domains
+15 fine
 
-🟢 Fremde Server              keine
-  → Beim Aufruf ging keine Anfrage an einen anderen Server.
+🟢 Third-party servers              none
+  → Opening the page sent no request to another server.
 
-🟢 Cookies und Speicher       nichts gesetzt
+🟢 Cookies and storage              nothing set
 
-🟢 Weitergegebene Daten       keine
-  → In den Anfragen an fremde Server steht keine E-Mail-Adresse, kein Wert aus
-    der Adresse der Seite und keine ID aus dem Cookie eines anderen Servers.
+🟢 Data passed on                   none
+  → No email address, no value from the address of the page and no ID from
+    another server's cookie in the requests to third-party servers.
 
-🟢 Fingerprinting             keine
-  → Kein Skript las Canvas, Grafikkarte, Audio oder die IP-Adresse über WebRTC
-    so aus, wie es Fingerprinting tut.
+🟢 Fingerprinting                   none
+  → No script read out canvas, graphics card, audio or the IP address via WebRTC
+    the way fingerprinting does.
 
-🟢 Browser-Zugriffe           keine
-  → Kein Skript fragte nach Standort, Kamera, Mikrofon oder Benachrichtigungen,
-    keines registrierte einen Service Worker.
+🟢 Browser access                   none
+  → No script asked for location, camera, microphone or notifications, none
+    registered a service worker.
 
-🟢 Impressum und Datenschutz  beide verlinkt und erreichbar
-  ├─ 🟢 Impressum: „Impressum“ → https://shop.example/impressum – erreichbar
-  └─ 🟢 Datenschutzerklärung: „Datenschutz“ → https://shop.example/datenschutz – erreichbar
+🟢 Legal notice and privacy policy  both linked and reachable
+  ├─ 🟢 Legal notice (Impressum): “Impressum” → https://shop.example/impressum – reachable
+  └─ 🟢 Privacy policy: “Datenschutz” → https://shop.example/datenschutz – reachable
 
-🟢 Datenschutzerklärung       keine fremden Dienste zu nennen
+🟢 Privacy policy text              no third-party services to name
 
-🟢 HTTPS                      in Ordnung
-  └─ 🟢 http:// leitet auf https:// weiter.
+🟢 HTTPS                            fine
+  └─ 🟢 http:// redirects to https://.
 
-🟢 Sicherheits-Header         alle gesetzt
-🟢 Eingebundene Dateien       in Ordnung
+🟢 Security headers                 all set
+🟢 Embedded files                   fine
 
-🟢 Formulare                  1
-  └─ 🟢 POST https://shop.example/kontakt – sendet verschlüsselt an die eigene Seite
+🟢 Forms                            1
+  └─ 🟢 POST https://shop.example/kontakt – sends encrypted to the site itself
 
-🟢 Verratene Details          keine
-  → Weder Header noch Seite nennen die Software dahinter.
+🟢 Software details                 none
+  → Neither headers nor the page name the software behind it.
 
-🟢 Suchmaschinen              dürfen die Seite aufnehmen
-  → Weder X-Robots-Tag noch <meta name="robots"> sagen noindex.
+🟢 Search engines                   may list the page
+  → Neither X-Robots-Tag nor <meta name="robots"> says noindex.
 
-🟢 Mobil                      in Ordnung
-  → Auf dem Handy prüft spurlos das mit --mobile; manche Seiten laden dort auch
-    andere Tracker und Cookie-Banner.
+🟢 Mobile                           in order
+  → For phones, spurlos checks this with --mobile; some sites also load other
+    trackers and cookie banners there.
 
-🟢 Barrierefreiheit           Grundlagen in Ordnung
-  └─ 🟢 Erklärung zur Barrierefreiheit: „Barrierefreiheit“ → https://shop.example/barrierefreiheit
-     → Das sind nur Grundlagen, die sich ohne Klick prüfen lassen. Ob die Seite
-       barrierefrei ist, sagt das nicht; dafür braucht es Werkzeuge wie axe und
-       Menschen, die sie mit Screenreader und Tastatur bedienen.
+🟢 Accessibility                    basics in order
+  └─ 🟢 Accessibility statement: “Barrierefreiheit” → https://shop.example/barrierefreiheit
+     → These are only basics that can be checked without a click. They do not
+       say whether the site is accessible; that takes tools such as axe and
+       people using it with a screen reader and keyboard.
 
-Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die
-Seite DSGVO-konform ist.
+Technical pre-check – not legal advice, and no statement on whether the site
+complies with the GDPR.

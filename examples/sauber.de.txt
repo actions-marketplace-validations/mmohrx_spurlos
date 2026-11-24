@@ -1,0 +1,54 @@
+spurlos 0.5.2  https://shop.example/
+beim Aufruf 2 Anfragen, 1 kB; keine an andere Domains
+15 in Ordnung
+
+🟢 Fremde Server              keine
+  → Beim Aufruf ging keine Anfrage an einen anderen Server.
+
+🟢 Cookies und Speicher       nichts gesetzt
+
+🟢 Weitergegebene Daten       keine
+  → In den Anfragen an fremde Server steht keine E-Mail-Adresse, kein Wert aus
+    der Adresse der Seite und keine ID aus dem Cookie eines anderen Servers.
+
+🟢 Fingerprinting             keine
+  → Kein Skript las Canvas, Grafikkarte, Audio oder die IP-Adresse über WebRTC
+    so aus, wie es Fingerprinting tut.
+
+🟢 Browser-Zugriffe           keine
+  → Kein Skript fragte nach Standort, Kamera, Mikrofon oder Benachrichtigungen,
+    keines registrierte einen Service Worker.
+
+🟢 Impressum und Datenschutz  beide verlinkt und erreichbar
+  ├─ 🟢 Impressum: „Impressum“ → https://shop.example/impressum – erreichbar
+  └─ 🟢 Datenschutzerklärung: „Datenschutz“ → https://shop.example/datenschutz – erreichbar
+
+🟢 Datenschutzerklärung       keine fremden Dienste zu nennen
+
+🟢 HTTPS                      in Ordnung
+  └─ 🟢 http:// leitet auf https:// weiter.
+
+🟢 Sicherheits-Header         alle gesetzt
+🟢 Eingebundene Dateien       in Ordnung
+
+🟢 Formulare                  1
+  └─ 🟢 POST https://shop.example/kontakt – sendet verschlüsselt an die eigene Seite
+
+🟢 Verratene Details          keine
+  → Weder Header noch Seite nennen die Software dahinter.
+
+🟢 Suchmaschinen              dürfen die Seite aufnehmen
+  → Weder X-Robots-Tag noch <meta name="robots"> sagen noindex.
+
+🟢 Mobil                      in Ordnung
+  → Auf dem Handy prüft spurlos das mit --mobile; manche Seiten laden dort auch
+    andere Tracker und Cookie-Banner.
+
+🟢 Barrierefreiheit           Grundlagen in Ordnung
+  └─ 🟢 Erklärung zur Barrierefreiheit: „Barrierefreiheit“ → https://shop.example/barrierefreiheit
+     → Das sind nur Grundlagen, die sich ohne Klick prüfen lassen. Ob die Seite
+       barrierefrei ist, sagt das nicht; dafür braucht es Werkzeuge wie axe und
+       Menschen, die sie mit Screenreader und Tastatur bedienen.
+
+Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die
+Seite DSGVO-konform ist.

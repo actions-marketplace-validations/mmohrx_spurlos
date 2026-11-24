@@ -32,7 +32,7 @@ npx spurlos example-company.com --lang en
 
 On the left a page with problems, on the right a clean one:
 
-![Colored output of spurlos for a page with problems and a clean page](examples/vorschau.en.png)
+![Colored output of spurlos for a page with problems and a clean page](examples/vorschau.png)
 
 The full reports for both pages, as text in German and English and as JSON, are in [`examples/`](examples/), along with an HTML page each. Both pages come from the tests and run offline as `https://shop.example`; `pnpm examples` regenerates everything.
 
@@ -58,7 +58,7 @@ npx spurlos <url> --lang en
 | Option | |
 |---|---|
 | `<url> …` | one or more addresses; several are checked one after the other, with a report each |
-| `--lang de\|en` | language of the report. Without it, `SPURLOS_LANG` applies, then the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`), else `de` |
+| `--lang de\|en` | language of the report. Without it, `SPURLOS_LANG` applies, then the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`), else `en` |
 | `--verbose`, `-v` | details for the green checks too |
 | `--json` | the full result as JSON |
 | `--html` | the report as a self-contained HTML page, e.g. to pass on |

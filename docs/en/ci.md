@@ -56,7 +56,7 @@ The action installs spurlos and Chromium from its own checkout, checks, and writ
 |---|---|
 | `url` | the address, or several, separated by spaces or new lines |
 | `baseline` | an earlier output of `--json` in the repository |
-| `lang` | `de` or `en`; without it the same rules as on the command line apply |
+| `lang` | `de` or `en`; without it the same rules as on the command line apply, so English on GitHub's runners |
 | `auth` | `user:password` for HTTP basic auth, best from a secret: `${{ secrets.STAGING_AUTH }}` |
 | `own` | own servers on other domains as with `--own`, separated by spaces or new lines |
 | `user-agent` | your own user agent for every request |

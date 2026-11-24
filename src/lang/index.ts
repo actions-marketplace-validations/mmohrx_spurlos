@@ -11,7 +11,7 @@ export type Lang = keyof typeof MESSAGES
 export type { Messages }
 
 export const LANGS = Object.keys(MESSAGES) as Lang[]
-export const DEFAULT_LANG: Lang = 'de'
+export const DEFAULT_LANG: Lang = 'en'
 
 const isLang = (s: string): s is Lang => Object.hasOwn(MESSAGES, s)
 /** the language part of a code or locale: en_US.UTF-8, en-GB and EN all mean en */

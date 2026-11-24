@@ -13,7 +13,7 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 
 - Prüfungen und ihre Ampel: `src/checks.ts`. Eine neue Prüfung bekommt einen eigenen `check` im Typ `Result`, eine Zeile in der Ampel-Tabelle im README und einen Fall in `test/sites/`.
 - Texte: eine Datei je Sprache in `src/lang/` (Bericht, Hilfe, Fehlermeldungen); `src/report.ts` nur die Darstellung. `de.ts` ist die Vorlage, jede andere Sprache ist als `Messages` typisiert, damit `pnpm typecheck` fehlende Texte meldet. Jede Meldung sagt in jeder Sprache dasselbe. Deutsch mit „du“, Anführungszeichen als Paar „…“.
-- Sprache: `--lang`, sonst `SPURLOS_LANG`, sonst `LC_ALL`/`LC_MESSAGES`/`LANG`, sonst `de` (`pickLang` in `src/lang/index.ts`). Bericht-Funktionen bekommen die Sprache immer übergeben, damit Tests und `pnpm examples` nicht vom System abhängen.
+- Sprache: `--lang`, sonst `SPURLOS_LANG`, sonst `LC_ALL`/`LC_MESSAGES`/`LANG`, sonst `en` (`pickLang` in `src/lang/index.ts`). Bericht-Funktionen bekommen die Sprache immer übergeben, damit Tests und `pnpm examples` nicht vom System abhängen.
 - Bekannte Dienste: nur in `src/services.json`. Hosts gelten samt Subdomains, Cookie-Namen als Anfang, mit `*` vorn als Ende.
 - Paketmanager ist pnpm (`packageManager` in `package.json`), nicht npm.
 
@@ -35,4 +35,4 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 
 ## Release
 
-Version in `package.json` erhöhen, Eintrag in `CHANGELOG.md` (ab 0.5.3 auf Englisch, er wird der Text des GitHub-Release), dann Tag `vX.Y.Z` pushen. Der Workflow `release.yml` prüft, dass Tag und Version übereinstimmen, und veröffentlicht das Image auf ghcr, bei öffentlichem Repo auch das Paket auf npm (Trusted Publishing, kein Token) und danach den MCP-Server in der MCP Registry (`server.json`, Version kommt aus dem Tag, Anmeldung über GitHub OIDC), zuletzt das GitHub-Release mit dem Eintrag aus `CHANGELOG.md` (fehlt er, schlägt der Job fehl); den Haken für den GitHub Marketplace setzt Martin danach von Hand unter „Edit“, dafür hat GitHub keine API. Tags und Releases nur nach Martins Freigabe.
+Version in `package.json` erhöhen, Eintrag in `CHANGELOG.md` (ab 0.5.3 auf Englisch, er wird der Text des GitHub-Release; was noch nicht veröffentlicht ist, sammelt sich unter `## Unreleased`, beim Release wird daraus `## X.Y.Z – Datum`), dann Tag `vX.Y.Z` pushen. Der Workflow `release.yml` prüft, dass Tag und Version übereinstimmen, und veröffentlicht das Image auf ghcr, bei öffentlichem Repo auch das Paket auf npm (Trusted Publishing, kein Token) und danach den MCP-Server in der MCP Registry (`server.json`, Version kommt aus dem Tag, Anmeldung über GitHub OIDC), zuletzt das GitHub-Release mit dem Eintrag aus `CHANGELOG.md` (fehlt er, schlägt der Job fehl); den Haken für den GitHub Marketplace setzt Martin danach von Hand unter „Edit“, dafür hat GitHub keine API. Tags und Releases nur nach Martins Freigabe.

@@ -43,6 +43,7 @@ jobs:
         with:
           url: https://www.firma.de
           baseline: spurlos-baseline.json
+          lang: de
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -56,7 +57,7 @@ Die Action installiert spurlos und Chromium aus ihrem eigenen Stand, prüft und 
 |---|---|
 | `url` | die Adresse, oder mehrere, getrennt durch Leerzeichen oder Zeilenumbrüche |
 | `baseline` | eine frühere Ausgabe von `--json` im Repository |
-| `lang` | `de` oder `en`; ohne Angabe gelten dieselben Regeln wie in der CLI |
+| `lang` | `de` oder `en`; ohne Angabe gelten dieselben Regeln wie in der CLI, auf den Runnern von GitHub also Englisch |
 | `auth` | `benutzer:passwort` für HTTP Basic Auth, am besten aus einem Secret: `${{ secrets.STAGING_AUTH }}` |
 | `own` | eigene Server auf anderen Domains wie bei `--own`, getrennt durch Leerzeichen oder Zeilenumbrüche |
 | `user-agent` | eigene Browserkennung für alle Aufrufe |

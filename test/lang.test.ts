@@ -3,8 +3,8 @@ import { LANGS, MESSAGES, pickLang } from '../src/lang/index.ts'
 
 const lang = (flag: string | undefined, env: NodeJS.ProcessEnv) => pickLang(flag, env).lang
 
-test('without anything set the report is German', () => {
-  expect(pickLang(undefined, {})).toEqual({ lang: 'de' })
+test('without anything set the report is English', () => {
+  expect(pickLang(undefined, {})).toEqual({ lang: 'en' })
 })
 
 test('the system locale picks the language, LC_ALL before LC_MESSAGES before LANG', () => {
@@ -14,8 +14,9 @@ test('the system locale picks the language, LC_ALL before LC_MESSAGES before LAN
 })
 
 test('C and POSIX say nothing about a language and let the next variable decide', () => {
-  expect(lang(undefined, { LC_ALL: 'C', LANG: 'en_US.UTF-8' })).toBe('en')
-  expect(lang(undefined, { LC_ALL: 'POSIX', LC_MESSAGES: 'C.UTF-8' })).toBe('de')
+  expect(lang(undefined, { LC_ALL: 'C', LANG: 'de_DE.UTF-8' })).toBe('de')
+  expect(lang(undefined, { LC_ALL: 'POSIX', LC_MESSAGES: 'C.UTF-8', LANG: 'de_DE' })).toBe('de')
+  expect(lang(undefined, { LC_ALL: 'POSIX', LC_MESSAGES: 'C.UTF-8' })).toBe('en')
 })
 
 test('--lang and SPURLOS_LANG take a locale like LANG does', () => {
@@ -23,8 +24,8 @@ test('--lang and SPURLOS_LANG take a locale like LANG does', () => {
   expect(lang(undefined, { SPURLOS_LANG: 'en_US.UTF-8' })).toBe('en')
 })
 
-test('a locale without texts falls back to German', () => {
-  for (const LANG of ['C.UTF-8', 'POSIX', 'fr_FR.UTF-8']) expect(lang(undefined, { LANG })).toBe('de')
+test('a locale without texts falls back to English', () => {
+  for (const LANG of ['C.UTF-8', 'POSIX', 'fr_FR.UTF-8']) expect(lang(undefined, { LANG })).toBe('en')
 })
 
 test('--lang before SPURLOS_LANG before the locale', () => {
@@ -33,8 +34,8 @@ test('--lang before SPURLOS_LANG before the locale', () => {
 })
 
 test('an unknown choice is reported, with the language that applies without it', () => {
-  expect(pickLang('fr', { LANG: 'en_US' })).toEqual({ lang: 'en', unknown: { from: '--lang', value: 'fr' } })
-  expect(pickLang(undefined, { SPURLOS_LANG: 'fr' })).toEqual({ lang: 'de', unknown: { from: 'SPURLOS_LANG', value: 'fr' } })
+  expect(pickLang('fr', { LANG: 'de_DE' })).toEqual({ lang: 'de', unknown: { from: '--lang', value: 'fr' } })
+  expect(pickLang(undefined, { SPURLOS_LANG: 'fr' })).toEqual({ lang: 'en', unknown: { from: 'SPURLOS_LANG', value: 'fr' } })
 })
 
 test('every language has a help naming all options', () => {

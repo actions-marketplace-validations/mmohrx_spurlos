@@ -1,0 +1,157 @@
+spurlos 0.5.2  https://shop.example/tracked.html
+beim Aufruf 15 Anfragen, 4 kB; davon 9 mit 1 kB an andere Domains
+7 Mängel · 6 Hinweise · 2 in Ordnung
+
+🔴 Fremde Server              9
+  ├─ 🟡 app.usercentrics.eu – Usercentrics (1 Anfrage)
+  ├─ 🔴 cdn.jsdelivr.net – jsDelivr (1 Anfrage)
+  ├─ 🔴 cdn.unbekannt.example – 1 Anfrage
+  ├─ 🔴 connect.facebook.net – Meta Pixel (1 Anfrage, erst nach der ersten Bewegung)
+  ├─ 🔴 fonts.googleapis.com – Google Fonts (1 Anfrage)
+  ├─ 🔴 fp.unbekannt.example – 1 Anfrage
+  ├─ 🔴 www.google-analytics.com – Google Analytics (1 Anfrage)
+  ├─ 🔴 www.googletagmanager.com – Google Tag Manager (1 Anfrage)
+  ├─ 🔴 www.youtube.com – YouTube (1 Anfrage)
+  └─ 🔴 Google Consent Mode (gcs=G111) – meldet Google Zustimmung zu Werbung und Analyse, bevor jemand etwas gewählt hat
+     → Jeder davon erfährt beim Aufruf die IP-Adresse des Besuchers, noch bevor
+       er etwas anklickt.
+     → „Erst nach der ersten Bewegung“ kam, als spurlos die Maus bewegte und
+       scrollte, ohne zu klicken. Optimierungen wie WP Rocket halten Skripte bis
+       dahin zurück; jeder echte Besucher löst sie aus, lange bevor er im
+       Cookie-Banner etwas wählt.
+     → Cookie-Banner erkannt: Usercentrics.
+     → Die Tracker oben laden trotzdem schon, bevor jemand im Banner etwas
+       wählt.
+     → Google Consent Mode sagt den Google-Tags, ob der Besucher zugestimmt hat.
+       Steht es vorab auf „granted“, setzen sie Cookies und nutzen die Daten,
+       als hätte er zugestimmt. Üblich ist „denied“, bis der Cookie-Banner die
+       Wahl meldet.
+     → Schriften lassen sich vom eigenen Server ausliefern, dann geht dafür
+       keine Anfrage nach außen.
+     → Bibliotheken von einem CDN lassen sich ebenso vom eigenen Server
+       ausliefern.
+     → Den Cookie-Banner braucht die Seite, bevor jemand zustimmen kann. Es gibt
+       auch Banner zum Selbsthosten, dann geht dafür keine Anfrage nach außen.
+     → Videos, Karten, Chats und Beiträge aus sozialen Netzwerken lassen sich so
+       einbinden, dass sie erst nach einem Klick laden.
+     → Tracker lassen sich so einbinden, dass sie erst laden, wenn jemand im
+       Cookie-Banner zustimmt.
+
+🔴 Cookies und Speicher       4 Cookies, 1 Eintrag im Browser-Speicher
+  ├─ 🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure
+  ├─ 🔴 Cookie _ga (shop.example) – eigen, Google Analytics, 400 Tage (länger als 13 Monate), ohne Secure
+  ├─ 🟡 Cookie prefs (shop.example) – eigen, unbekannt, 400 Tage (länger als 13 Monate), SameSite=None
+  ├─ 🔴 Cookie _fbp (shop.example) – eigen, Meta Pixel, 90 Tage, erst nach der ersten Bewegung
+  └─ 🟡 localStorage: theme – unbekannt
+     → Gesetzt beim ersten Aufruf, bevor jemand etwas anklickt.
+     → Secure: Das Cookie geht auch über unverschlüsseltes http. HttpOnly:
+       Skripte auf der Seite können die Sitzung auslesen.
+     → Länger als 13 Monate muss sich kaum ein Cookie halten; Chrome kürzt jede
+       Laufzeit ohnehin auf 400 Tage. Bei Trackern wiegt das schwerer, weil sie
+       den Besucher so über lange Zeit wiedererkennen.
+     → SameSite=None: Der Browser schickt das Cookie auch mit, wenn andere
+       Seiten die Seite einbetten oder Anfragen an sie stellen. Braucht es das
+       nicht, ist SameSite=Lax die bessere Wahl.
+     → „Erst nach der ersten Bewegung“ kam, als spurlos die Maus bewegte und
+       scrollte, ohne zu klicken. Optimierungen wie WP Rocket halten Skripte bis
+       dahin zurück; jeder echte Besucher löst sie aus, lange bevor er im
+       Cookie-Banner etwas wählt.
+
+🔴 Fingerprinting             3
+  ├─ 🔴 https://fp.unbekannt.example/fp.js – liest ein Canvas mit Text aus, fremd
+  ├─ 🔴 https://fp.unbekannt.example/fp.js – liest die Grafikkarte über WebGL aus, fremd
+  └─ 🔴 https://fp.unbekannt.example/fp.js – rechnet Audio im OfflineAudioContext, fremd
+     → Aus solchen Werten lässt sich ein Merkmal bilden, das den Browser auch
+       ohne Cookie wiedererkennt, noch bevor jemand etwas anklickt.
+
+🔴 Impressum und Datenschutz  nicht vollständig
+  ├─ 🔴 Impressum: „Impressum“ → https://shop.example/rechtliches – antwortet mit Status 404
+  └─ 🔴 Datenschutzerklärung: kein Link auf der Seite gefunden
+
+🔴 HTTPS                      mit Mängeln
+  ├─ 🔴 http:// liefert die Seite ohne Weiterleitung auf https:// aus.
+  └─ 🟡 Kein HSTS-Header (Strict-Transport-Security): Browser merken sich nicht, dass sie nur https nutzen sollen. – etwa Strict-Transport-Security: max-age=31536000
+
+🔴 Eingebundene Dateien       7
+  ├─ 🟡 script https://www.googletagmanager.com/gtag/js?… – von einem fremden Server, ohne integrity
+  ├─ 🟡 script https://app.usercentrics.eu/browser-ui/latest/loader.js – von einem fremden Server, ohne integrity
+  ├─ 🔴 script http://shop.example/alt.js – über http auf einer https-Seite
+  ├─ 🟡 script https://cdn.jsdelivr.net/npm/slider.js – von einem fremden Server, ohne integrity
+  ├─ 🟡 script https://fp.unbekannt.example/fp.js – von einem fremden Server, ohne integrity
+  ├─ 🟡 script https://connect.facebook.net/en_US/fbevents.js – von einem fremden Server, ohne integrity
+  └─ 🟡 stylesheet https://fonts.googleapis.com/css2?… – von einem fremden Server, ohne integrity
+     → Skripte, Stylesheets und Frames über http blockiert der Browser auf einer
+       https-Seite, Bilder und Videos lädt er über https oder gar nicht.
+     → Ohne integrity-Attribut kann der fremde Server die Datei jederzeit
+       austauschen, und die Seite führt aus, was er liefert. Bei Dateien, die
+       der Anbieter laufend ändert, etwa einem Tag Manager, geht das nicht; dann
+       hilft nur, sie selbst auszuliefern.
+
+🔴 Formulare                  2
+  ├─ 🔴 POST http://shop.example/newsletter – sendet unverschlüsselt über http
+  └─ 🟡 POST https://formspree.io/f/abc – sendet an einen fremden Server
+
+🟡 Browser-Zugriffe           2
+  ├─ 🟡 https://shop.example/tracked.html – fragt nach dem Standort, eigen
+  ├─ 🟡 https://shop.example/tracked.html – fragt, ob es Benachrichtigungen schicken darf, eigen
+  └─ 🟢 https://shop.example/tracked.html – registriert einen Service Worker, eigen
+     → Gefragt schon beim Laden, bevor jemand etwas anklickt: Der Besucher weiß
+       dann nicht, wozu die Seite das will. Firefox zeigt die Frage nach
+       Benachrichtigungen ohne Klick gar nicht erst an.
+     → Ein Service Worker bleibt im Browser und kann auch nach dem Besuch
+       laufen, etwa für Push-Nachrichten oder damit die Seite offline geht.
+
+🟡 Sicherheits-Header         5 von 5 fehlen
+  ├─ 🟡 Content-Security-Policy fehlt – erst als Content-Security-Policy-Report-Only ausprobieren
+  ├─ 🟡 X-Frame-Options fehlt – etwa SAMEORIGIN, oder frame-ancestors in der CSP
+  ├─ 🟡 X-Content-Type-Options fehlt – Wert: nosniff
+  ├─ 🟡 Referrer-Policy fehlt – etwa strict-origin-when-cross-origin
+  └─ 🟡 Permissions-Policy fehlt – etwa camera=(), microphone=(), geolocation=()
+
+🟡 Verratene Details          3 Angaben mit Versionsnummer
+  ├─ 🟡 Header server: Apache/2.4.41 (Ubuntu)
+  ├─ 🟡 Header x-powered-by: PHP/8.1.2
+  └─ 🟡 <meta name="generator">: WordPress 6.2
+     → Mit der Versionsnummer lässt sich gezielt nach bekannten Lücken suchen.
+     → Versionsnummern lassen sich meist abschalten, etwa mit expose_php = Off
+       in PHP oder server_tokens off in nginx.
+
+🟡 Suchmaschinen              sollen die Seite nicht aufnehmen (noindex)
+  └─ 🟡 <meta name="robots">: noindex, nofollow
+     → Mit noindex nehmen Suchmaschinen die Seite nicht auf. Gewollt auf einer
+       Staging-Seite, auf einer öffentlichen meist ein Überbleibsel aus der Zeit
+       vor dem Livegang.
+
+🟡 Mobil                      1 Hinweis
+  └─ 🟡 Die Seite ist 1608 Pixel breit, das Fenster 1280: Besucher müssen quer scrollen
+     → Meist ragt ein Bild, eine Tabelle oder ein Element mit fester Breite über
+       den Rand.
+     → Auf dem Handy prüft spurlos das mit --mobile; manche Seiten laden dort
+       auch andere Tracker und Cookie-Banner.
+
+🟡 Barrierefreiheit           3 Grundlagen fehlen
+  ├─ 🟡 1 Bild ohne alt-Text – https://shop.example/team.jpg
+  ├─ 🟡 2 Formularfelder ohne Beschriftung – input mail, input mail
+  └─ 🟡 Der Viewport verhindert das Vergrößern – width=device-width, initial-scale=1, user-scalable=no
+     → Ohne alt lesen Screenreader den Dateinamen vor. Bilder, die nur
+       schmücken, bekommen alt="".
+     → Ohne <label>, aria-label oder title sagen Screenreader nicht, was in ein
+       Feld gehört; ein placeholder ersetzt keine Beschriftung.
+     → Mit user-scalable=no oder maximum-scale unter 2 lässt sich die Seite auf
+       dem Handy nicht auf das Doppelte vergrößern.
+     → Keine Erklärung zur Barrierefreiheit verlinkt.
+     → Das sind nur Grundlagen, die sich ohne Klick prüfen lassen. Ob die Seite
+       barrierefrei ist, sagt das nicht; dafür braucht es Werkzeuge wie axe und
+       Menschen, die sie mit Screenreader und Tastatur bedienen.
+
+🟢 Weitergegebene Daten       keine
+  → In den Anfragen an fremde Server steht keine E-Mail-Adresse, kein Wert aus
+    der Adresse der Seite und keine ID aus dem Cookie eines anderen Servers.
+
+🟢 Datenschutzerklärung       nicht gelesen
+  → Die Datenschutzerklärung ließ sich nicht als Text lesen: kein Link, nicht
+    erreichbar, ein PDF oder eine Seite, die ihren Text erst per JavaScript
+    lädt.
+
+Technische Vorprüfung – keine Rechtsberatung und keine Aussage darüber, ob die
+Seite DSGVO-konform ist.

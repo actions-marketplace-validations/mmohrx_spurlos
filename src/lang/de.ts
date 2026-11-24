@@ -17,7 +17,7 @@ welche fremden Server dabei angefragt und welche Cookies gesetzt werden.
 Mehrere Adressen prüft spurlos nacheinander, mit je einem Bericht.
 
   --lang        Sprache: ${langs}. Ohne Angabe gilt SPURLOS_LANG, dann
-                die Sprache des Systems (LC_ALL, LC_MESSAGES, LANG), sonst de
+                die Sprache des Systems (LC_ALL, LC_MESSAGES, LANG), sonst en
   --verbose     Details auch zu den grünen Prüfungen
   --json        Ergebnis als JSON statt als Text
   --html        Bericht als HTML-Seite, etwa: spurlos <url> --html > bericht.html

@@ -32,7 +32,7 @@ npx spurlos beispiel-firma.de
 
 Links eine Seite mit Mängeln, rechts eine saubere:
 
-![Farbige Ausgabe von spurlos für eine Seite mit Mängeln und eine saubere Seite](examples/vorschau.png)
+![Farbige Ausgabe von spurlos für eine Seite mit Mängeln und eine saubere Seite](examples/vorschau.de.png)
 
 Die vollständigen Berichte beider Seiten, als Text auf Deutsch und Englisch und als JSON, liegen in [`examples/`](examples/), dazu je eine HTML-Seite. Beide Seiten stammen aus den Tests und laufen offline unter `https://shop.example`; `pnpm examples` erzeugt alles neu.
 
@@ -45,8 +45,10 @@ Mit welcher Browserkennung spurlos die Seite aufruft und wie es mit Bot-Schutz u
 Mit Docker, ohne Node:
 
 ```
-docker run --rm ghcr.io/mmohrx/spurlos beispiel-firma.de
+docker run --rm ghcr.io/mmohrx/spurlos beispiel-firma.de --lang de
 ```
+
+Im Container ist keine Sprache eingestellt, ohne `--lang de` kommt der Bericht deshalb auf Englisch. Dasselbe gilt in CI und oft beim MCP-Server; dort hilft `SPURLOS_LANG=de`.
 
 Oder mit Node.js 22 oder neuer. Beim ersten Mal braucht Playwright seinen Browser:
 
@@ -58,7 +60,7 @@ npx spurlos <url>
 | Option | |
 |---|---|
 | `<url> …` | eine oder mehrere Adressen; mehrere prüft spurlos nacheinander, mit je einem Bericht |
-| `--lang de\|en` | Sprache des Berichts. Ohne Angabe gilt `SPURLOS_LANG`, dann die Sprache des Systems (`LC_ALL`, `LC_MESSAGES`, `LANG`), sonst `de` |
+| `--lang de\|en` | Sprache des Berichts. Ohne Angabe gilt `SPURLOS_LANG`, dann die Sprache des Systems (`LC_ALL`, `LC_MESSAGES`, `LANG`), sonst `en` |
 | `--verbose`, `-v` | Details auch zu den grünen Prüfungen |
 | `--json` | vollständiges Ergebnis als JSON |
 | `--html` | Bericht als eigenständige HTML-Seite, etwa zum Weiterschicken |
