@@ -1,30 +1,30 @@
-# Mitmachen
+# Contributing
 
-Danke, dass du spurlos besser machen willst. Issues und Pull Requests dürfen auf Deutsch oder Englisch sein.
+Thanks for wanting to make spurlos better. Issues and pull requests are welcome in English or German.
 
-## Am häufigsten: ein Dienst fehlt
+## Most common: a service is missing
 
-spurlos meldet einen Host oder ein Cookie als „unbekannt“, obwohl du weißt, wozu es gehört? Dann trag den Dienst in [`src/services.json`](src/services.json) ein:
+spurlos reports a host or a cookie as “unknown”, but you know what it belongs to? Add the service to [`src/services.json`](src/services.json):
 
 ```json
 { "name": "Matomo", "category": "tracking", "hosts": ["matomo.cloud"], "cookies": ["_pk_id", "_pk_ses"] }
 ```
 
-- `category`: `fonts`, `tracking` (Cookies rot), `analytics` (Statistik ohne Cookies, etwa Plausible), `consent` (Cookie-Banner: als fremder Server gelb, ihre Cookies grün), `video`, `maps`, `social`, `chat`, `payment`, `captcha` (als fremder Server gelb), `cdn`, `necessary` (für den Betrieb nötig, etwa ein CSRF-Token, Cookies grün) oder `other`. Die Kategorie entscheidet über die Ampel eines Cookies und über die Tipps im Bericht.
-- `hosts` gelten samt Subdomains, `cookies` als Anfang des Namens (`_pk_id` deckt auch `_pk_id.1.abcd` ab), mit `*` vorn als Ende (`*-session`). Einträge im Browser-Speicher stehen unter `storage`, Teile von Dateipfaden für Dienste, die auf der Seite selbst oder auf einem unbekannten Host liegen (etwa WordPress-Plugins, ein eigenes Matomo), unter `paths`: mit `/` am Ende ein Verzeichnis irgendwo im Pfad, sonst das Ende des Pfads. Präfixe für Cookies so lang wählen, dass sie keine fremden Namen treffen (`*_posthog` statt `ph_`).
-- Unter `aliases` stehen andere Namen, unter denen Datenschutzerklärungen den Dienst nennen, etwa ein früherer Name (`Webtrekk`) oder der des Anbieters (`Facebook` für `Meta Pixel`). Nur Namen, die nichts anderes meinen: `Meta` träfe auch „Meta-Daten“.
-- Eine Plattform, auf der Seiten selbst laufen (Wix, Shopify), bekommt unter `headers` den Header, an dem man ihre Seiten erkennt: nur den Namen (`x-wix-request-id`) oder Name und einen Teil des Werts (`powered-by: Shopify`). Ihre Hosts sind dann auf ihren Seiten gelb statt rot. Nenn im Pull Request eine Seite, die den Header sendet.
-- Nenn im Pull Request eine Quelle, etwa die Doku des Anbieters, die Host oder Cookie belegt.
+- `category`: `fonts`, `tracking` (cookies red), `analytics` (statistics without cookies, such as Plausible), `consent` (cookie banners: yellow as a third-party server, their cookies green), `video`, `maps`, `social`, `chat`, `payment`, `captcha` (yellow as a third-party server), `cdn`, `necessary` (needed to run the site, such as a CSRF token, cookies green) or `other`. The category decides the light of a cookie and the tips in the report.
+- `hosts` include their subdomains, `cookies` match the start of the name (`_pk_id` also covers `_pk_id.1.abcd`), with a leading `*` the end (`*-session`). Entries in browser storage go under `storage`. Parts of file paths, for services that sit on the site itself or on an unknown host (such as WordPress plugins or a self-hosted Matomo), go under `paths`: ending in `/` a directory anywhere in the path, otherwise the end of the path. Make cookie prefixes long enough not to match other names (`*_posthog` rather than `ph_`).
+- `aliases` lists other names privacy policies use for the service, such as a former name (`Webtrekk`) or the provider's name (`Facebook` for `Meta Pixel`). Only names that mean nothing else: `Meta` would also match “Meta-Daten”.
+- A platform that sites run on (Wix, Shopify) gets the header that identifies its sites under `headers`: just the name (`x-wix-request-id`) or the name and part of the value (`powered-by: Shopify`). Its hosts are then yellow instead of red on its own sites. Name a site that sends the header in the pull request.
+- Name a source in the pull request, such as the provider's documentation, that shows the host or cookie.
 
-Was spurlos auf echten Seiten nicht kennt, zeigt `pnpm sites`: Es prüft die Seiten aus [`scripts/sites.txt`](scripts/sites.txt) erneut, vergleicht mit dem letzten Lauf und listet unbekannte Hosts, Cookies und Speicher-Einträge, die häufigsten zuerst. Die Ergebnisse liegen in `~/.cache/spurlos-sites/`, nicht im Repo. Die Seiten sind echte, das Skript braucht also Netz und gehört nicht zu `pnpm test`.
+`pnpm sites` shows what spurlos does not know on real sites: it checks the sites in [`scripts/sites.txt`](scripts/sites.txt) again, compares with the last run and lists unknown hosts, cookies and storage entries, the most common first. The results are kept in `~/.cache/spurlos-sites/`, not in the repository. The sites are real, so the script needs the network and is not part of `pnpm test`.
 
-## Fehler und Ideen
+## Bugs and ideas
 
-Öffne ein Issue mit der Vorlage. Bei einem Fehler hilft die Ausgabe von `spurlos <url> --json`; kürze darin, was du nicht teilen magst.
+Open an issue with the template. For a bug, the output of `spurlos <url> --json` helps; cut out whatever you would rather not share.
 
-Neue Prüfungen müssen passiv bleiben: spurlos ruft die Seite so auf wie ein Besucher und rät keine Pfade wie `/.env` oder `/wp-admin`. Ideen, die darüber hinausgehen, nehme ich nicht auf, auch wenn sie nützlich wären.
+New checks have to stay passive: spurlos opens the page the way a visitor does and does not guess paths like `/.env` or `/wp-admin`. Ideas that go beyond that are not taken up, even if they would be useful.
 
-## Entwickeln
+## Development
 
 ```
 pnpm install
@@ -32,18 +32,18 @@ pnpm exec playwright install chromium-headless-shell
 node src/cli.ts <url>
 ```
 
-Vor dem Pull Request:
+Before the pull request:
 
 ```
 pnpm typecheck
-pnpm test       # läuft ohne Netz gegen test/sites
+pnpm test       # runs offline against test/sites
 ```
 
-- Eine neue Prüfung bekommt einen Fall in `test/sites/` (Dateien fremder Server unter `test/sites/fremd/<host>/`, etwa ein Skript, das Fingerprinting betreibt) und eine Zeile in der Ampel-Tabelle im README (beide Sprachen) und, wo nötig, die genaue Regel in `docs/de/checks.md` und `docs/en/checks.md`.
-- Jede Meldung gibt es in jeder Sprache, je eine Datei in [`src/lang/`](src/lang/).
-- Eine neue Sprache: `src/lang/de.ts` kopieren, z. B. nach `fr.ts`, als `const fr: Messages` typisieren, übersetzen und in `MESSAGES` in `src/lang/index.ts` eintragen. `pnpm typecheck` zeigt jeden Text, der noch fehlt. Danach `--lang` im README ergänzen und `pnpm examples` laufen lassen.
-- Ändert sich der Bericht, `pnpm examples` laufen lassen und `examples/` mit committen.
+- A new check gets a case in `test/sites/` (files of third-party servers under `test/sites/fremd/<host>/`, such as a script that does fingerprinting), a row in the table of lights in the README (both languages: `README.md` and `README.de.md`) and, where needed, the exact rule in `docs/en/checks.md` and `docs/de/checks.md`.
+- Every message exists in every language, one file each in [`src/lang/`](src/lang/).
+- A new language: copy `src/lang/de.ts`, for example to `fr.ts`, type it as `const fr: Messages`, translate it and add it to `MESSAGES` in `src/lang/index.ts`. `pnpm typecheck` shows every text still missing. Then add it to `--lang` in the README and run `pnpm examples`.
+- If the report changes, run `pnpm examples` and commit `examples/` along with it.
 
-## Lizenz
+## License
 
-Mit deinem Beitrag stimmst du zu, dass er unter der [MIT-Lizenz](LICENSE) des Projekts steht.
+By contributing, you agree that your contribution is licensed under the project's [MIT License](LICENSE).

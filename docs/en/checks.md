@@ -2,7 +2,7 @@
 
 [Deutsch](../de/checks.md) · **English**
 
-The table of lights is in the [README](../../README.en.md#lights). This is how spurlos decides in detail.
+The table of lights is in the [README](../../README.md#lights). This is how spurlos decides in detail.
 
 The headers checked are `Content-Security-Policy`, `X-Frame-Options` (or `frame-ancestors` in the CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` and `Permissions-Policy`. CSP and Referrer-Policy also count as a `<meta>` tag, for hosts like GitHub Pages where headers cannot be set. A CSP lets scripts through if, for scripts (`script-src`, else `default-src`), it allows `'unsafe-inline'` without a nonce or hash, `'unsafe-eval'` or a source like `*`, `https:`, `http:` or `data:` (the latter not with `'strict-dynamic'`), or if it does not restrict scripts at all. With both a header and a `<meta>` tag, it is enough for one of the two policies to be tight. spurlos recognizes the legal notice and privacy policy by link text or address, in German and English. A link like “Impressum & Datenschutz” counts for both. If several match, a link on the site itself wins, then one whose text starts with the word (“Datenschutz”, “Privacy Policy”), then one that names it later in its text, last one where only the address matches.
 

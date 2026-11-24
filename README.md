@@ -5,112 +5,112 @@
   </picture>
 </h1>
 
-**Deutsch** · [English](README.en.md)
+[Deutsch](README.de.md) · **English**
 
-Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat, und zeigt dir:
+*spurlos* is German for “without a trace”. It opens a website the way a first-time visitor does, before clicking anything, and shows you:
 
-- **welche fremden Server** dabei angefragt werden, etwa Google Fonts, Tag Manager, YouTube oder ein CDN. Jeder davon erfährt die IP-Adresse des Besuchers.
-- **welche Cookies und Einträge im Browser-Speicher** schon vor jeder Einwilligung gesetzt sind, und ob darunter bekannte Tracker oder Cookies fremder Domains sind.
-- ob **E-Mail-Adressen oder Werte aus der Adresse der Seite** an fremde Server gehen, etwa von einer Danke-Seite `/danke?email=…` an Analytics, und ob Werbe-Server ihre IDs untereinander austauschen (Cookie-Sync).
-- ob Skripte den Browser per **Fingerprinting** vermessen: Canvas, Grafikkarte über WebGL, Audio, die IP-Adresse über WebRTC. Das erkennt Besucher auch ohne Cookie wieder.
-- ob Skripte schon beim Laden **nach Standort, Kamera, Mikrofon oder Benachrichtigungen fragen** oder einen Service Worker registrieren.
-- welcher **Cookie-Banner** geladen wird, etwa Usercentrics, Cookiebot oder Borlabs, ob Tracker trotzdem schon vorher laden und ob Google Consent Mode vorab Zustimmung meldet.
-- ob **Impressum und Datenschutzerklärung** verlinkt sind und sich öffnen lassen, und ob die Datenschutzerklärung die Dienste beim Namen nennt, die vor dem ersten Klick laden.
-- ob **HTTPS** sauber eingerichtet ist: Zertifikat, Weiterleitung von http, HSTS.
-- welche **Sicherheits-Header** fehlen, und ob die Content-Security-Policy Skripte doch durchlässt.
-- ob **eingebundene Dateien** über unverschlüsseltes http kommen, und ob fremde Skripte und Stylesheets ohne `integrity` eingebunden sind.
-- wohin **Formulare** senden: verschlüsselt an die eigene Seite, an einen fremden Server oder unverschlüsselt.
-- ob Header oder Seite **die Software dahinter samt Version** verraten, etwa `X-Powered-By: PHP/8.1.2` oder `WordPress 6.2`.
-- ob die Seite **Suchmaschinen aussperrt** (`noindex` in `X-Robots-Tag` oder `<meta name="robots">`), etwa vergessen nach dem Livegang.
-- ob die Seite **auf dem Handy** passt: Viewport, Querscrollen; mit `--mobile` ruft spurlos sie dafür als Smartphone auf, denn manche Seiten laden dort auch andere Tracker.
-- ein paar **Grundlagen der Barrierefreiheit**: Sprache der Seite, Bilder ohne `alt`, Formularfelder ohne Beschriftung, gesperrtes Zoomen, Link auf eine Erklärung zur Barrierefreiheit.
-- **wie viel die Seite lädt und wie lange**: Anfragen und Datenmenge beim ersten Aufruf, davon an andere Domains, und wann der erste Inhalt zu sehen und alles geladen war.
+- **which third-party servers** get requests, such as Google Fonts, Tag Manager, YouTube or a CDN. Each of them learns the visitor's IP address.
+- **which cookies and browser storage entries** are set before any consent, and whether known trackers or third-party cookies are among them.
+- whether **email addresses or values from the page address** go to third-party servers, from a thank-you page `/thanks?email=…` to analytics, say, and whether ad servers swap their IDs (cookie syncing).
+- whether scripts measure the browser by **fingerprinting**: canvas, graphics card via WebGL, audio, the IP address via WebRTC. That recognizes visitors without any cookie.
+- whether scripts **ask for location, camera, microphone or notifications** right on load, or register a service worker.
+- which **cookie banner** loads, such as Usercentrics, Cookiebot or Borlabs, whether trackers load before it anyway, and whether Google Consent Mode reports consent up front.
+- whether the **legal notice (Impressum) and privacy policy** are linked and open, and whether the privacy policy names the services that load before the first click.
+- whether **HTTPS** is set up properly: certificate, redirect from http, HSTS.
+- which **security headers** are missing, and whether the Content-Security-Policy lets scripts through after all.
+- whether **embedded files** come over unencrypted http, and whether third-party scripts and stylesheets are embedded without `integrity`.
+- where **forms** send their data: encrypted to the site itself, to a third-party server, or unencrypted.
+- whether headers or the page **reveal the software behind it, version included**, e.g. `X-Powered-By: PHP/8.1.2` or `WordPress 6.2`.
+- whether the page **keeps search engines out** (`noindex` in `X-Robots-Tag` or `<meta name="robots">`), left over from before going live, say.
+- whether the page fits **a phone**: viewport, scrolling sideways; with `--mobile` spurlos opens it as a phone for that, as some sites load other trackers there too.
+- a few **accessibility basics**: the page's language, images without `alt`, form fields without a label, zooming locked, a link to an accessibility statement.
+- **how much the page loads, and how long it takes**: requests and data on first load, how much of it goes to other domains, and when the first content showed and everything had loaded.
 
 ```
-npx spurlos beispiel-firma.de
+npx spurlos example-company.com --lang en
 ```
 
-Links eine Seite mit Mängeln, rechts eine saubere:
+On the left a page with problems, on the right a clean one:
 
-![Farbige Ausgabe von spurlos für eine Seite mit Mängeln und eine saubere Seite](examples/vorschau.png)
+![Colored output of spurlos for a page with problems and a clean page](examples/vorschau.en.png)
 
-Die vollständigen Berichte beider Seiten, als Text auf Deutsch und Englisch und als JSON, liegen in [`examples/`](examples/), dazu je eine HTML-Seite. Beide Seiten stammen aus den Tests und laufen offline unter `https://shop.example`; `pnpm examples` erzeugt alles neu.
+The full reports for both pages, as text in German and English and as JSON, are in [`examples/`](examples/), along with an HTML page each. Both pages come from the tests and run offline as `https://shop.example`; `pnpm examples` regenerates everything.
 
-spurlos nutzt einen echten Browser (Chromium über Playwright). Es findet also auch Anfragen und Cookies, die erst per JavaScript entstehen. Nach dem Laden bewegt es einmal die Maus und scrollt ein Stück, ohne zu klicken, denn viele Seiten halten Skripte bis zur ersten Bewegung zurück; was erst dann kommt, markiert der Bericht. Impressum, Datenschutzerklärung und die http-Adresse ruft es getrennt davon auf; diese Aufrufe zählen nicht zu den Anfragen und Cookies der Seite. Ob http auf https weiterleitet, fragt es direkt beim Server und nicht über den Browser nach, denn Chromium wechselt von sich aus auf https.
+spurlos uses a real browser (Chromium via Playwright), so it also finds requests and cookies that only JavaScript creates. After loading, it moves the mouse once and scrolls a little, without clicking, as many sites hold scripts back until the first move; the report marks what comes only then. It opens the legal notice, the privacy policy and the http address separately; those visits do not count towards the page's requests and cookies. Whether http redirects to https is asked of the server directly rather than through the browser, since Chromium switches to https on its own.
 
-Mit welcher Browserkennung spurlos die Seite aufruft und wie es mit Bot-Schutz und Anmeldungen umgeht, steht in [docs/de/how-it-works.md](docs/de/how-it-works.md).
+Which user agent spurlos visits the site with and how it handles bot protection and logins is in [docs/en/how-it-works.md](docs/en/how-it-works.md).
 
 ## Installation
 
-Mit Docker, ohne Node:
+With Docker, no Node needed:
 
 ```
-docker run --rm ghcr.io/mmohrx/spurlos beispiel-firma.de
+docker run --rm ghcr.io/mmohrx/spurlos example-company.com --lang en
 ```
 
-Oder mit Node.js 22 oder neuer. Beim ersten Mal braucht Playwright seinen Browser:
+Or with Node.js 22 or later. The first time, Playwright needs its browser:
 
 ```
 npx playwright install chromium-headless-shell
-npx spurlos <url>
+npx spurlos <url> --lang en
 ```
 
 | Option | |
 |---|---|
-| `<url> …` | eine oder mehrere Adressen; mehrere prüft spurlos nacheinander, mit je einem Bericht |
-| `--lang de\|en` | Sprache des Berichts. Ohne Angabe gilt `SPURLOS_LANG`, dann die Sprache des Systems (`LC_ALL`, `LC_MESSAGES`, `LANG`), sonst `de` |
-| `--verbose`, `-v` | Details auch zu den grünen Prüfungen |
-| `--json` | vollständiges Ergebnis als JSON |
-| `--html` | Bericht als eigenständige HTML-Seite, etwa zum Weiterschicken |
-| `--pdf` | Bericht als PDF |
-| `--sarif` | die Befunde als SARIF, etwa für GitHub Code Scanning, siehe [In der CI](#in-der-ci) |
-| `-o`, `--output <datei>` | Bericht in eine Datei statt auf die Ausgabe. Ohne `--json`, `--html`, `--pdf` oder `--sarif` entscheidet die Endung: `spurlos firma.de -o bericht.pdf` (`.pdf`, `.html`, `.json`, sonst Text). Mehrmals angegeben, schreibt ein Lauf mehrere Formate: `-o bericht.json -o bericht.html`; dann entscheidet bei jeder Datei die Endung, `--json`, `--html` und `--pdf` gehen damit nicht |
-| `--baseline <datei>` | mit einer früheren Ausgabe von `--json` vergleichen, siehe [In der CI](docs/de/ci.md) |
-| `--auth <benutzer:passwort>` | Anmeldung per HTTP Basic Auth, etwa für eine Staging-Seite. Besser über `SPURLOS_AUTH`, siehe [Seiten hinter einer Anmeldung](docs/de/how-it-works.md#seiten-hinter-einer-anmeldung) |
-| `--user-agent <kennung>` | eigene Browserkennung für alle Aufrufe |
-| `--own <host>` | Server, die zur Seite gehören, obwohl sie auf einer anderen Domain liegen, etwa ihr CDN: `--own cdn-firma.net`, samt Subdomains; mehrmals oder mit Komma. Siehe [Eigene Server auf anderen Domains](docs/de/checks.md#eigene-server-auf-anderen-domains) |
-| `--mobile` | die Seite als Smartphone aufrufen: Bildschirm eines Pixel 7, Touch und Kennung von Chrome auf Android. Manche Seiten laden dort andere Tracker und Cookie-Banner |
-| `--gpc` | mit [Global Privacy Control](https://globalprivacycontrol.org) aufrufen, dem Signal gegen Verkauf und Weitergabe der Daten (`Sec-GPC: 1`), wie Firefox, Brave und DuckDuckGo es senden. Mit `--baseline` gegen einen Lauf ohne siehst du, ob die Seite es beachtet, siehe [Global Privacy Control](docs/de/how-it-works.md#global-privacy-control) |
-| `--help`, `-h` | Hilfe |
+| `<url> …` | one or more addresses; several are checked one after the other, with a report each |
+| `--lang de\|en` | language of the report. Without it, `SPURLOS_LANG` applies, then the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`), else `de` |
+| `--verbose`, `-v` | details for the green checks too |
+| `--json` | the full result as JSON |
+| `--html` | the report as a self-contained HTML page, e.g. to pass on |
+| `--pdf` | the report as a PDF |
+| `--sarif` | the findings as SARIF, e.g. for GitHub code scanning, see [In CI](#in-ci) |
+| `-o`, `--output <file>` | the report into a file instead of the output. Without `--json`, `--html`, `--pdf` or `--sarif` the extension decides: `spurlos example.com -o report.pdf` (`.pdf`, `.html`, `.json`, else text). Given more than once, one run writes several formats: `-o report.json -o report.html`; then each file's extension decides, and `--json`, `--html` and `--pdf` do not go with it |
+| `--baseline <file>` | compare with an earlier output of `--json`, see [In CI](docs/en/ci.md) |
+| `--auth <user:password>` | login by HTTP basic auth, e.g. for a staging site. Better through `SPURLOS_AUTH`, see [Sites behind a login](docs/en/how-it-works.md#sites-behind-a-login) |
+| `--user-agent <string>` | your own user agent for every request |
+| `--own <host>` | servers that belong to the site though on another domain, such as its CDN: `--own cdn-company.net`, subdomains included; repeated or comma-separated. See [Own servers on other domains](docs/en/checks.md#own-servers-on-other-domains) |
+| `--mobile` | open the site as a phone: the screen of a Pixel 7, touch and the user agent of Chrome on Android. Some sites load other trackers and cookie banners there |
+| `--gpc` | open the site with [Global Privacy Control](https://globalprivacycontrol.org), the signal against selling and sharing the data (`Sec-GPC: 1`), as Firefox, Brave and DuckDuckGo send it. With `--baseline` against a run without it you see whether the site honours it, see [Global Privacy Control](docs/en/how-it-works.md#global-privacy-control) |
+| `--help`, `-h` | help |
 
-Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und gelbe Prüfungen zeigen jeden Befund, grüne nur eine Zeile. Wo es einen gängigen Weg gibt, nennt der Bericht ihn gleich mit, etwa Schriften selbst auszuliefern oder einen Beispielwert für einen fehlenden Header. Das sind technische Hinweise, keine Rechtsberatung. Im Terminal ist der Bericht farbig. Mit `-o`, in einer Pipe oder mit `NO_COLOR` bleibt es reiner Text. `--html` und `--pdf` gehen auch über die Ausgabe (`--pdf > bericht.pdf`), ein PDF schreibt spurlos aber nicht ins Terminal. Mit Docker landet eine Datei von `-o` im Container; dort leitest du besser um: `docker run --rm ghcr.io/mmohrx/spurlos firma.de --pdf > bericht.pdf`.
+The summary comes first, then the checks, red ones first. Red and yellow checks list every finding, green ones take a single line. Where there is a common fix, the report names it right away, such as serving fonts yourself or an example value for a missing header. These are technical hints, not legal advice. In a terminal the report is colored; with `-o`, in a pipe or with `NO_COLOR` set, it stays plain text. `--html` and `--pdf` go to the output too (`--pdf > report.pdf`), but spurlos does not write a PDF into the terminal. With Docker a file of `-o` stays in the container; redirect instead: `docker run --rm ghcr.io/mmohrx/spurlos example.com --pdf > report.pdf`.
 
-| Umgebungsvariable | |
+| Environment variable | |
 |---|---|
-| `SPURLOS_LANG` | Sprache des Berichts, wenn `--lang` fehlt |
-| `SPURLOS_AUTH` | Anmeldung als `benutzer:passwort`, wenn `--auth` fehlt, siehe [Seiten hinter einer Anmeldung](docs/de/how-it-works.md#seiten-hinter-einer-anmeldung) |
-| `SPURLOS_NO_SANDBOX` | `1` startet Chromium gleich ohne Sandbox und ohne Hinweis darauf; das Docker-Image setzt das, dort ist der Container die Grenze |
-| `NO_COLOR` | keine Farben, auch im Terminal |
+| `SPURLOS_LANG` | language of the report when `--lang` is missing |
+| `SPURLOS_AUTH` | login as `user:password` when `--auth` is missing, see [Sites behind a login](docs/en/how-it-works.md#sites-behind-a-login) |
+| `SPURLOS_NO_SANDBOX` | `1` starts Chromium without a sandbox right away, and without a note about it; the Docker image sets it, there the container is the boundary |
+| `NO_COLOR` | no colors, even in a terminal |
 
-Die Seite selbst darf bis zu 30 Sekunden zum Laden brauchen. Danach wartet spurlos bis zu 10 Sekunden, bis sie nichts mehr nachlädt, und nach der ersten Bewegung der Maus noch einmal bis zu 5 Sekunden; lädt sie dann noch, sagt der Bericht das. Impressum, Datenschutzerklärung und die Anfrage über http bekommen je 15 Sekunden.
+The page itself may take up to 30 seconds to load. After that spurlos waits up to 10 seconds for it to stop loading more, and after the first move of the mouse up to 5 seconds again; if it still does, the report says so. Impressum, privacy policy and the request over http get 15 seconds each.
 
-spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Angefragt wird nur die Seite, die du prüfst, samt allem, was sie selbst nachlädt.
+spurlos itself does not phone home: no telemetry, no statistics. It requests only the page you check, plus whatever that page loads itself.
 
-## Ampel
+## Lights
 
-| Prüfung | 🟢 | 🟡 | 🔴 |
+| Check | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem; dazu Server, die zur Seite zu gehören scheinen (`--own`, Zertifikat, Name), und die der Plattform, auf der sie läuft (Wix, Shopify, Squarespace, Webflow, IONOS MyWebsite) | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner, keinem Captcha und nicht zur Seite gehört; Google Consent Mode meldet vor jedem Klick Zustimmung (`gcs=G101`, `G110`, `G111`) |
-| Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies und solche, in denen der Cookie-Banner die Wahl speichert | eigene Cookies oder Einträge, die spurlos nicht kennt oder die zu einem Dienst wie einem Chat oder Zahlungsanbieter gehören; ein Cookie ohne `Secure` auf einer https-Seite; ein Sitzungs-Cookie ohne `HttpOnly`; ein Cookie, das länger als 13 Monate gilt | Cookie einer fremden Domain, die nicht zur Seite zu gehören scheint, oder eines bekannten Trackers |
-| Weitergegebene Daten | keine | ein Wert aus der Query der Seite (außer `utm_…` und Klick-IDs) geht an einen fremden Server, oder eine E-Mail-Adresse an einen Server, der zur Seite zu gehören scheint | eine E-Mail-Adresse geht an einen fremden Server; die ID aus dem Cookie eines fremden Servers geht an einen dritten (Cookie-Sync) |
-| Fingerprinting | kein Skript liest Canvas, Grafikkarte, Audio oder über WebRTC die IP-Adresse aus | ein eigenes Skript, ein Captcha oder ein Server, der zur Seite zu gehören scheint, liest sie aus | ein Skript einer fremden Domain liest sie aus |
-| Browser-Zugriffe | kein Skript fragt nach Berechtigungen, oder nur ein Service Worker | ein Skript fragt beim Laden nach Benachrichtigungen oder Push; ein eigenes Skript oder eines von einem Server, der zur Seite zu gehören scheint, nach Standort, Kamera oder Mikrofon | ein Skript einer fremden Domain fragt nach Standort, Kamera oder Mikrofon |
-| Impressum und Datenschutz | beide verlinkt und erreichbar | eine Seite weist spurlos ab (`401`, `403`, `429`) oder antwortet nicht vor dem Timeout, oft ein Bot-Schutz | ein Link fehlt oder die Seite antwortet mit einem anderen Fehler, etwa `404`; ein PDF zählt als erreichbar |
-| Datenschutzerklärung | nennt jeden bekannten fremden Dienst, der vor dem ersten Klick lädt; keiner lädt; oder sie ließ sich nicht als Text lesen | ein Dienst steht nicht im Text, weder mit Namen noch mit einem bekannten anderen Namen | – |
-| HTTPS | https, http leitet weiter, HSTS, Zertifikat noch 14 Tage oder länger gültig | kein HSTS (oder `max-age=0`), über http antwortet nichts oder nur ein Fehler (4xx, 5xx, oft ein Bot-Schutz), Zertifikat weniger als 14 Tage gültig | kein https, http ohne Weiterleitung, Zertifikat weniger als 7 Tage gültig oder abgelaufen |
-| Sicherheits-Header | alle gesetzt | einer oder mehrere fehlen; die CSP lässt Skripte durch | – |
-| Eingebundene Dateien | keine Auffälligkeiten | Skript oder Stylesheet eines fremden Servers ohne `integrity`; Bild, Video oder Audio über http auf einer https-Seite | Skript, Stylesheet oder iframe über http auf einer https-Seite |
-| Formulare | keine oder alle senden verschlüsselt an die eigene Seite | eines sendet an einen fremden Server | eines sendet unverschlüsselt über http |
-| Verratene Details | nichts, oder nur der Name der Software | eine Versionsnummer in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` oder `<meta name="generator">` | – |
-| Suchmaschinen | kein `noindex` | `noindex` oder `none` in `X-Robots-Tag` oder `<meta name="robots">` (auch `googlebot`) | – |
-| Mobil | Viewport mit `width=device-width`, die Seite passt ins Fenster | kein Viewport mit `width=device-width`; die Seite ist breiter als das Fenster, Besucher müssen quer scrollen (für Smartphones mit `--mobile`) | – |
-| Barrierefreiheit | `lang` gesetzt, Bilder mit `alt`, Formularfelder beschriftet, Zoomen erlaubt | eine dieser Grundlagen fehlt | – |
+| Third-party servers | none | only cookie banners and captchas (categories `consent` and `captcha`): the site needs them, they still learn the IP address; and servers that seem to belong to the site (`--own`, certificate, name), and those of the platform it runs on (Wix, Shopify, Squarespace, Webflow, IONOS MyWebsite) | at least one request to another domain that belongs to no cookie banner, no captcha and not to the site; Google Consent Mode reports consent before any click (`gcs=G101`, `G110`, `G111`) |
+| Cookies and storage | nothing set, or only known session and security cookies and those in which the cookie banner keeps the choice | first-party cookies or entries spurlos does not know or that belong to a service such as a chat or payment provider; a cookie without `Secure` on an https page; a session cookie without `HttpOnly`; a cookie that lasts longer than 13 months | a cookie of another domain that does not seem to belong to the site, or one of a known tracker |
+| Data passed on | none | a value from the page query (other than `utm_…` and click IDs) goes to a third-party server, or an email address to a server that seems to belong to the site | an email address goes to a third-party server; the ID in a third-party server's cookie goes to yet another one (cookie syncing) |
+| Fingerprinting | no script reads out canvas, graphics card, audio or the IP address via WebRTC | a script of the site itself, a captcha or a server that seems to belong to the site reads them out | a script of another domain reads them out |
+| Browser access | no script asks for permissions, or only a service worker | a script asks for notifications or push on load; a script of the site itself (or of a server that seems to belong to it) for location, camera or microphone | a script of another domain asks for location, camera or microphone |
+| Legal notice and privacy policy | both linked and reachable | a page turns spurlos away (`401`, `403`, `429`) or does not answer before the timeout, often a bot check | a link is missing or the page answers with another error, such as `404`; a PDF counts as reachable |
+| Privacy policy text | names every known third-party service that loads before the first click; none loads; or it could not be read as text | a service is not in the text, neither by its name nor by a known other name | – |
+| HTTPS | https, http redirects, HSTS, certificate valid for 14 days or more | no HSTS (or `max-age=0`), nothing or only an error answers on http (4xx, 5xx, often a bot check), certificate valid for less than 14 days | no https, http without redirect, certificate valid for less than 7 days or expired |
+| Security headers | all set | one or more missing; the CSP lets scripts through | – |
+| Embedded files | nothing to note | a script or stylesheet from a third-party server without `integrity`; an image, video or audio over http on an https page | a script, stylesheet or iframe over http on an https page |
+| Forms | none, or all send encrypted to the site itself | one sends to a third-party server | one sends unencrypted over http |
+| Software details | nothing, or only the software's name | a version number in `Server`, `X-Powered-By`, `X-AspNet-Version`, `X-AspNetMvc-Version`, `X-Generator` or `<meta name="generator">` | – |
+| Search engines | no `noindex` | `noindex` or `none` in `X-Robots-Tag` or `<meta name="robots">` (also `googlebot`) | – |
+| Mobile | viewport with `width=device-width`, the page fits the window | no viewport with `width=device-width`; the page is wider than the window, visitors have to scroll sideways (for phones with `--mobile`) | – |
+| Accessibility | `lang` set, images with `alt`, form fields labelled, zooming allowed | one of these basics is missing | – |
 
-Die genauen Regeln stehen in [docs/de/checks.md](docs/de/checks.md): welche Header geprüft werden, welche Cookies spurlos kennt, wann ein Server auf einer anderen Domain zur Seite gehört und woran es die Plattform erkennt, auf der die Seite läuft.
+The exact rules are in [docs/en/checks.md](docs/en/checks.md): which headers are checked, which cookies spurlos knows, when a server on another domain belongs to the site and how it tells the platform the site runs on.
 
-## Für KI-Assistenten (MCP)
+## For AI assistants (MCP)
 
-`spurlos mcp` startet einen [MCP](https://modelcontextprotocol.io)-Server über stdio. Ein Assistent wie Claude kann damit selbst Seiten prüfen, etwa auf die Bitte „Prüf mal firma.de und erklär mir, was rot ist“. Der Server bietet ein Werkzeug, `scan`, mit `url` und optional `lang` (`de`, `en`), `format` (`text` oder `json`) `own` (eine Liste von Hostnamen wie bei `--own`) `mobile` (`true` wie `--mobile`) und `gpc` (`true` wie `--gpc`). Er läuft auf deinem Rechner, wie die CLI: Der Assistent startet ihn selbst und spricht über stdin und stdout mit ihm. Einen offenen Port gibt es nicht, deshalb braucht er auch kein Token.
+`spurlos mcp` starts an [MCP](https://modelcontextprotocol.io) server over stdio. An assistant like Claude can then check sites itself, e.g. when asked “Check example.com and explain what is red”. The server offers one tool, `scan`, with `url` and optionally `lang` (`de`, `en`), `format` (`text` or `json`) `own` (a list of host names, as with `--own`) `mobile` (`true` as with `--mobile`) and `gpc` (`true` as with `--gpc`). It runs on your machine, like the CLI: the assistant starts it itself and talks to it over stdin and stdout. There is no open port, so it needs no token either.
 
 In Claude Code:
 
@@ -118,54 +118,54 @@ In Claude Code:
 claude mcp add spurlos -- npx spurlos mcp
 ```
 
-In anderen Clients, etwa Claude Desktop, unter `mcpServers`:
+In other clients, e.g. Claude Desktop, under `mcpServers`:
 
 ```json
 { "spurlos": { "command": "npx", "args": ["spurlos", "mcp"] } }
 ```
 
-Mit Docker statt Node: `"command": "docker", "args": ["run", "-i", "--rm", "ghcr.io/mmohrx/spurlos", "mcp"]`.
+With Docker instead of Node: `"command": "docker", "args": ["run", "-i", "--rm", "ghcr.io/mmohrx/spurlos", "mcp"]`.
 
-Die Sprache richtet sich wie bei der CLI nach `--lang`, `SPURLOS_LANG` oder dem System, `--user-agent` gilt für alle Aufrufe. `--auth` gibt es dort nicht, denn die Adressen wählt der Assistent. Höchstens zwei Prüfungen laufen gleichzeitig, weitere warten. Jeder Bericht trägt den Hinweis, dass er keine Rechtsberatung ist.
+As with the CLI, the language follows `--lang`, `SPURLOS_LANG` or the system, and `--user-agent` applies to every request. There is no `--auth` there, as the assistant picks the addresses. At most two checks run at a time, others wait. Every report carries the note that it is not legal advice.
 
-## In der CI
+## In CI
 
 ```
-npx spurlos https://staging.firma.de || echo "neue Spuren"
+npx spurlos https://staging.company.com --lang en || echo "new traces"
 ```
 
-Exit-Code `0` ohne roten Befund, `1` mit rotem Befund, `2`, wenn sich eine Seite nicht prüfen ließ oder der Aufruf falsch war. Alle Fälle, das JSON von `--json`, der Vergleich mit einer Baseline, die GitHub Action und GitHub Code Scanning mit `--sarif` stehen in [docs/de/ci.md](docs/de/ci.md).
+Exit code `0` without a red finding, `1` with one, `2` if a page could not be checked or the call was wrong. All cases, the JSON of `--json`, comparing with a baseline, the GitHub Action and GitHub code scanning with `--sarif` are in [docs/en/ci.md](docs/en/ci.md).
 
-## Bekannte Dienste ergänzen
+## Adding known services
 
-Welche Hosts und Cookies zu welchem Dienst gehören, steht in [`src/services.json`](src/services.json). Hosts gelten samt Subdomains, Cookie-Namen als Anfang (`_ga` deckt auch `_ga_ABC123` ab), mit `*` vorn als Ende (`*-session`). Unter `paths` stehen Teile von Dateipfaden, an denen spurlos einen Dienst auch auf der eigenen Seite oder auf einem unbekannten Host erkennt: mit `/` am Ende ein Verzeichnis irgendwo im Pfad (`/wp-content/plugins/borlabs-cookie/`), sonst das Ende des Pfads (`/klaro.js`). Unter `aliases` stehen andere Namen, unter denen eine Datenschutzerklärung den Dienst nennen kann (`Facebook` für `Meta Pixel`). Fehlt ein Dienst, freue ich mich über einen Pull Request.
+Which hosts and cookies belong to which service is in [`src/services.json`](src/services.json). Hosts include their subdomains, cookie names match as a prefix (`_ga` also covers `_ga_ABC123`), with a leading `*` as a suffix (`*-session`). `paths` holds parts of file paths by which spurlos recognizes a service on the site itself or on an unknown host too: ending in `/`, a directory anywhere in the path (`/wp-content/plugins/borlabs-cookie/`), otherwise the end of the path (`/klaro.js`). `aliases` holds other names a privacy policy may give the service (`Facebook` for `Meta Pixel`). If a service is missing, a pull request is welcome.
 
-## Was spurlos nicht tut
+## What spurlos does not do
 
-- Es sucht nicht aktiv nach Lücken. Ausgewertet wird nur, was ein normaler Aufruf der Seite ohnehin liefert; Adressen wie `/.env`, `/.git/` oder `/phpinfo.php` fragt spurlos nicht ab. So lässt es sich gegen jede Seite laufen, ohne sie abzuklopfen.
-- Es klickt keinen Cookie-Banner an. Geprüft wird der Zustand vor jeder Entscheidung des Besuchers; welcher Banner geladen wird, nennt spurlos, aber nicht, ob er richtig eingestellt ist.
-- Es liest das Impressum nicht, sondern prüft nur, ob es verlinkt und erreichbar ist. In der Datenschutzerklärung sucht es nur nach den Namen der Dienste, die es gefunden hat; ob sie dort richtig beschrieben sind, beurteilt es nicht.
-- Es gibt keine Rechtsberatung. Ein grüner Bericht heißt nicht, dass eine Seite DSGVO-konform ist, und ein roter nicht, dass sie es nicht ist.
+- It does not actively look for holes. It only evaluates what a normal visit to the page returns anyway; it never requests addresses like `/.env`, `/.git/` or `/phpinfo.php`. So you can run it against any site without probing it.
+- It does not click the cookie banner. What it checks is the state before the visitor decides anything; spurlos names which banner loads, but not whether it is set up correctly.
+- It does not read the legal notice, it only checks that it is linked and reachable. In the privacy policy it only looks for the names of the services it found; whether they are described correctly there, it does not judge.
+- It is not legal advice. A green report does not mean a site complies with the GDPR, and a red one does not mean it doesn't.
 
-## Entwickeln
+## Development
 
 ```
 pnpm install
 pnpm exec playwright install chromium-headless-shell
-pnpm test        # Unit-Tests und Browser-Tests gegen test/sites, ohne Netz
+pnpm test        # unit and browser tests against test/sites, no network
 pnpm typecheck
-pnpm build       # nach dist/
+pnpm build       # to dist/
 node src/cli.ts <url>
 ```
 
-## Mitmachen
+## Contributing
 
-Fehlt ein Dienst, stimmt eine Ampel nicht oder hast du eine Idee: In [`CONTRIBUTING.md`](CONTRIBUTING.md) steht, wie du beiträgst. Sicherheitslücken bitte nicht als Issue, sondern wie in [`SECURITY.md`](SECURITY.md) beschrieben melden.
+A service is missing, a light seems wrong, or you have an idea: [`CONTRIBUTING.md`](CONTRIBUTING.md) explains how to contribute (in German; issues and pull requests in English are welcome). Please report security holes not as an issue but as described in [`SECURITY.md`](SECURITY.md).
 
-## Unterstützen
+## Support
 
-spurlos ist ein Hobbyprojekt. Wenn es dir hilft, kannst du es auf [Ko-fi](https://ko-fi.com/mmohrx) oder über [GitHub Sponsors](https://github.com/sponsors/mmohrx) unterstützen. Die Hilfe (`spurlos --help`) verlinkt in der letzten Zeile auch dorthin; die Berichte nicht, die gehören dir.
+spurlos is a hobby project. If it helps you, you can support it on [Ko-fi](https://ko-fi.com/mmohrx) or through [GitHub Sponsors](https://github.com/sponsors/mmohrx). The help (`spurlos --help`) links there in its last line too; the reports do not, they are yours.
 
-## Lizenz
+## License
 
-MIT, © 2026 [Martin Mohr](https://mohrwurm.de/projekte/spurlos/)
+MIT, © 2026 [Martin Mohr](https://mohrwurm.de/en/projects/spurlos/)

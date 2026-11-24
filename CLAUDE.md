@@ -1,6 +1,6 @@
 # spurlos
 
-CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem ersten Klick passiert. Node 22+, TypeScript ohne Build-Schritt für die Entwicklung (`node src/cli.ts`), Playwright mit Chromium. Was es prüft und wie man es nutzt: `README.md`. Wie man beiträgt: `CONTRIBUTING.md`.
+CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem ersten Klick passiert. Node 22+, TypeScript ohne Build-Schritt für die Entwicklung (`node src/cli.ts`), Playwright mit Chromium. Was es prüft und wie man es nutzt: `README.md` (Englisch, die Startseite auf GitHub und npm) und `README.de.md`. Wie man beiträgt: `CONTRIBUTING.md`.
 
 ## Grundsätze
 
@@ -25,8 +25,8 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 
 ## Doku
 
-- Ändert sich, was Nutzer sehen oder worauf sie sich verlassen (Optionen, Exit-Codes, Umgebungsvariablen, Ampel-Regeln und Schwellen, geprüfte Header, Felder in `--json`, das MCP-Werkzeug), im selben Commit die Doku anpassen, dazu die Hilfe in `src/lang/`. Das README hat den Überblick (Optionen, Umgebungsvariablen, Ampel-Tabelle, MCP), die Einzelheiten stehen in `docs/de/` und `docs/en/`, je Sprache dieselben Dateien: Ampel-Regeln, Schwellen, geprüfte Header und eigene Server in `checks.md`, Exit-Codes, `--json`, `--baseline` und die Action in `ci.md`, Browserkennung, Bot-Schutz und Anmeldung in `how-it-works.md`. Das englische README ist `README.en.md`. Beide Sprachen sagen dasselbe.
-- Ändert sich, wie man beiträgt (Dienste, Sprachen, Tests), auch `CONTRIBUTING.md`.
+- Ändert sich, was Nutzer sehen oder worauf sie sich verlassen (Optionen, Exit-Codes, Umgebungsvariablen, Ampel-Regeln und Schwellen, geprüfte Header, Felder in `--json`, das MCP-Werkzeug), im selben Commit die Doku anpassen, dazu die Hilfe in `src/lang/`. Das README hat den Überblick (Optionen, Umgebungsvariablen, Ampel-Tabelle, MCP), die Einzelheiten stehen in `docs/de/` und `docs/en/`, je Sprache dieselben Dateien: Ampel-Regeln, Schwellen, geprüfte Header und eigene Server in `checks.md`, Exit-Codes, `--json`, `--baseline` und die Action in `ci.md`, Browserkennung, Bot-Schutz und Anmeldung in `how-it-works.md`. Das README gibt es als `README.md` (Englisch) und `README.de.md` (Deutsch). Beide Sprachen sagen dasselbe.
+- Ändert sich, wie man beiträgt (Dienste, Sprachen, Tests), auch `CONTRIBUTING.md`. `CONTRIBUTING.md`, `SECURITY.md` und die Vorlagen in `.github/` sind Englisch.
 - Vor dem Commit die Doku gegen den geänderten Code lesen, nicht aus dem Gedächtnis: Namen, Werte und Listen müssen genau stimmen.
 
 ## Logo
@@ -35,4 +35,4 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 
 ## Release
 
-Version in `package.json` erhöhen, Eintrag in `CHANGELOG.md`, dann Tag `vX.Y.Z` pushen. Der Workflow `release.yml` prüft, dass Tag und Version übereinstimmen, und veröffentlicht das Image auf ghcr, bei öffentlichem Repo auch das Paket auf npm (Trusted Publishing, kein Token) und danach den MCP-Server in der MCP Registry (`server.json`, Version kommt aus dem Tag, Anmeldung über GitHub OIDC), zuletzt das GitHub-Release mit dem Eintrag aus `CHANGELOG.md` (fehlt er, schlägt der Job fehl); den Haken für den GitHub Marketplace setzt Martin danach von Hand unter „Edit“, dafür hat GitHub keine API. Tags und Releases nur nach Martins Freigabe.
+Version in `package.json` erhöhen, Eintrag in `CHANGELOG.md` (ab 0.5.3 auf Englisch, er wird der Text des GitHub-Release), dann Tag `vX.Y.Z` pushen. Der Workflow `release.yml` prüft, dass Tag und Version übereinstimmen, und veröffentlicht das Image auf ghcr, bei öffentlichem Repo auch das Paket auf npm (Trusted Publishing, kein Token) und danach den MCP-Server in der MCP Registry (`server.json`, Version kommt aus dem Tag, Anmeldung über GitHub OIDC), zuletzt das GitHub-Release mit dem Eintrag aus `CHANGELOG.md` (fehlt er, schlägt der Job fehl); den Haken für den GitHub Marketplace setzt Martin danach von Hand unter „Edit“, dafür hat GitHub keine API. Tags und Releases nur nach Martins Freigabe.

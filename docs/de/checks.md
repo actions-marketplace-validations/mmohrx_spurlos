@@ -2,7 +2,7 @@
 
 **Deutsch** · [English](../en/checks.md)
 
-Die Ampel-Tabelle steht im [README](../../README.md#ampel). Hier steht, wie spurlos im Einzelnen entscheidet.
+Die Ampel-Tabelle steht im [README](../../README.de.md#ampel). Hier steht, wie spurlos im Einzelnen entscheidet.
 
 Geprüft werden bei den Headern `Content-Security-Policy`, `X-Frame-Options` (oder `frame-ancestors` in der CSP), `X-Content-Type-Options: nosniff`, `Referrer-Policy` und `Permissions-Policy`. CSP und Referrer-Policy zählen auch als `<meta>`-Tag, für Hoster wie GitHub Pages, bei denen sich keine Header setzen lassen. Eine CSP lässt Skripte durch, wenn sie für Skripte (`script-src`, sonst `default-src`) `'unsafe-inline'` ohne Nonce oder Hash, `'unsafe-eval'` oder eine Quelle wie `*`, `https:`, `http:` oder `data:` erlaubt (Letztere nicht mit `'strict-dynamic'`), oder wenn sie Skripte gar nicht regelt. Gibt es Header und `<meta>`-Tag, reicht es, wenn eine der beiden Richtlinien dicht ist. Impressum und Datenschutzerklärung erkennt spurlos am Linktext oder an der Adresse, auf Deutsch und Englisch. Ein Link wie „Impressum & Datenschutz“ zählt für beides. Passen mehrere, gewinnt ein Link auf der eigenen Seite, dann einer, dessen Text mit dem Stichwort beginnt („Datenschutz“, „Privacy Policy“), dann einer, der es später im Text nennt, zuletzt einer, bei dem nur die Adresse passt.
 

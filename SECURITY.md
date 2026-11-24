@@ -1,7 +1,7 @@
-# Sicherheit
+# Security
 
-Hast du in spurlos eine Sicherheitslücke gefunden, melde sie bitte nicht als öffentliches Issue, sondern privat über GitHub: **Security → Report a vulnerability** in diesem Repository. Ich antworte in der Regel innerhalb einer Woche.
+If you have found a vulnerability in spurlos, please do not report it as a public issue but privately through GitHub: **Security → Report a vulnerability** in this repository. I usually reply within a week.
 
-Unterstützt wird jeweils die neueste Version.
+Only the latest version is supported.
 
-Gemeint sind Lücken in spurlos selbst, etwa wenn eine geprüfte Seite über den Bericht Befehle oder Steuerzeichen ins Terminal schleusen kann. Befunde, die spurlos auf fremden Websites anzeigt, sind keine Lücke in spurlos; die meldest du bitte dem Betreiber der Seite.
+This is about vulnerabilities in spurlos itself, for example if a checked site can smuggle commands or control characters into the terminal through the report. Findings that spurlos shows on other people's websites are not a vulnerability in spurlos; please report those to whoever runs the site.

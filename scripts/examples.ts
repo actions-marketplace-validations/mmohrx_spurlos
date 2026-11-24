@@ -16,7 +16,8 @@ const pages = [
   { name: 'sauber', url: `${SITE}/`, fetch: redirects },
 ]
 
-const colored: string[] = []
+// the colored output per language, for the picture in each README
+const colored = new Map(LANGS.map(lang => [lang, [] as string[]]))
 for (const p of pages) {
   const s = await scan(p.url, { setup: offline, fetch: p.fetch, screenshot: true })
   // offline the times are a few ms and differ on every run: left out, so examples/ changes only with the code
@@ -29,7 +30,7 @@ for (const p of pages) {
   }
   await writeFile(new URL(`${p.name}.json`, out), json(s, results, DEFAULT_LANG) + '\n')
   await writeFile(new URL(`${p.name}.html`, out), htmlReport(s, results, DEFAULT_LANG, { timeZone: 'Europe/Berlin' }))
-  colored.push(text(s, results, DEFAULT_LANG, { color: true }))
+  for (const lang of LANGS) colored.get(lang)?.push(text(s, results, lang, { color: true }))
 }
 
 // the colored output as a terminal would show it, for the README
@@ -60,9 +61,13 @@ function html(ansi: string): string {
 }
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1400, height: 400 }, deviceScaleFactor: 2 })
-await page.setContent(`<!doctype html><meta charset="utf-8"><style>
+// like the reports, the default language keeps the bare name: vorschau.png (README.de.md), vorschau.en.png (README.md)
+for (const [lang, reports] of colored) {
+  await page.setContent(`<!doctype html><meta charset="utf-8"><style>
   body { margin: 0; padding: 20px; background: #fff; display: flex; gap: 20px; align-items: flex-start; width: max-content }
   pre { margin: 0; padding: 16px 18px; border-radius: 10px; background: #1e1f24; color: #d6d6dc; font: 13px/1.45 Menlo, "DejaVu Sans Mono", monospace }
-</style>${colored.map(c => `<pre>${html(c)}</pre>`).join('')}`)
-await page.screenshot({ path: new URL('vorschau.png', out).pathname, fullPage: true })
+</style>${reports.map(c => `<pre>${html(c)}</pre>`).join('')}`)
+  const suffix = lang === DEFAULT_LANG ? '' : `.${lang}`
+  await page.screenshot({ path: new URL(`vorschau${suffix}.png`, out).pathname, fullPage: true })
+}
 await browser.close()
