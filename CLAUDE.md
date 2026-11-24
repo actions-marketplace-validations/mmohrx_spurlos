@@ -35,4 +35,4 @@ CLI, die eine Website wie ein neuer Besucher aufruft und zeigt, was vor dem erst
 
 ## Release
 
-Version in `package.json` erhöhen, Eintrag in `CHANGELOG.md`, dann Tag `vX.Y.Z` pushen. Der Workflow `release.yml` prüft, dass Tag und Version übereinstimmen, und veröffentlicht das Image auf ghcr, bei öffentlichem Repo auch das Paket auf npm (Trusted Publishing, kein Token). Tags und Releases nur nach Martins Freigabe.
+Version in `package.json` erhöhen, Eintrag in `CHANGELOG.md`, dann Tag `vX.Y.Z` pushen. Der Workflow `release.yml` prüft, dass Tag und Version übereinstimmen, und veröffentlicht das Image auf ghcr, bei öffentlichem Repo auch das Paket auf npm (Trusted Publishing, kein Token) und danach den MCP-Server in der MCP Registry (`server.json`, Version kommt aus dem Tag, Anmeldung über GitHub OIDC). Tags und Releases nur nach Martins Freigabe.

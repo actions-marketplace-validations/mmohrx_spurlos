@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mmohrx/spurlos",
+  "title": "spurlos",
+  "description": "Opens a website like a first-time visitor: third-party requests and cookies before any click",
+  "repository": {
+    "url": "https://github.com/mmohrx/spurlos",
+    "source": "github"
+  },
+  "websiteUrl": "https://mohrwurm.de/projekte/spurlos/",
+  "version": "0.5.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "spurlos",
+      "version": "0.5.0",
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
