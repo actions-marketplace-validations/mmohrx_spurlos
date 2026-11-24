@@ -1,7 +1,7 @@
 {
   "name": "spurlos",
   "mcpName": "io.github.mmohrx/spurlos",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Ruft eine Website wie ein neuer Besucher auf und zeigt, was vor jedem Klick an fremde Server geht und welche Cookies gesetzt werden.",
   "keywords": [
     "privacy",

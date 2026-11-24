@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2 – 2026-11-24
+
+- Die Action heißt jetzt „spurlos website check“, denn im GitHub Marketplace ist der Name „spurlos“ vergeben. `uses: mmohrx/spurlos@…` bleibt gleich.
+- Jedes Release legt ein GitHub-Release mit dem Eintrag aus diesem Changelog an; in den GitHub Marketplace kommt es weiter von Hand (Edit, Haken setzen).
+
 ## 0.5.1 – 2026-11-24
 
 - spurlos steht in der offiziellen MCP Registry als `io.github.mmohrx/spurlos`: `mcpName` in `package.json`, der Eintrag in `server.json`. Jedes Release veröffentlicht ihn nach dem npm-Paket.

@@ -1,4 +1,4 @@
-name: spurlos
+name: spurlos website check
 description: Opens a website like a first-time visitor and reports third-party requests, cookies, legal pages, HTTPS and headers.
 author: Martin Mohr
 branding:

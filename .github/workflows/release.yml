@@ -123,7 +123,7 @@ jobs:
 
   release:
     name: GitHub release
-    # once the action is listed on the GitHub Marketplace, each release updates the listing
+    # GitHub has no API to publish to the Marketplace: tick it by hand under Edit on the release
     needs: [image, npm]
     # without the npm job (private repo) it is skipped, and with it the release still follows the image
     if: ${{ !cancelled() && needs.image.result == 'success' && needs.npm.result != 'failure' }}
