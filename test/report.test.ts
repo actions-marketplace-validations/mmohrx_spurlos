@@ -207,6 +207,16 @@ test('a session replay counts as a tracker and gets a note of its own', () => {
   expect(text(page('https://shop.example/'), [{ ...r, hosts: [{ ...hj, own: 'option' as const }] }], 'de')).not.toContain('Sitzungsaufzeichnung')
 })
 
+test('frames embedded on load are named, youtube-nocookie.com with what it changes', () => {
+  const yt = { host: 'www.youtube-nocookie.com', service: { name: 'YouTube', category: 'video', hosts: ['youtube-nocookie.com'] }, requests: 3 }
+  const r: Result = { check: 'third-party', level: 'red', hosts: [yt], consent: [], selfHosted: [], embeds: ['YouTube (youtube-nocookie.com)'] }
+  const de = text(page('https://shop.example/'), [r], 'de')
+  expect(de).toContain('Ohne Klick eingebettet: YouTube (youtube-nocookie.com).')
+  expect(de).toContain('youtube-nocookie.com setzt laut YouTube erst Cookies')
+  expect(text(page('https://shop.example/'), [r], 'en')).toContain('Embedded without a click: YouTube (youtube-nocookie.com).')
+  expect(text(page('https://shop.example/'), [{ ...r, embeds: [] }], 'de')).not.toContain('Ohne Klick eingebettet')
+})
+
 test('SARIF: one rule per check, a result per red or yellow finding at the page, its key as fingerprint', () => {
   const scan = page('https://shop.example/')
   const results: Result[] = [

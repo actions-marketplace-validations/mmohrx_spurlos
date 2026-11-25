@@ -143,6 +143,9 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   bannerNoReject: text => `“${text}” on the first layer, no button to refuse`,
   bannerNoRejectNote:
     'Without a click, the banner shows a button to agree but none to refuse; that one then mostly sits behind “Settings” or a link. spurlos recognizes the buttons by their words and clicks none of them. If the button is worded differently, check it yourself.',
+  embedded: names =>
+    `Embedded without a click: ${names}. The frame loads with the page, and its provider learns the IP address before anyone asks for the content.`,
+  embeddedNoCookie: 'youtube-nocookie.com, as YouTube says, sets cookies only once the video plays. YouTube still learns the IP address when it loads.',
   consentModeGranted: (ads, analytics) => `tells Google consent was given for ${ads && analytics ? 'ads and analytics' : ads ? 'ads' : 'analytics'} before anyone chose anything`,
   consentModeGrantedNote: 'Google Consent Mode tells Google\'s tags whether the visitor agreed. Set to “granted” up front, they set cookies and use the data as if the visitor had agreed. The usual default is “denied” until the cookie banner reports the choice.',
   consentModeDenied: gcs => `Google Consent Mode reports ads and analytics as denied (gcs=${gcs}). Google's tags still send requests, without cookies, and learn the IP address that way.`,

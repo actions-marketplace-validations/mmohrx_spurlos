@@ -22,6 +22,8 @@ spurlos 0.5.4  https://shop.example/tracked.html
      → Cookie banner found: Usercentrics.
      → The trackers above still load before anyone chooses anything in the
        banner.
+     → Embedded without a click: YouTube. The frame loads with the page, and its
+       provider learns the IP address before anyone asks for the content.
      → Google Consent Mode tells Google's tags whether the visitor agreed. Set
        to “granted” up front, they set cookies and use the data as if the
        visitor had agreed. The usual default is “denied” until the cookie banner

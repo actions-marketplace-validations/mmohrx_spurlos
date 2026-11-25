@@ -66,7 +66,7 @@ export type AccessibilityProblem = 'lang' | 'images' | 'fields' | 'zoom'
 export type MobileProblem = 'viewport' | 'overflow'
 
 export type Result =
-  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string; consentMode?: ConsentMode; banner?: Banner }
+  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string; consentMode?: ConsentMode; banner?: Banner; embeds?: string[] }
   | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
   | { check: 'policy'; level: Level; read: boolean; url?: string; services: PolicyService[] }
@@ -269,6 +269,31 @@ export function consentMode(scan: Scan): ConsentMode | undefined {
 /** Consent Mode granting anything before a click is red: Google's tags then set cookies and use the data as if agreed. */
 export const consentModeGranted = (c: ConsentMode | undefined): boolean => c !== undefined && (c.ads === 'granted' || c.analytics === 'granted')
 
+// what a site can embed as a frame that waits for a click: a video, a map, a post
+const EMBEDDED = ['video', 'maps', 'social']
+
+/**
+ * The known services the markup embeds as a frame from another site, so they load with the page: no placeholder that
+ * waits for a click. youtube-nocookie.com is named as such, as it sets cookies only once the video plays.
+ */
+export function embeds(scan: Scan): string[] {
+  const own = ownSites(scan)
+  const names = new Set<string>()
+  for (const r of list(scan.resources)) {
+    if (r.tag !== 'iframe') continue
+    let host = ''
+    try {
+      host = new URL(r.url).hostname
+    } catch {
+      continue
+    }
+    const service = preferPath(serviceOfHost(host), serviceOfPath(r.url))
+    if (own.has(site(host)) || !service || !EMBEDDED.includes(service.category)) continue
+    names.add(site(host) === 'youtube-nocookie.com' ? `${service.name} (youtube-nocookie.com)` : service.name)
+  }
+  return [...names]
+}
+
 /** a cookie banner's buttons on its first layer: the one that agrees, and the one that refuses if there is one */
 export type Banner = { accept: string; reject?: string }
 
@@ -302,8 +327,9 @@ export function thirdParty(scan: Scan): Result {
   const platform = platformOf(scan)
   const mode = consentMode(scan)
   const choice = banner(scan)
+  const framed = embeds(scan)
   const level = worst([...hosts.map(hostLevel), ...(consentModeGranted(mode) ? ['red' as const] : []), ...(choice ? [bannerLevel(choice)] : [])])
-  return { check: 'third-party', level, hosts, consent: consentManagers(scan), selfHosted, ...(platform ? { platform: platform.name } : {}), ...(mode ? { consentMode: mode } : {}), ...(choice ? { banner: choice } : {}) }
+  return { check: 'third-party', level, hosts, consent: consentManagers(scan), selfHosted, ...(platform ? { platform: platform.name } : {}), ...(mode ? { consentMode: mode } : {}), ...(choice ? { banner: choice } : {}), ...(framed.length ? { embeds: framed } : {}) }
 }
 
 const thirdPartyHosts = (scan: Scan) => thirdPartyFound(scan).hosts

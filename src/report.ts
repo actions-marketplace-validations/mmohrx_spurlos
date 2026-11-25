@@ -81,7 +81,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
         categories.has('cdn') ? t.thirdPartyHint.cdn : null,
         categories.has('consent') ? t.thirdPartyHint.consent : null,
         categories.has('captcha') ? t.thirdPartyHint.captcha : null,
-        EMBEDS.some(c => categories.has(c)) ? t.thirdPartyHint.embed : null,
+        EMBEDS.some(c => categories.has(c)) || r.embeds?.length ? t.thirdPartyHint.embed : null,
         trackers ? t.thirdPartyHint.tracking : null,
         tagManager ? t.thirdPartyHint.tagManager : null,
       ]
@@ -102,6 +102,9 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           ...consent,
           ...(replays.length ? [t.sessionReplay(replays.join(', '))] : []),
           ...bannerNotes,
+          // a baseline from an older spurlos has none
+          ...(r.embeds?.length ? [t.embedded(r.embeds.join(', '))] : []),
+          ...(r.embeds?.some(e => e.includes('youtube-nocookie.com')) ? [t.embeddedNoCookie] : []),
           ...modeNotes,
           ...hints.filter(n => n !== null),
         ],

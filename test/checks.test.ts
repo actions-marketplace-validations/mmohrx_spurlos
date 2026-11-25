@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   access, accessibility, blocksZoom, indexing, consentMode, cookieIds, policy, servicesNamed, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
-  banner, thirdParty, weakCsp, type Banner, type Result,
+  banner, embeds, thirdParty, weakCsp, type Banner, type Result,
 } from '../src/checks.ts'
 import { iceHost, type Scan, type Visit } from '../src/scan.ts'
 
@@ -660,6 +660,25 @@ describe('cookie banners', () => {
     expect(level({ accept: 'Alle akzeptieren' })).toBe('yellow')
     expect(level({ accept: 'Alle akzeptieren', reject: 'Ablehnen' })).toBe('green')
     expect(findings(thirdParty({ ...base, banner: ['Alle akzeptieren'] }))).toEqual([{ key: 'consent-banner no-reject', level: 'yellow' }])
+  })
+
+  test('a video, map or post embedded as a frame on load is named; a script or the site’s own frame is not', () => {
+    const frame = (url: string) => ({ tag: 'iframe', url, integrity: false })
+    const scan = {
+      ...base,
+      resources: [
+        frame('https://www.youtube-nocookie.com/embed/abc'),
+        frame('https://www.google.com/maps/embed?pb=xyz'),
+        frame('https://www.firma.de/karte.html'),
+        frame('https://www.google.com/recaptcha/api2/anchor'),
+        { tag: 'script', url: 'https://player.vimeo.com/api/player.js', integrity: false },
+      ],
+    }
+    expect(embeds(scan)).toEqual(['YouTube (youtube-nocookie.com)', 'Google Maps'])
+    const r = thirdParty(scan)
+    if (r.check !== 'third-party') throw new Error()
+    expect(r.embeds).toEqual(['YouTube (youtube-nocookie.com)', 'Google Maps'])
+    expect(thirdParty(base)).not.toHaveProperty('embeds')
   })
 
   test("the banner's own cookie is green, a chat's yellow, a tracker's red", () => {

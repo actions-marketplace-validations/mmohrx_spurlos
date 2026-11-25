@@ -115,7 +115,7 @@
   { "name": "Loom", "category": "video", "hosts": ["loom.com"] },
   { "name": "HolaCDN", "category": "video", "hosts": ["h-cdn.com", "holacdn.com"] },
 
-  { "name": "Google Maps", "category": "maps", "hosts": ["maps.googleapis.com", "maps.gstatic.com", "maps.google.com", "maps.google.de"] },
+  { "name": "Google Maps", "category": "maps", "hosts": ["maps.googleapis.com", "maps.gstatic.com", "maps.google.com", "maps.google.de"], "paths": ["/maps/embed", "/maps/embed/"] },
   { "name": "Mapbox", "category": "maps", "hosts": ["mapbox.com"] },
   { "name": "OpenStreetMap", "category": "maps", "hosts": ["openstreetmap.org"] },
 
