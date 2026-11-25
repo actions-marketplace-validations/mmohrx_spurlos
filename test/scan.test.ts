@@ -59,6 +59,12 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(pick(results, 'forms').forms.map(f => [f.action, f.problem])).toEqual([['http://shop.example/newsletter', 'unencrypted']])
   })
 
+  test('an Impressum in href on a div, opened by a script, counts', async () => {
+    const s = await scan(`${SITE}/divlink.html`, { setup: offline, fetch: redirects })
+    expect(pick(runChecks(s), 'legal').level).toBe('green')
+    expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
+  })
+
   test('a page that takes window.localStorage away is still checked', async () => {
     const s = await scan(`${SITE}/nostorage.html`, { setup: offline, fetch: redirects })
     expect(s.storage).toEqual([])

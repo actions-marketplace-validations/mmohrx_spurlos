@@ -14,7 +14,7 @@ export type Service = { name: string; category: string; hosts: string[]; cookies
 
 /**
  * Why another site counts as the page's own: named with --own · listed in the page's own certificate · named like
- * the page (media.kuketz.de on kuketz-blog.de) · it is the platform that hosts the page (Wix's servers on a Wix
+ * the page (media.wetter.de on wetter-blog.de) · it is the platform that hosts the page (Wix's servers on a Wix
  * site). A known service never does, but for the platform's, and on a page that is that service itself (media.doctolib.com
  * on doctolib.de).
  */
@@ -166,11 +166,11 @@ export function consentManagers(scan: Scan): string[] {
 
 // words too common to tie two names together: shop.de does not own shop-cdn.com
 const COMMON = new Set(['blog', 'shop', 'store', 'online', 'news', 'mein', 'meine', 'home', 'info', 'portal', 'service', 'group', 'media', 'site', 'world', 'live', 'digital'])
-// what a site adds to its name for the server of its files: bildstatic.de, chefkoch-cdn.de
+// what a site adds to its name for the server of its files: zeitungstatic.de, rezeptwelt-cdn.de
 const AFFIXES = ['statics', 'static', 'cdn', 'img', 'images', 'media', 'assets', 'files', 'content', 'cache']
 const word = (w: string) => w.length >= 4 && !COMMON.has(w)
 
-/** the names a host's site goes by: chefkoch-cdn.de as chefkoch-cdn and chefkoch, bildstatic.de as bild */
+/** the names a host's site goes by: rezeptwelt-cdn.de as rezeptwelt-cdn and rezeptwelt, zeitungstatic.de as zeitung */
 function namesOf(label: string): Set<string> {
   const names = new Set([label, ...label.split('-')])
   for (const a of AFFIXES) {

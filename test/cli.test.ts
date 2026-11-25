@@ -45,7 +45,7 @@ test('--own takes host names only', () => {
   for (const value of ['https://cdn.firma.de', 'cdn', 'cdn.firma.de/bilder']) {
     expect(cli('shop.example', '--own', value)).toMatchObject({ status: 2, stderr: expect.stringContaining('--own braucht einen Hostnamen') })
   }
-  expect(cli('shop.example', '--own', 'ztat.net,cdn')).toMatchObject({ status: 2, stderr: expect.stringContaining('nicht cdn.') })
+  expect(cli('shop.example', '--own', 'bilderdienst.net,cdn')).toMatchObject({ status: 2, stderr: expect.stringContaining('nicht cdn.') })
 })
 
 test('--sarif is one format among the others', () => {

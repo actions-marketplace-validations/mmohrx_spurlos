@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- An Impressum or privacy policy that a page shows as another element with `href`, such as a `<div href="/impressum">` a script opens on click, now counts as a link. Before, the report said "no link found on the page" although the footer had one.
+
 ## 0.5.4 – 2026-11-25
 
 - Google Tag Manager, Adobe Tags and Tealium iQ are now their own category, `tag-manager`. When only a tag manager loads before the cookie banner's choice, the report no longer says "the trackers above still load" but has a note of its own: it counts nothing itself, but starts trackers once the site is set up to. The server stays red. Tealium's collect server (`tealiumiq.com`) stays a tracker.

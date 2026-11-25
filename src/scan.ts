@@ -486,7 +486,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const { storage, links, forms, resources, metaCsp, metaReferrer, generator, robots, accessibility, preconnect, width } = await page.evaluate(() => {
       const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
-        // a page may delete window.localStorage (elektro-kranen.de did): then there is nothing to read
+        // a page may delete window.localStorage: then there is nothing to read
         const s = window[area] as Storage | undefined
         if (!s) continue
         for (let i = 0; i < s.length; i++) storage.push({ area, key: s.key(i) ?? '' })
@@ -495,17 +495,24 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       const roots: (Document | ShadowRoot)[] = [document]
       for (let i = 0; i < roots.length; i++) for (const el of roots[i]!.querySelectorAll('*')) if (el.shadowRoot) roots.push(el.shadowRoot)
       const all = (selector: string) => roots.flatMap(r => [...r.querySelectorAll(selector)])
-      // the text a visitor reads: a script inside the link (proton.me has one) is none of it
+      // the text a visitor reads: a script inside the link is none of it
       const textOf = (a: Element) => {
         if (!a.querySelector('script, style, noscript, template')) return a.textContent ?? ''
         const copy = a.cloneNode(true) as Element
         for (const el of copy.querySelectorAll('script, style, noscript, template')) el.remove()
         return copy.textContent ?? ''
       }
-      const links = all('a[href]').map(a => ({
-        text: textOf(a).trim().replace(/\s+/g, ' '),
-        href: (a as HTMLAnchorElement).href,
-      }))
+      // a script may open the page from another element that carries href, as a footer's <div href="/impressum">
+      const hrefOf = (el: Element) => {
+        try {
+          return new URL(el.getAttribute('href') ?? '', document.baseURI).href
+        } catch {
+          return ''
+        }
+      }
+      const links = all('[href]:not(link, base)')
+        .filter(el => el instanceof HTMLElement)
+        .map(a => ({ text: textOf(a).trim().replace(/\s+/g, ' '), href: hrefOf(a) }))
       const forms = (all('form') as HTMLFormElement[]).map(f => ({ action: f.action, method: (f.getAttribute('method') ?? 'get').toLowerCase() }))
       // the address as the browser resolved it, also where it blocked the file (a script over http on an https page)
       const resources: Resource[] = []

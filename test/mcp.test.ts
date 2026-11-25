@@ -111,8 +111,8 @@ test('serve speaks one message per line and ends with its input', async () => {
 test('own goes to the scan as host names; anything else back to the model', async () => {
   let given: string[] | undefined
   const seeing: Context = { lang: 'de', scan: async (_url, options) => ((given = options.own), Promise.reject(new Error('done'))) }
-  await handle(request(1, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', own: ['*.ztat.net', 'Bücher.de'] } }), seeing)
-  expect(given).toEqual(['ztat.net', 'xn--bcher-kva.de'])
+  await handle(request(1, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', own: ['*.bilderdienst.net', 'Bäckerei.de'] } }), seeing)
+  expect(given).toEqual(['bilderdienst.net', 'xn--bckerei-5wa.de'])
   const wrong = await handle(request(2, 'tools/call', { name: 'scan', arguments: { url: 'firma.de', own: ['https://x.de'] } }), seeing)
   expect(wrong).toMatchObject({ result: { isError: true, content: [{ text: expect.stringContaining('--own braucht einen Hostnamen') }] } })
 })

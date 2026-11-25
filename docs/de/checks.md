@@ -82,11 +82,11 @@ Darunter steht, wie lange das gedauert hat: wann der erste Inhalt zu sehen war (
 
 ## Eigene Server auf anderen Domains
 
-Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, Wikipedia etwa von `wikimedia.org`. Solche Server sind gelb statt rot, wenn spurlos sie der Seite zuordnen kann, und der Bericht sagt, warum:
+Viele Seiten laden Bilder und Skripte von einer eigenen zweiten Domain, ein Nachschlagewerk etwa von `bildarchiv.org`. Solche Server sind gelb statt rot, wenn spurlos sie der Seite zuordnen kann, und der Bericht sagt, warum:
 
 - **laut --own:** Du nennst sie selbst, `--own cdn-firma.net`. Das ist eindeutig und der richtige Weg für die eigene Seite.
-- **laut Zertifikat:** Das TLS-Zertifikat der Seite nennt auch diese Domain, wie das von `wikipedia.org` die Domain `wikimedia.org`. spurlos liest es aus der Verbindung, die Chromium ohnehin hat, und glaubt ihm nur, wenn sein Inhaber (CN) die Seite selbst ist, denn Sammelzertifikate von Hostern nennen fremde Kunden.
-- **dem Namen nach:** Die Domain trägt den Namen der Seite als ganzes Wort, `media.kuketz.de` bei `kuketz-blog.de`, `img.chefkoch-cdn.de` bei `chefkoch.de` oder `bildstatic.de` bei `bild.de`. Teile eines Worts zählen nicht (`ottonova.de` gehört nicht zu `otto.de`), kurze Namen und Allerweltswörter wie `shop` oder `blog` auch nicht. Das ist eine Vermutung, prüfe sie.
+- **laut Zertifikat:** Das TLS-Zertifikat der Seite nennt auch diese Domain, wie das von `nachschlag.org` die Domain `bildarchiv.org`. spurlos liest es aus der Verbindung, die Chromium ohnehin hat, und glaubt ihm nur, wenn sein Inhaber (CN) die Seite selbst ist, denn Sammelzertifikate von Hostern nennen fremde Kunden.
+- **dem Namen nach:** Die Domain trägt den Namen der Seite als ganzes Wort, `media.wetter.de` bei `wetter-blog.de`, `img.rezeptwelt-cdn.de` bei `rezeptwelt.de` oder `zeitungstatic.de` bei `zeitung.de`. Teile eines Worts zählen nicht (`hausboot.de` gehört nicht zu `haus.de`), kurze Namen und Allerweltswörter wie `shop` oder `blog` auch nicht. Das ist eine Vermutung, prüfe sie.
 
 Ein bekannter Dienst aus `src/services.json` gehört nie zur Seite, auch nicht mit `--own`, außer die Seite ist dieser Dienst selbst: Auf `doctolib.de` können die Server von Doctolib wie `media.doctolib.com` aus den Gründen oben zur Seite gehören, die anderer Dienste nicht. Das gilt ebenso für Cookies dieser Domains. Gelb bleibt es, weil die IP-Adresse trotzdem an einen anderen Host geht; betreibt ihn ein Dienstleister, erfährt auch der sie.
 

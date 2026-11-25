@@ -161,7 +161,7 @@ async function check(args: string[]) {
   }
   if (auth && urls.some(u => u.startsWith('http:'))) console.error(`spurlos: ${say.authOverHttp}`)
 
-  // host names only, as the browser writes them (Bücher.de as xn--bcher-kva.de); *.cdn.de means cdn.de and its subdomains
+  // host names only, as the browser writes them (Bäckerei.de as xn--bckerei-5wa.de); *.cdn.de means cdn.de and its subdomains
   const own: string[] = []
   for (const value of (values.own ?? []).flatMap(v => v.split(','))) {
     const host = ownHost(value)

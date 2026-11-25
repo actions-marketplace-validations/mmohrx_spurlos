@@ -274,25 +274,25 @@ describe('own servers on other sites', () => {
   })
 
   test('--own names them, subdomains included; they are yellow', () => {
-    expect(own({ own: ['ztat.net'] }, 'img01.ztat.net', 'ztat.net', 'notztat.net')).toEqual({ 'img01.ztat.net': 'option', 'ztat.net': 'option', 'notztat.net': null })
-    expect(thirdParty({ ...base, own: ['ztat.net'], requests: [req('img01.ztat.net')] }).level).toBe('yellow')
+    expect(own({ own: ['bilderdienst.net'] }, 'img01.bilderdienst.net', 'bilderdienst.net', 'notbilderdienst.net')).toEqual({ 'img01.bilderdienst.net': 'option', 'bilderdienst.net': 'option', 'notbilderdienst.net': null })
+    expect(thirdParty({ ...base, own: ['bilderdienst.net'], requests: [req('img01.bilderdienst.net')] }).level).toBe('yellow')
   })
 
   test('the page’s own certificate names them, if its holder is the page', () => {
-    const certificate = { validTo: 0, issuer: 'x', subject: '*.wikipedia.org', names: ['*.wikipedia.org', '*.wikimedia.org', 'wikimedia.org'] }
-    const wiki = { url: 'https://de.wikipedia.org/', finalUrl: 'https://de.wikipedia.org/', certificate }
-    expect(own(wiki, 'upload.wikimedia.org', 'cdn.anders.de')).toEqual({ 'upload.wikimedia.org': 'certificate', 'cdn.anders.de': null })
+    const certificate = { validTo: 0, issuer: 'x', subject: '*.nachschlag.org', names: ['*.nachschlag.org', '*.bildarchiv.org', 'bildarchiv.org'] }
+    const lexikon = { url: 'https://de.nachschlag.org/', finalUrl: 'https://de.nachschlag.org/', certificate }
+    expect(own(lexikon, 'upload.bildarchiv.org', 'cdn.anders.de')).toEqual({ 'upload.bildarchiv.org': 'certificate', 'cdn.anders.de': null })
     // a hoster's shared certificate names its customers, not the page's servers
-    expect(own({ ...wiki, certificate: { ...certificate, subject: 'sni.hoster.example' } }, 'upload.wikimedia.org')).toEqual({ 'upload.wikimedia.org': null })
-    expect(own({ ...wiki, certificate: { validTo: 0, issuer: 'x', names: certificate.names } }, 'upload.wikimedia.org')).toEqual({ 'upload.wikimedia.org': null })
+    expect(own({ ...lexikon, certificate: { ...certificate, subject: 'sni.hoster.example' } }, 'upload.bildarchiv.org')).toEqual({ 'upload.bildarchiv.org': null })
+    expect(own({ ...lexikon, certificate: { validTo: 0, issuer: 'x', names: certificate.names } }, 'upload.bildarchiv.org')).toEqual({ 'upload.bildarchiv.org': null })
   })
 
   test('a name like the page’s, as a whole word', () => {
-    expect(own({ finalUrl: 'https://www.kuketz-blog.de/' }, 'media.kuketz.de')).toEqual({ 'media.kuketz.de': 'name' })
-    expect(own({ finalUrl: 'https://www.chefkoch.de/' }, 'img.chefkoch-cdn.de')).toEqual({ 'img.chefkoch-cdn.de': 'name' })
-    expect(own({ finalUrl: 'https://www.bild.de/' }, 'a.bildstatic.de')).toEqual({ 'a.bildstatic.de': 'name' })
+    expect(own({ finalUrl: 'https://www.wetter-blog.de/' }, 'media.wetter.de')).toEqual({ 'media.wetter.de': 'name' })
+    expect(own({ finalUrl: 'https://www.rezeptwelt.de/' }, 'img.rezeptwelt-cdn.de')).toEqual({ 'img.rezeptwelt-cdn.de': 'name' })
+    expect(own({ finalUrl: 'https://www.zeitung.de/' }, 'a.zeitungstatic.de')).toEqual({ 'a.zeitungstatic.de': 'name' })
     // a part of a word, a common word or a short name is no tie
-    expect(own({ finalUrl: 'https://www.otto.de/' }, 'cdn.ottonova.de')).toEqual({ 'cdn.ottonova.de': null })
+    expect(own({ finalUrl: 'https://www.haus.de/' }, 'cdn.hausboot.de')).toEqual({ 'cdn.hausboot.de': null })
     expect(own({ finalUrl: 'https://mein-shop.de/' }, 'shop-cdn.com', 'cdn.shopify.com')).toEqual({ 'shop-cdn.com': null, 'cdn.shopify.com': null })
     expect(own({ finalUrl: 'https://ab.de/' }, 'ab-cdn.de')).toEqual({ 'ab-cdn.de': null })
   })
@@ -311,7 +311,7 @@ describe('own servers on other sites', () => {
   })
 
   test('their cookies are yellow, not red, and say why', () => {
-    const r = cookies({ ...base, own: ['ztat.net'], cookies: [{ name: 'x', domain: 'ztat.net', expires: -1, secure: true, httpOnly: true }] })
+    const r = cookies({ ...base, own: ['bilderdienst.net'], cookies: [{ name: 'x', domain: 'bilderdienst.net', expires: -1, secure: true, httpOnly: true }] })
     expect(r).toMatchObject({ level: 'yellow', cookies: [{ thirdParty: true, own: 'option' }] })
   })
 })
@@ -435,18 +435,18 @@ describe('legal', () => {
   })
 
   test('a link whose text starts with the word wins over one that names it later, and both over the address alone', () => {
-    const datenschutz = (page: { text: string; href: string }[]) => legalLinks(page, 'https://proton.me/').find(l => l.kind === 'datenschutz')?.href
-    // proton.me: a blog teaser comes first, the policy later
+    const datenschutz = (page: { text: string; href: string }[]) => legalLinks(page, 'https://www.firma.de/').find(l => l.kind === 'datenschutz')?.href
+    // a blog teaser comes first, the policy later
     expect(datenschutz([
-      { text: 'About Swiss privacy', href: 'https://proton.me/blog/switzerland' },
-      { text: 'Privacy Policy', href: 'https://proton.me/legal/privacy' },
-    ])).toBe('https://proton.me/legal/privacy')
-    // mozilla.org: cookie settings under /privacy/ come first, the notice later
+      { text: 'About Swiss privacy', href: 'https://www.firma.de/blog/switzerland' },
+      { text: 'Privacy Policy', href: 'https://www.firma.de/legal/privacy' },
+    ])).toBe('https://www.firma.de/legal/privacy')
+    // cookie settings under /privacy/ come first, the notice later
     expect(datenschutz([
-      { text: 'Cookie settings', href: 'https://proton.me/privacy/websites/cookie-settings/' },
-      { text: 'this Privacy Notice', href: 'https://proton.me/privacy/websites/' },
-    ])).toBe('https://proton.me/privacy/websites/')
-    expect(datenschutz([{ text: 'Mehr zum Datenschutz', href: 'https://proton.me/blog' }, { text: '» Datenschutz', href: 'https://proton.me/ds' }])).toBe('https://proton.me/ds')
+      { text: 'Cookie settings', href: 'https://www.firma.de/privacy/websites/cookie-settings/' },
+      { text: 'this Privacy Notice', href: 'https://www.firma.de/privacy/websites/' },
+    ])).toBe('https://www.firma.de/privacy/websites/')
+    expect(datenschutz([{ text: 'Mehr zum Datenschutz', href: 'https://www.firma.de/blog' }, { text: '» Datenschutz', href: 'https://www.firma.de/ds' }])).toBe('https://www.firma.de/ds')
   })
 
   test('a link that names both counts for both', () => {

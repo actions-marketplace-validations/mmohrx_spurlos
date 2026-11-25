@@ -82,11 +82,11 @@ Below it, the report says how long that took: when the first content showed (Fir
 
 ## Own servers on other domains
 
-Many sites load images and scripts from a second domain of their own, Wikipedia for example from `wikimedia.org`. Such servers are yellow instead of red when spurlos can tie them to the site, and the report says why:
+Many sites load images and scripts from a second domain of their own, a reference site for example from `bildarchiv.org`. Such servers are yellow instead of red when spurlos can tie them to the site, and the report says why:
 
 - **per --own:** you name them yourself, `--own cdn-company.net`. That is unambiguous and the right way for your own site.
-- **per its certificate:** the site's TLS certificate names that domain too, as the one of `wikipedia.org` names `wikimedia.org`. spurlos reads it from the connection Chromium has anyway, and trusts it only if its holder (CN) is the site itself, since hosters' shared certificates name other customers.
-- **by its name:** the domain carries the site's name as a whole word, `media.kuketz.de` on `kuketz-blog.de`, `img.chefkoch-cdn.de` on `chefkoch.de` or `bildstatic.de` on `bild.de`. Parts of a word do not count (`ottonova.de` does not belong to `otto.de`), nor do short names and common words such as `shop` or `blog`. This is a guess; check it.
+- **per its certificate:** the site's TLS certificate names that domain too, as the one of `nachschlag.org` names `bildarchiv.org`. spurlos reads it from the connection Chromium has anyway, and trusts it only if its holder (CN) is the site itself, since hosters' shared certificates name other customers.
+- **by its name:** the domain carries the site's name as a whole word, `media.wetter.de` on `wetter-blog.de`, `img.rezeptwelt-cdn.de` on `rezeptwelt.de` or `zeitungstatic.de` on `zeitung.de`. Parts of a word do not count (`hausboot.de` does not belong to `haus.de`), nor do short names and common words such as `shop` or `blog`. This is a guess; check it.
 
 A known service from `src/services.json` never belongs to the site, not even with `--own`, unless the site is that service itself: on `doctolib.de`, Doctolib’s servers such as `media.doctolib.com` can belong to the site for the reasons above, those of other services cannot. The same goes for cookies of these domains. It stays yellow because the IP address still goes to another host; if a provider runs it, the provider learns it too.
 
