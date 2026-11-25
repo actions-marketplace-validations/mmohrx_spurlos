@@ -138,7 +138,7 @@ Exit code `0` without a red finding, `1` with one, `2` if a page could not be ch
 
 ## Adding known services
 
-Which hosts and cookies belong to which service is in [`src/services.json`](src/services.json). Hosts include their subdomains, cookie names match as a prefix (`_ga` also covers `_ga_ABC123`), with a leading `*` as a suffix (`*-session`). `paths` holds parts of file paths by which spurlos recognizes a service on the site itself or on an unknown host too: ending in `/`, a directory anywhere in the path (`/wp-content/plugins/borlabs-cookie/`), otherwise the end of the path (`/klaro.js`). `aliases` holds other names a privacy policy may give the service (`Facebook` for `Meta Pixel`). If a service is missing, a pull request is welcome.
+Which hosts and cookies belong to which service is in [`src/services.json`](src/services.json). Hosts include their subdomains, cookie names match as a prefix (`_ga` also covers `_ga_ABC123`), with a leading `*` as a suffix (`*-session`). `paths` holds parts of file paths by which spurlos recognizes a service on the site itself, on an unknown host, or on a host that only stands for its provider in general (reCAPTCHA under `www.google.com/recaptcha/`): ending in `/`, a directory anywhere in the path (`/wp-content/plugins/borlabs-cookie/`), otherwise the end of the path (`/klaro.js`). `aliases` holds other names a privacy policy may give the service (`Facebook` for `Meta Pixel`). If a service is missing, a pull request is welcome.
 
 ## What spurlos does not do
 

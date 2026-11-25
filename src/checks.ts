@@ -143,6 +143,10 @@ export function serviceOfPath(url: string): Service | undefined {
   return services.find(s => s.paths?.some(p => (p.endsWith('/') ? path.includes(p) : path.endsWith(p))))
 }
 
+/** A host's service, unless a path names one more exactly: Google's servers (category other) also serve reCAPTCHA. */
+const preferPath = (byHost: Service | undefined, byPath: Service | undefined) =>
+  byPath && (!byHost || byHost.category === 'other') ? byPath : byHost
+
 /** The platform the page runs on, by its headers (Wix, Shopify): it serves the page, so it knows the visitor's IP anyway. */
 export function platformOf(scan: Scan): Service | undefined {
   return services.find(s =>
@@ -307,7 +311,7 @@ function thirdPartyFound(scan: Scan): { hosts: ThirdParty[]; selfHosted: string[
   const hosts = [...counts, ...[...ahead].map(h => [h, 0] as const)]
     .map(([host, requests]): ThirdParty => {
       const reason = owner(host)
-      return { host, service: serviceOfHost(host) ?? byPath.get(host), requests, ...(reason ? { own: reason } : {}), ...(requests ? {} : { preconnect: true as const }), ...(requests && !early.has(host) ? { afterMove: true as const } : {}) }
+      return { host, service: preferPath(serviceOfHost(host), byPath.get(host)), requests, ...(reason ? { own: reason } : {}), ...(requests ? {} : { preconnect: true as const }), ...(requests && !early.has(host) ? { afterMove: true as const } : {}) }
     })
     .sort((a, b) => a.host.localeCompare(b.host))
   return { hosts, selfHosted: [...selfHosted] }
@@ -735,7 +739,8 @@ function callers(scan: Scan): (script: string) => Caller {
     }
     const thirdParty = host !== '' && !own.has(site(host))
     const reason = thirdParty ? owner(host) : undefined
-    return { host, thirdParty, service: host ? serviceOfHost(host) : undefined, ...(reason ? { own: reason } : {}) }
+    const service = host ? preferPath(serviceOfHost(host), serviceOfPath(script)) : undefined
+    return { host, thirdParty, service, ...(reason ? { own: reason } : {}) }
   }
 }
 

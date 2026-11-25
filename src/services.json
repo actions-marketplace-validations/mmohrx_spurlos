@@ -145,7 +145,7 @@
   { "name": "PayPal", "category": "payment", "hosts": ["paypal.com", "paypalobjects.com"] },
   { "name": "Klarna", "category": "payment", "hosts": ["klarna.com", "klarnaservices.com"] },
 
-  { "name": "Google reCAPTCHA", "category": "captcha", "hosts": ["recaptcha.net"], "cookies": ["_GRECAPTCHA"], "aliases": ["reCAPTCHA"] },
+  { "name": "Google reCAPTCHA", "category": "captcha", "hosts": ["recaptcha.net"], "paths": ["/recaptcha/api.js", "/recaptcha/api2/", "/recaptcha/releases/", "/recaptcha/enterprise.js", "/recaptcha/enterprise/"], "cookies": ["_GRECAPTCHA"], "aliases": ["reCAPTCHA"] },
   { "name": "hCaptcha", "category": "captcha", "hosts": ["hcaptcha.com"] },
   { "name": "Cloudflare Turnstile", "category": "captcha", "hosts": ["challenges.cloudflare.com"] },
   { "name": "Friendly Captcha", "category": "captcha", "hosts": ["friendlycaptcha.com", "frcapi.com"] },

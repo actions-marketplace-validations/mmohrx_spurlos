@@ -19,6 +19,7 @@ describe('fingerprinting', () => {
         fp('canvas', 'https://fp.anders.de/fp.js'),
         fp('webgl', 'https://www.firma.de/app.js'),
         fp('audio', 'https://www.recaptcha.net/recaptcha/api.js'),
+        fp('canvas', 'https://www.gstatic.com/recaptcha/releases/abc/recaptcha__de.js'),
         fp('canvas', 'https://cdn-firma.net/x.js'),
         fp('canvas', 'about:blank'),
       ],
@@ -29,6 +30,7 @@ describe('fingerprinting', () => {
       ['fp.anders.de', true, undefined],
       ['www.firma.de', false, undefined],
       ['www.recaptcha.net', true, undefined],
+      ['www.gstatic.com', true, undefined],
       ['cdn-firma.net', true, 'option'],
       ['', false, undefined],
     ])
@@ -36,6 +38,7 @@ describe('fingerprinting', () => {
       'red fingerprinting canvas fp.anders.de',
       'yellow fingerprinting webgl www.firma.de',
       'yellow fingerprinting audio recaptcha.net',
+      'yellow fingerprinting canvas gstatic.com',
       'yellow fingerprinting canvas cdn-firma.net',
       'yellow fingerprinting canvas ',
     ])
@@ -626,6 +629,19 @@ describe('cookie banners', () => {
     expect(thirdParty({ ...base, requests: [req('consent.cookiebot.com'), req('challenges.cloudflare.com')] }).level).toBe('yellow')
     expect(thirdParty({ ...base, requests: [req('consent.cookiebot.com'), req('fonts.gstatic.com')] }).level).toBe('red')
     expect(thirdParty({ ...base, requests: [req('js.stripe.com')] }).level).toBe('red')
+  })
+
+  test('reCAPTCHA on Google’s servers is known by its path, other files there stay Google', () => {
+    const at = (url: string) => ({ url, host: new URL(url).hostname, type: 'script' })
+    const r = thirdParty({ ...base, requests: [at('https://www.google.com/recaptcha/api.js'), at('https://www.gstatic.com/recaptcha/releases/abc/recaptcha__de.js')] })
+    if (r.check !== 'third-party') throw new Error()
+    expect(r.level).toBe('yellow')
+    expect(r.hosts.map(h => [h.host, h.service?.name])).toEqual([['www.google.com', 'Google reCAPTCHA'], ['www.gstatic.com', 'Google reCAPTCHA']])
+    expect(thirdParty({ ...base, requests: [at('https://www.gstatic.com/images/logo.png')] }).level).toBe('red')
+    // a known service keeps its name, whatever path it serves
+    const ads = thirdParty({ ...base, requests: [at('https://googleads.g.doubleclick.net/recaptcha/api2/x')] })
+    if (ads.check !== 'third-party') throw new Error()
+    expect(ads.hosts[0]?.service?.name).toBe('Google Ads')
   })
 
   test("the banner's own cookie is green, a chat's yellow, a tracker's red", () => {
