@@ -136,6 +136,8 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   consentButTrackers: 'The trackers above still load before anyone chooses anything in the banner.',
   consentButTagManager:
     'A tag manager already loads before anyone chooses anything in the banner. It counts nothing itself, but starts trackers as soon as the site is set up to, and its provider learns the IP address on loading.',
+  sessionReplay: names =>
+    `Session replay: ${names}. Such services record mouse movements, clicks and scrolling, depending on their settings also what someone types into form fields, and play the visit back later like a video.`,
   consentModeGranted: (ads, analytics) => `tells Google consent was given for ${ads && analytics ? 'ads and analytics' : ads ? 'ads' : 'analytics'} before anyone chose anything`,
   consentModeGrantedNote: 'Google Consent Mode tells Google\'s tags whether the visitor agreed. Set to “granted” up front, they set cookies and use the data as if the visitor had agreed. The usual default is “denied” until the cookie banner reports the choice.',
   consentModeDenied: gcs => `Google Consent Mode reports ads and analytics as denied (gcs=${gcs}). Google's tags still send requests, without cookies, and learn the IP address that way.`,

@@ -197,6 +197,16 @@ test('a tag manager alone before the banner gets its own note, not the one about
   expect(both).not.toContain('Vor jeder Wahl im Banner lädt schon ein Tag Manager.')
 })
 
+test('a session replay counts as a tracker and gets a note of its own', () => {
+  const hj = { host: 'static.hotjar.com', service: { name: 'Hotjar', category: 'session-replay', hosts: ['hotjar.com'] }, requests: 1 }
+  const r: Result = { check: 'third-party', level: 'red', hosts: [hj], consent: ['Usercentrics'], selfHosted: [] }
+  const de = text(page('https://shop.example/'), [r], 'de')
+  expect(de).toContain('Sitzungsaufzeichnung: Hotjar.')
+  expect(de).toContain('Die Tracker oben laden trotzdem schon')
+  expect(text(page('https://shop.example/'), [r], 'en')).toContain('Session replay: Hotjar.')
+  expect(text(page('https://shop.example/'), [{ ...r, hosts: [{ ...hj, own: 'option' as const }] }], 'de')).not.toContain('Sitzungsaufzeichnung')
+})
+
 test('SARIF: one rule per check, a result per red or yellow finding at the page, its key as fingerprint', () => {
   const scan = page('https://shop.example/')
   const results: Result[] = [

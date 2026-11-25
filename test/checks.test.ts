@@ -649,6 +649,8 @@ describe('cookie banners', () => {
     expect(cookies({ ...base, cookies: [c('CookieConsent'), c('euconsent-v2')] }).level).toBe('green')
     expect(cookies({ ...base, cookies: [c('intercom-id-abc')] }).level).toBe('yellow')
     expect(cookies({ ...base, cookies: [c('_ttp')] }).level).toBe('red')
+    // a session replay's cookie is a tracker's
+    expect(cookies({ ...base, cookies: [c('_hjSessionUser_1')] }).level).toBe('red')
   })
 })
 

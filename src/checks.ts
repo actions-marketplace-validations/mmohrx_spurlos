@@ -119,7 +119,8 @@ export function hostKey(host: string): string {
  * needed to run the site, not to follow anyone.
  */
 const isNecessary = (s: Service | undefined) => s?.category === 'necessary' || s?.category === 'consent'
-const isTracker = (s: Service | undefined) => s?.category === 'tracking'
+// a session replay records the visit: a tracker, and more
+const isTracker = (s: Service | undefined) => s?.category === 'tracking' || s?.category === 'session-replay'
 
 // names in services.json are prefixes (_ga also covers GA4's _ga_ABC123),
 // or with a leading * suffixes (*-session covers Laravel's <app>-session)

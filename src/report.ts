@@ -57,7 +57,9 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
     case 'third-party': {
       // the site's own servers give no tips: not the platform it runs on, nor a known service's on its own site
       const categories = new Set(r.hosts.filter(h => !h.own).map(h => h.service?.category))
-      const trackers = categories.has('tracking')
+      // a session replay is a tracker too, and records how the visit goes: it gets a note of its own
+      const trackers = categories.has('tracking') || categories.has('session-replay')
+      const replays = [...new Set(r.hosts.filter(h => !h.own && h.service?.category === 'session-replay').map(h => h.service?.name ?? ''))]
       // a tag manager counts nothing itself: it starts trackers when the site is set up to, so it gets a note of its own
       const tagManager = categories.has('tag-manager')
       const before = trackers ? [t.consentButTrackers] : tagManager ? [t.consentButTagManager] : []
@@ -94,6 +96,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           ...(r.hosts.some(h => h.afterMove) ? [t.afterMoveNote] : []),
           ...selfHosted,
           ...consent,
+          ...(replays.length ? [t.sessionReplay(replays.join(', '))] : []),
           ...modeNotes,
           ...hints.filter(n => n !== null),
         ],
