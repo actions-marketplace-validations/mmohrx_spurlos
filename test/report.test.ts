@@ -154,7 +154,7 @@ test('the platform the site runs on is named, and gives no tips for its own serv
     level: 'red',
     hosts: [
       { host: 'cdn.shopify.com', service: { name: 'Shopify', category: 'cdn', hosts: ['cdn.shopify.com'] }, requests: 3, own: 'platform' },
-      { host: 'www.googletagmanager.com', service: { name: 'Google Tag Manager', category: 'tracking', hosts: ['googletagmanager.com'] }, requests: 1 },
+      { host: 'www.googletagmanager.com', service: { name: 'Google Tag Manager', category: 'tag-manager', hosts: ['googletagmanager.com'] }, requests: 1 },
     ],
     consent: [],
     selfHosted: [],
@@ -181,6 +181,20 @@ test('a page that is a known service itself names why its servers are its own, a
   expect(de).toContain('🟡 static.hotjar.io – Hotjar, gehört dem Namen nach zur Seite (2 Anfragen)')
   expect(de).not.toContain('Tracker')
   expect(de).not.toContain('Keinen bekannten Cookie-Banner')
+})
+
+test('a tag manager alone before the banner gets its own note, not the one about trackers', () => {
+  const gtm = { host: 'www.googletagmanager.com', service: { name: 'Google Tag Manager', category: 'tag-manager', hosts: ['googletagmanager.com'] }, requests: 1 }
+  const ga = { host: 'www.google-analytics.com', service: { name: 'Google Analytics', category: 'tracking', hosts: ['google-analytics.com'] }, requests: 1 }
+  const r = (...hosts: (typeof gtm)[]): Result => ({ check: 'third-party', level: 'red', hosts, consent: ['Usercentrics'], selfHosted: [] })
+  const alone = text(page('https://shop.example/'), [r(gtm)], 'de')
+  expect(alone).toContain('Vor jeder Wahl im Banner lädt schon ein Tag Manager.')
+  expect(alone).toContain('Ein Tag Manager lässt sich so einstellen')
+  expect(alone).not.toContain('Die Tracker oben laden trotzdem')
+  expect(text(page('https://shop.example/'), [r(gtm)], 'en')).toContain('A tag manager already loads before anyone chooses anything in the banner.')
+  const both = text(page('https://shop.example/'), [r(gtm, ga)], 'de')
+  expect(both).toContain('Die Tracker oben laden trotzdem schon')
+  expect(both).not.toContain('Vor jeder Wahl im Banner lädt schon ein Tag Manager.')
 })
 
 test('SARIF: one rule per check, a result per red or yellow finding at the page, its key as fingerprint', () => {

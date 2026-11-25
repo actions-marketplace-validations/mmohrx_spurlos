@@ -35,6 +35,9 @@ spurlos 0.5.3  https://shop.example/tracked.html
        only load after a click.
      → Trackers can be embedded so that they only load once someone agrees in
        the cookie banner.
+     → A tag manager can be set up to start trackers only after consent. To send
+       no request to its provider at all, load the tag manager itself only after
+       consent.
 
 🔴 Cookies and storage              4 cookies, 1 entry in browser storage
   ├─ 🟡 Cookie session (shop.example) – first-party, unknown, until the session ends, without Secure

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Google Tag Manager, Adobe Tags and Tealium iQ are now their own category, `tag-manager`. When only a tag manager loads before the cookie banner's choice, the report no longer says "the trackers above still load" but has a note of its own: it counts nothing itself, but starts trackers once the site is set up to. The server stays red. Tealium's collect server (`tealiumiq.com`) stays a tracker.
 - A page that removes `window.localStorage` or `window.sessionStorage` is checked again; before, spurlos stopped with "Cannot read properties of undefined".
 
 ## 0.5.3 – 2026-11-24

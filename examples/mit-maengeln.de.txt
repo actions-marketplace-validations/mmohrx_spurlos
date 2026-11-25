@@ -36,6 +36,9 @@ beim Aufruf 15 Anfragen, 4 kB; davon 9 mit 1 kB an andere Domains
        einbinden, dass sie erst nach einem Klick laden.
      → Tracker lassen sich so einbinden, dass sie erst laden, wenn jemand im
        Cookie-Banner zustimmt.
+     → Ein Tag Manager lässt sich so einstellen, dass er Tracker erst nach der
+       Zustimmung startet. Ganz ohne Anfrage an seinen Anbieter geht es nur,
+       wenn er selbst erst nach der Zustimmung lädt.
 
 🔴 Cookies und Speicher       4 Cookies, 1 Eintrag im Browser-Speicher
   ├─ 🟡 Cookie session (shop.example) – eigen, unbekannt, bis Sitzungsende, ohne Secure

@@ -58,7 +58,10 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       // the site's own servers give no tips: not the platform it runs on, nor a known service's on its own site
       const categories = new Set(r.hosts.filter(h => !h.own).map(h => h.service?.category))
       const trackers = categories.has('tracking')
-      const consent = r.consent.length ? [t.consentFound(r.consent.join(', ')), ...(trackers ? [t.consentButTrackers] : [])] : trackers ? [t.consentNone] : []
+      // a tag manager counts nothing itself: it starts trackers when the site is set up to, so it gets a note of its own
+      const tagManager = categories.has('tag-manager')
+      const before = trackers ? [t.consentButTrackers] : tagManager ? [t.consentButTagManager] : []
+      const consent = r.consent.length ? [t.consentFound(r.consent.join(', ')), ...before] : trackers || tagManager ? [t.consentNone] : []
       // a baseline from an older spurlos has none
       const selfHosted = r.selfHosted?.length ? [t.selfHosted(r.selfHosted.join(', '))] : []
       // what Google's tags were told of the visitor's consent; a baseline from an older spurlos has none
@@ -74,6 +77,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
         categories.has('captcha') ? t.thirdPartyHint.captcha : null,
         EMBEDS.some(c => categories.has(c)) ? t.thirdPartyHint.embed : null,
         trackers ? t.thirdPartyHint.tracking : null,
+        tagManager ? t.thirdPartyHint.tagManager : null,
       ]
       return {
         value: `${r.hosts.length}`,
