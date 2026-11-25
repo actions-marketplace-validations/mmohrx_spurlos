@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- A page that removes `window.localStorage` or `window.sessionStorage` is checked again; before, spurlos stopped with "Cannot read properties of undefined".
+
 ## 0.5.3 – 2026-11-24
 
 - Without `--lang`, `SPURLOS_LANG` or a system language spurlos knows, the report is now in English instead of German. This applies in Docker, on CI runners (`C.UTF-8`), often for the MCP server, and for locales without texts such as `fr_FR`. A German system still gets German; elsewhere use `--lang de` or `SPURLOS_LANG=de`, and `lang: de` in the action.

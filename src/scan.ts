@@ -486,7 +486,9 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const { storage, links, forms, resources, metaCsp, metaReferrer, generator, robots, accessibility, preconnect, width } = await page.evaluate(() => {
       const storage: StorageEntry[] = []
       for (const area of ['localStorage', 'sessionStorage'] as const) {
-        const s = window[area]
+        // a page may delete window.localStorage (elektro-kranen.de did): then there is nothing to read
+        const s = window[area] as Storage | undefined
+        if (!s) continue
         for (let i = 0; i < s.length; i++) storage.push({ area, key: s.key(i) ?? '' })
       }
       // web components keep their markup in shadow roots, footers with Impressum and Datenschutz among them

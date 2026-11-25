@@ -59,6 +59,12 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(pick(results, 'forms').forms.map(f => [f.action, f.problem])).toEqual([['http://shop.example/newsletter', 'unencrypted']])
   })
 
+  test('a page that takes window.localStorage away is still checked', async () => {
+    const s = await scan(`${SITE}/nostorage.html`, { setup: offline, fetch: redirects })
+    expect(s.storage).toEqual([])
+    expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
+  })
+
   test('a page that turns spurlos away, as bot checks do, says so instead of checking the error page', async () => {
     await expect(scan(`${SITE}/blocked.html`, { setup: offline, fetch: redirects })).rejects.toThrow(`${REFUSED} 403`)
     expect(MESSAGES.de.failed('https://shop.example/', `${REFUSED} 403`)).toContain('mit Status 403 abgewiesen, oft wegen eines Bot-Schutzes')

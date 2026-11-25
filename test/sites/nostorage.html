@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Seite ohne Web Storage</title>
+</head>
+<body>
+  <h1>Seite ohne Web Storage</h1>
+  <script>
+    // some sites take the storage away from every script that comes after them
+    Object.defineProperty(window, 'localStorage', { value: undefined })
+    Object.defineProperty(window, 'sessionStorage', { value: undefined })
+  </script>
+  <a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a>
+</body>
+</html>
