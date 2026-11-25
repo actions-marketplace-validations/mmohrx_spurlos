@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   access, accessibility, blocksZoom, indexing, consentMode, cookieIds, policy, servicesNamed, compare, mobile, carried, leaks, load, consentManagers, preconnects, cookies, disclosure, findings, fingerprinting, forms, headers, https, legal, legalLinks, resources, serviceOfCookie, serviceOfStorage, serviceOfHost,
-  thirdParty, weakCsp, type Result,
+  banner, thirdParty, weakCsp, type Banner, type Result,
 } from '../src/checks.ts'
 import { iceHost, type Scan, type Visit } from '../src/scan.ts'
 
@@ -642,6 +642,24 @@ describe('cookie banners', () => {
     const ads = thirdParty({ ...base, requests: [at('https://googleads.g.doubleclick.net/recaptcha/api2/x')] })
     if (ads.check !== 'third-party') throw new Error()
     expect(ads.hosts[0]?.service?.name).toBe('Google Ads')
+  })
+
+  test('a banner refusing on its first layer is green, one that only agrees yellow; settings and saving are neither', () => {
+    const choice = (...buttons: string[]) => banner({ ...base, banner: buttons })
+    expect(choice('Einstellungen', 'Alle akzeptieren')).toEqual({ accept: 'Alle akzeptieren' })
+    expect(choice('Alle ablehnen', 'Alle akzeptieren')).toEqual({ accept: 'Alle akzeptieren', reject: 'Alle ablehnen' })
+    expect(choice('Nur notwendige akzeptieren', 'Akzeptieren')).toEqual({ accept: 'Akzeptieren', reject: 'Nur notwendige akzeptieren' })
+    expect(choice('Weiter ohne Einwilligung', 'Zustimmen & weiter')).toEqual({ accept: 'Zustimmen & weiter', reject: 'Weiter ohne Einwilligung' })
+    expect(choice('Only allow necessary', 'Accept all cookies')).toEqual({ accept: 'Accept all cookies', reject: 'Only allow necessary' })
+    expect(choice('Manage options', 'Reject all', 'I agree')).toEqual({ accept: 'I agree', reject: 'Reject all' })
+    // choosing what to allow is no answer either way
+    expect(choice('Auswahl erlauben', 'Einstellungen speichern', 'Datenschutzerklärung')).toBeUndefined()
+    expect(choice()).toBeUndefined()
+    expect(banner(base)).toBeUndefined()
+    const level = (b?: Banner) => thirdParty({ ...base, banner: b ? [b.accept, ...(b.reject ? [b.reject] : [])] : [] }).level
+    expect(level({ accept: 'Alle akzeptieren' })).toBe('yellow')
+    expect(level({ accept: 'Alle akzeptieren', reject: 'Ablehnen' })).toBe('green')
+    expect(findings(thirdParty({ ...base, banner: ['Alle akzeptieren'] }))).toEqual([{ key: 'consent-banner no-reject', level: 'yellow' }])
   })
 
   test("the banner's own cookie is green, a chat's yellow, a tracker's red", () => {

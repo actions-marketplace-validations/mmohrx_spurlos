@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The check "Third-party servers" now reads the buttons a cookie banner shows without a click, on the page or in a frame of its provider, and says whether one refuses next to the one that agrees. If only agreeing takes one click, the finding is yellow. spurlos knows the buttons by their words in German and English and clicks none of them. In `--json`, the result has `banner` with `accept` and `reject`, the scan the texts of the buttons under `banner`.
 - Hotjar, Microsoft Clarity, FullStory, Mouseflow, Smartlook, Lucky Orange and Crazy Egg are now their own category, `session-replay`. They still count as trackers, and the check "Third-party servers" names them in a note of its own, since they record mouse movements, clicks and scrolling, depending on their settings also what someone types into form fields.
 - Google reCAPTCHA is now recognized when it loads from `www.google.com/recaptcha/` or `www.gstatic.com/recaptcha/`, as on most sites. Before, those servers were only "Google" and red; now they are yellow like other captchas, and so is reCAPTCHA reading the browser's canvas or audio. A path in `services.json` now wins over a host entry of category `other`.
 - An Impressum or privacy policy that a page shows as another element with `href`, such as a `<div href="/impressum">` a script opens on click, now counts as a link. Before, the report said "no link found on the page" although the footer had one.

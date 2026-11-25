@@ -142,6 +142,11 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   consentNone: 'Keinen bekannten Cookie-Banner erkannt.',
   sessionReplay: (names: string) =>
     `Sitzungsaufzeichnung: ${names}. Solche Dienste zeichnen Mausbewegungen, Klicks und Scrollen auf, je nach Einstellung auch, was jemand in Formularfelder tippt, und spielen den Besuch später wie ein Video ab.`,
+  bannerLabel: 'Cookie-Banner',
+  bannerReject: (text: string) => `Ablehnen auf der ersten Ebene: „${text}“`,
+  bannerNoReject: (text: string) => `„${text}“ auf der ersten Ebene, kein Knopf zum Ablehnen`,
+  bannerNoRejectNote:
+    'Der Banner zeigt ohne Klick einen Knopf zum Zustimmen, aber keinen zum Ablehnen; der steckt dann meist hinter „Einstellungen“ oder einem Link. spurlos erkennt die Knöpfe an ihren Wörtern und klickt keinen an. Heißt der Knopf anders, prüf es selbst.',
   consentModeGranted: (ads: boolean, analytics: boolean) => `meldet Google Zustimmung zu ${ads && analytics ? 'Werbung und Analyse' : ads ? 'Werbung' : 'Analyse'}, bevor jemand etwas gewählt hat`,
   consentModeGrantedNote: 'Google Consent Mode sagt den Google-Tags, ob der Besucher zugestimmt hat. Steht es vorab auf „granted“, setzen sie Cookies und nutzen die Daten, als hätte er zugestimmt. Üblich ist „denied“, bis der Cookie-Banner die Wahl meldet.',
   consentModeDenied: (gcs: string) => `Google Consent Mode meldet Werbung und Analyse als abgelehnt (gcs=${gcs}). Die Google-Tags senden trotzdem schon, ohne Cookies, und erfahren dabei die IP-Adresse.`,

@@ -279,6 +279,11 @@ export type Scan = {
    * load event ended; idle, the last request before the first move was done. Missing in a scan of an older spurlos.
    */
   timing?: { firstPaint?: number; load: number; idle: number }
+  /**
+   * the visible buttons of what looks like a cookie banner after the first move, as their text, in any frame; empty
+   * when none showed. Missing in a scan of an older spurlos.
+   */
+  banner?: string[]
   /** what <meta name="generator"> says, often the CMS and its version */
   generator?: string
   /** what <meta name="robots"> and <meta name="googlebot"> say, joined by a comma */
@@ -467,6 +472,8 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const before = requests.length
     const quiet = await firstMove(page, requests, options.settleMs ?? 10_000)
     for (const r of requests.slice(before)) r.afterMove = true
+    // the banner as it stands now, after the move: some only show once the visitor moves
+    const banner = await bannerButtons(page)
 
     const jar = await context.cookies()
     // what other sites' cookies hold turns up in requests to a third: cookie syncing. Only the values are compared, none kept
@@ -580,6 +587,7 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
       width,
       userAgent,
       sandbox,
+      banner,
     }
     if (tls?.validTo) result.certificate = { validTo: tls.validTo, issuer: tls.issuer ?? '', ...names }
     if (options.own?.length) result.own = options.own
@@ -637,6 +645,70 @@ async function firstMove(page: Page, requests: Request[], settleMs: number): Pro
   }
   await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {})
   return Date.now() < end
+}
+
+/**
+ * The texts of the buttons a visitor sees in a cookie banner, without clicking any: clickable elements on screen inside
+ * a box that lies over the page (fixed, sticky or a dialog, found up through shadow roots) and speaks of cookies or
+ * consent. A frame counts as such a box, as some banners sit in one of their provider's.
+ */
+async function bannerButtons(page: Page): Promise<string[]> {
+  // a frame that does not answer (an ad still loading, say) gives no buttons rather than holding up the scan
+  const late = () => new Promise<string[]>(resolve => setTimeout(() => resolve([]), 3000).unref())
+  const found = await Promise.all(
+    page.frames().map(frame =>
+      Promise.race([late(), frame
+        .evaluate(main => {
+          const CONSENT = /cookie|einwillig|zustimm|consent|datenschutz|privacy|tracking/i
+          const roots: (Document | ShadowRoot)[] = [document]
+          for (let i = 0; i < roots.length; i++) for (const el of roots[i]!.querySelectorAll('*')) if (el.shadowRoot) roots.push(el.shadowRoot)
+          const clickable = roots.flatMap(r => [...r.querySelectorAll('button, [role="button"], a, input[type="button"], input[type="submit"], [onclick]')])
+          const shown = (el: Element) => {
+            const box = el.getBoundingClientRect()
+            // above or below the fold counts: a long banner scrolls inside itself, and the first move's wheel may have
+            // scrolled it. Far off is a banner hidden by moving it away.
+            if (box.width < 2 || box.height < 2 || box.bottom < -2000 || box.top > innerHeight + 2000 || box.right <= 0 || box.left >= innerWidth) return false
+            const style = getComputedStyle(el)
+            return style.visibility !== 'hidden' && Number(style.opacity) > 0
+          }
+          // the parent, or the host of the shadow root it sits in
+          const up = (el: Element) => el.parentElement ?? ((el.getRootNode() as ShadowRoot).host as Element | undefined) ?? null
+          // a banner lies over the page (fixed, sticky or a dialog) and speaks of cookies; in a frame of its own, the frame is the box
+          const inBanner = (el: Element) => {
+            for (let box: Element | null = el; box; box = up(box)) {
+              const { position } = getComputedStyle(box)
+              const overlay = position === 'fixed' || position === 'sticky' || box.tagName === 'DIALOG' || /^(alert)?dialog$/.test(box.getAttribute('role') ?? '') || box.getAttribute('aria-modal') === 'true'
+              if (!overlay) continue
+              // a header that stays on screen, or a page laid out fixed as a whole, is no banner: look further up
+              const text = (box as HTMLElement).innerText ?? ''
+              if (text.length <= 3000 && CONSENT.test(text)) return true
+            }
+            const frameText = document.body?.innerText ?? ''
+            // a provider's frame may hold a long text, but not a whole page
+            return !main && frameText.length <= 10000 && CONSENT.test(frameText)
+          }
+          // a link inside a sentence („… jetzt ablehnen“ in the text) is no button of the banner; one on its own, or in a row of them, may be
+          const button = (el: Element, text: string) => {
+            if (el.matches('button, [role="button"], input')) return true
+            // the block the link sits in: up through inline wrappers such as <span> or <strong>
+            let block = el.parentElement
+            while (block && /^(inline|contents)$/.test(getComputedStyle(block).display)) block = block.parentElement
+            // a row of buttons holds nothing but them; a sentence holds words of its own
+            let rest = block?.innerText ?? ''
+            for (const other of block?.querySelectorAll('a, button, [role="button"]') ?? []) rest = rest.replace((other as HTMLElement).innerText, '')
+            return /^[\s|·•,/-]*$/.test(rest)
+          }
+          const texts: string[] = []
+          for (const el of clickable) {
+            const text = ((el as HTMLElement).innerText || (el as HTMLInputElement).value || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ')
+            if (text && text.length <= 80 && button(el, text) && shown(el) && inBanner(el)) texts.push(text)
+          }
+          return texts
+        }, frame === page.mainFrame())
+        .catch(() => [] as string[])]),
+    ),
+  )
+  return [...new Set(found.flat())].slice(0, 50)
 }
 
 /** A second, separate browser for opening single URLs: only the documents load, nothing of it counts towards the scan. */

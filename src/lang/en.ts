@@ -138,6 +138,11 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
     'A tag manager already loads before anyone chooses anything in the banner. It counts nothing itself, but starts trackers as soon as the site is set up to, and its provider learns the IP address on loading.',
   sessionReplay: names =>
     `Session replay: ${names}. Such services record mouse movements, clicks and scrolling, depending on their settings also what someone types into form fields, and play the visit back later like a video.`,
+  bannerLabel: 'Cookie banner',
+  bannerReject: text => `refusing on the first layer: “${text}”`,
+  bannerNoReject: text => `“${text}” on the first layer, no button to refuse`,
+  bannerNoRejectNote:
+    'Without a click, the banner shows a button to agree but none to refuse; that one then mostly sits behind “Settings” or a link. spurlos recognizes the buttons by their words and clicks none of them. If the button is worded differently, check it yourself.',
   consentModeGranted: (ads, analytics) => `tells Google consent was given for ${ads && analytics ? 'ads and analytics' : ads ? 'ads' : 'analytics'} before anyone chose anything`,
   consentModeGrantedNote: 'Google Consent Mode tells Google\'s tags whether the visitor agreed. Set to “granted” up front, they set cookies and use the data as if the visitor had agreed. The usual default is “denied” until the cookie banner reports the choice.',
   consentModeDenied: gcs => `Google Consent Mode reports ads and analytics as denied (gcs=${gcs}). Google's tags still send requests, without cookies, and learn the IP address that way.`,

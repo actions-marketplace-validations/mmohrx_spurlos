@@ -9,7 +9,7 @@
 
 Ruft eine Website so auf wie ein neuer Besucher, der noch nichts angeklickt hat, und zeigt dir:
 
-- **welche fremden Server** dabei angefragt werden, etwa Google Fonts, Tag Manager, YouTube oder ein CDN. Jeder davon erfährt die IP-Adresse des Besuchers.
+- **welche fremden Server** dabei angefragt werden, etwa Google Fonts, Tag Manager, YouTube oder ein CDN. Jeder davon erfährt die IP-Adresse des Besuchers. Dazu, ob der Cookie-Banner neben dem Knopf zum Zustimmen gleich einen zum Ablehnen anbietet.
 - **welche Cookies und Einträge im Browser-Speicher** schon vor jeder Einwilligung gesetzt sind, und ob darunter bekannte Tracker oder Cookies fremder Domains sind.
 - ob **E-Mail-Adressen oder Werte aus der Adresse der Seite** an fremde Server gehen, etwa von einer Danke-Seite `/danke?email=…` an Analytics, und ob Werbe-Server ihre IDs untereinander austauschen (Cookie-Sync).
 - ob Skripte den Browser per **Fingerprinting** vermessen: Canvas, Grafikkarte über WebGL, Audio, die IP-Adresse über WebRTC. Das erkennt Besucher auch ohne Cookie wieder.
@@ -92,7 +92,7 @@ spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Ange
 
 | Prüfung | 🟢 | 🟡 | 🔴 |
 |---|---|---|---|
-| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem; dazu Server, die zur Seite zu gehören scheinen (`--own`, Zertifikat, Name), und die der Plattform, auf der sie läuft (Wix, Shopify, Squarespace, Webflow, IONOS MyWebsite) | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner, keinem Captcha und nicht zur Seite gehört; Google Consent Mode meldet vor jedem Klick Zustimmung (`gcs=G101`, `G110`, `G111`) |
+| Fremde Server | keine | nur Cookie-Banner und Captchas (Kategorien `consent` und `captcha`): Die Seite braucht sie, sie erfahren die IP-Adresse trotzdem; dazu Server, die zur Seite zu gehören scheinen (`--own`, Zertifikat, Name), und die der Plattform, auf der sie läuft (Wix, Shopify, Squarespace, Webflow, IONOS MyWebsite); ein Cookie-Banner, der mit einem Klick zustimmt, aber ohne Klick keinen Knopf zum Ablehnen zeigt | mindestens eine Anfrage an eine andere Domain, die zu keinem Cookie-Banner, keinem Captcha und nicht zur Seite gehört; Google Consent Mode meldet vor jedem Klick Zustimmung (`gcs=G101`, `G110`, `G111`) |
 | Cookies und Speicher | nichts gesetzt, oder nur bekannte Sitzungs- und Sicherheits-Cookies und solche, in denen der Cookie-Banner die Wahl speichert | eigene Cookies oder Einträge, die spurlos nicht kennt oder die zu einem Dienst wie einem Chat oder Zahlungsanbieter gehören; ein Cookie ohne `Secure` auf einer https-Seite; ein Sitzungs-Cookie ohne `HttpOnly`; ein Cookie, das länger als 13 Monate gilt | Cookie einer fremden Domain, die nicht zur Seite zu gehören scheint, oder eines bekannten Trackers |
 | Weitergegebene Daten | keine | ein Wert aus der Query der Seite (außer `utm_…` und Klick-IDs) geht an einen fremden Server, oder eine E-Mail-Adresse an einen Server, der zur Seite zu gehören scheint | eine E-Mail-Adresse geht an einen fremden Server; die ID aus dem Cookie eines fremden Servers geht an einen dritten (Cookie-Sync) |
 | Fingerprinting | kein Skript liest Canvas, Grafikkarte, Audio oder über WebRTC die IP-Adresse aus | ein eigenes Skript, ein Captcha oder ein Server, der zur Seite zu gehören scheint, liest sie aus | ein Skript einer fremden Domain liest sie aus |

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Banner ohne Ablehnen</title>
+</head>
+<body>
+  <h1>Banner ohne Ablehnen</h1>
+  <p><a href="/impressum">Impressum</a> · <a href="/datenschutz">Datenschutz</a></p>
+  <button>Zum Warenkorb</button>
+  <banner-box></banner-box>
+  <!-- a banner that has gone does not count -->
+  <div style="display: none"><p>Wir nutzen Cookies.</p><button>Alle ablehnen</button></div>
+  <script>
+    // the banner in a shadow root, as some providers build it
+    customElements.define('banner-box', class extends HTMLElement {
+      connectedCallback() {
+        this.attachShadow({ mode: 'open' }).innerHTML =
+          '<div role="dialog"><p>Wir nutzen Cookies, um die Seite zu verbessern.</p>' +
+          '<button>Einstellungen</button> <button>Alle akzeptieren</button></div>'
+      }
+    })
+  </script>
+</body>
+</html>

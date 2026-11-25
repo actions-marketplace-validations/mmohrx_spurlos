@@ -66,7 +66,7 @@ export type AccessibilityProblem = 'lang' | 'images' | 'fields' | 'zoom'
 export type MobileProblem = 'viewport' | 'overflow'
 
 export type Result =
-  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string; consentMode?: ConsentMode }
+  | { check: 'third-party'; level: Level; hosts: ThirdParty[]; consent: string[]; selfHosted: string[]; platform?: string; consentMode?: ConsentMode; banner?: Banner }
   | { check: 'cookies'; level: Level; cookies: CookieFinding[]; storage: StorageFinding[] }
   | { check: 'legal'; level: Level; pages: LegalPage[] }
   | { check: 'policy'; level: Level; read: boolean; url?: string; services: PolicyService[] }
@@ -269,6 +269,29 @@ export function consentMode(scan: Scan): ConsentMode | undefined {
 /** Consent Mode granting anything before a click is red: Google's tags then set cookies and use the data as if agreed. */
 export const consentModeGranted = (c: ConsentMode | undefined): boolean => c !== undefined && (c.ads === 'granted' || c.analytics === 'granted')
 
+/** a cookie banner's buttons on its first layer: the one that agrees, and the one that refuses if there is one */
+export type Banner = { accept: string; reject?: string }
+
+// Refusal comes first: „Nur notwendige akzeptieren“ refuses, though it says accept. A choice to save or settings are neither.
+const REJECT =
+  /ablehn|verweiger|reject|decline|\bdeny\b|refuse|disagree|nicht (?:akzeptieren|zustimmen|einverstanden)|(?:ohne|weiter ohne) (?:einwilligung|zustimmung|cookies|akzeptieren)|continue without|\bnur (?:die )?(?:technisch |unbedingt )?(?:notwendig|erforderlich|essen[zt]iell|nötig|funktional)|(?:only|just) (?:the )?(?:strictly )?(?:necessary|essential|required)|(?:necessary|essential|required) (?:cookies )?only|(?:allow|use|accept) (?:only )?(?:strictly )?(?:necessary|essential|required)|(?:notwendige|erforderliche|essen[zt]ielle) (?:cookies )?(?:akzeptieren|zulassen|erlauben|verwenden)/i
+const SETTINGS = /einstellung|anpassen|auswahl|selection|individuell|details|mehr\b|weitere|verwalten|speichern|setting|customi[sz]|manage|preferences|options|save|purpose|zwecke|partner|vendor/i
+const ACCEPT = /akzeptier|annehmen|zustimm|stimme zu|einverstanden|zulassen|erlauben|\beinwilligen\b|accept|agree|\ballow\b|^ok(?:ay)?\b|^verstanden\b|^got it\b|^(?:geht|alles) klar\b/i
+
+/**
+ * What a visitor can choose on the banner's first layer, by its buttons' words: undefined when no button agrees, as
+ * then no banner showed, or spurlos does not know its words.
+ */
+export function banner(scan: Scan): Banner | undefined {
+  const texts = list(scan.banner)
+  const reject = texts.find(t => REJECT.test(t))
+  const accept = texts.find(t => !REJECT.test(t) && !SETTINGS.test(t) && ACCEPT.test(t))
+  return accept ? { accept, ...(reject ? { reject } : {}) } : undefined
+}
+
+/** a banner that agrees in one click but refuses on no button of its first layer is yellow: refusing takes more */
+export const bannerLevel = (b: Banner): Level => (b.reject ? 'green' : 'yellow')
+
 /**
  * Every request to another site than the page's own counts. A host no name gives away may by the path asked for
  * (/matomo.php on an agency's server). selfHosted: known services the page runs on its own site, by their paths (a
@@ -278,8 +301,9 @@ export function thirdParty(scan: Scan): Result {
   const { hosts, selfHosted } = thirdPartyFound(scan)
   const platform = platformOf(scan)
   const mode = consentMode(scan)
-  const level = worst([...hosts.map(hostLevel), ...(consentModeGranted(mode) ? ['red' as const] : [])])
-  return { check: 'third-party', level, hosts, consent: consentManagers(scan), selfHosted, ...(platform ? { platform: platform.name } : {}), ...(mode ? { consentMode: mode } : {}) }
+  const choice = banner(scan)
+  const level = worst([...hosts.map(hostLevel), ...(consentModeGranted(mode) ? ['red' as const] : []), ...(choice ? [bannerLevel(choice)] : [])])
+  return { check: 'third-party', level, hosts, consent: consentManagers(scan), selfHosted, ...(platform ? { platform: platform.name } : {}), ...(mode ? { consentMode: mode } : {}), ...(choice ? { banner: choice } : {}) }
 }
 
 const thirdPartyHosts = (scan: Scan) => thirdPartyFound(scan).hosts
@@ -853,6 +877,7 @@ export const key = {
   /** hosts of a known service share one key: see hostKey */
   host: (host: string) => `third-party ${hostKey(host)}`,
   consentMode: 'consent-mode granted',
+  banner: (refuses: boolean) => `consent-banner ${refuses ? 'reject' : 'no-reject'}`,
   cookie: (c: { name: string; domain: string }) => `cookie ${c.name} ${c.domain}`,
   storage: (e: { area: string; key: string }) => `storage ${e.area} ${e.key}`,
   legal: (kind: LegalKind) => `legal ${kind}`,
@@ -911,7 +936,7 @@ function unnumbered(r: Result): Finding[] {
       // the hosts of one service are one finding, at their worst
       const byKey = new Map<string, Level[]>()
       for (const h of list(r.hosts)) byKey.set(key.host(h.host), [...(byKey.get(key.host(h.host)) ?? []), hostLevel(h)])
-      return [...[...byKey].map(([k, levels]) => ({ key: k, level: worst(levels) })), ...(consentModeGranted(r.consentMode) ? [{ key: key.consentMode, level: 'red' as const }] : [])]
+      return [...[...byKey].map(([k, levels]) => ({ key: k, level: worst(levels) })), ...(consentModeGranted(r.consentMode) ? [{ key: key.consentMode, level: 'red' as const }] : []), ...(r.banner && !r.banner.reject ? [{ key: key.banner(false), level: 'yellow' as const }] : [])]
     case 'cookies':
       return [
         ...list(r.cookies).map(c => ({ key: key.cookie(c), level: cookieLevel({ ...c, missing: list(c.missing) }) })),

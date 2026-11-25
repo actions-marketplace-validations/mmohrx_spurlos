@@ -65,6 +65,18 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
   })
 
+  test('a banner that agrees in one click and refuses on no button is yellow; one in a frame that refuses is green', async () => {
+    const s = await scan(`${SITE}/banner.html`, { setup: offline, fetch: redirects })
+    expect(s.banner).toEqual(['Einstellungen', 'Alle akzeptieren'])
+    const r = pick(runChecks(s), 'third-party')
+    expect(r.banner).toEqual({ accept: 'Alle akzeptieren' })
+    expect(r.level).toBe('yellow')
+    expect(text(s, runChecks(s), 'de')).toContain('„Alle akzeptieren“ auf der ersten Ebene, kein Knopf zum Ablehnen')
+
+    const framed = await scan(`${SITE}/banner-frame.html`, { setup: offline, fetch: redirects })
+    expect(pick(runChecks(framed), 'third-party').banner).toEqual({ accept: 'Akzeptieren', reject: 'Nur notwendige Cookies' })
+  })
+
   test('a page that takes window.localStorage away is still checked', async () => {
     const s = await scan(`${SITE}/nostorage.html`, { setup: offline, fetch: redirects })
     expect(s.storage).toEqual([])
