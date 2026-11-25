@@ -1,6 +1,6 @@
 import {
-  abroad, bannerLevel, certLevel, consentModeGranted, load, cookieLevel, leakLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
-  type Comparison, type Level, type Result, type ThirdParty,
+  abroad, bannerLevel, EMBEDDED, isTracker, certLevel, consentModeGranted, load, cookieLevel, leakLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
+  type Comparison, type Level, type OwnReason, type Result, type ThirdParty,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
 import { styleText } from 'node:util'
@@ -15,8 +15,11 @@ function lifetime(t: Messages, expires: number, now: number): string {
   return days < 1 ? t.underADay : t.days(days)
 }
 
-/** one finding: what it is, and after a dash what spurlos makes of it; key: what --baseline knows it by */
-type Item = { level: Level; label: string; detail?: string; key: string }
+/**
+ * one finding: what it is, and after a dash what spurlos makes of it; key: what --baseline knows it by; shared: other
+ * items have the same key on purpose, as findings() counts them as one (the hosts of one service), so it is not numbered
+ */
+type Item = { level: Level; label: string; detail?: string; key: string; shared?: true }
 /** a check as the report shows it: a short value next to the title, each finding with its own light, notes under them */
 type Section = { value: string; items: Item[]; notes: string[] }
 
@@ -26,14 +29,24 @@ const item = (key: string, level: Level, label: string, detail?: string): Item =
 /** one page's report; compare: how it differs from the same page in the baseline file, whose results are before */
 export type Report = { scan: Scan; results: Result[]; compare?: { file: string; comparison: Comparison; before: Result[] } }
 
-/** the categories of services.json whose embeds can wait for a click */
-const EMBEDS = ['video', 'maps', 'social', 'chat']
+/** the categories of services.json whose embeds can wait for a click: a frame's, and a chat's widget */
+const EMBEDS = [...EMBEDDED, 'chat']
+
+/** an address without its query, marked where it had one: shown, not keyed */
+function short(url: string): string {
+  const bare = withoutQuery(url)
+  return bare === url ? url : `${bare}?…`
+}
+
+/** whose a cookie or a script is: of a server that seems the page's own, of another site, or of the page */
+const whose = (t: Messages, c: { own?: OwnReason; thirdParty: boolean }) => (c.own ? t.ownBy[c.own] : c.thirdParty ? t.cookieForeign : t.cookieOwn)
 
 /** a check as the report shows it, its keys numbered as findings() numbers them, so --baseline finds each one */
 function section(t: Messages, r: Result, now: number): Section {
   const s = unkeyed(t, r, now)
-  const keys = numbered(s.items.map(i => i.key))
-  return { ...s, items: s.items.map((i, n) => ({ ...i, key: keys[n] ?? i.key })) }
+  const keys = numbered(s.items.filter(i => !i.shared).map(i => i.key))
+  let n = 0
+  return { ...s, items: s.items.map(({ shared: _, ...i }) => (_ ? i : { ...i, key: keys[n++] ?? i.key })) }
 }
 
 /**
@@ -66,10 +79,11 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
   switch (r.check) {
     case 'third-party': {
       // the site's own servers give no tips: not the platform it runs on, nor a known service's on its own site
-      const categories = new Set(r.hosts.filter(h => !h.own).map(h => h.service?.category))
+      const foreign = r.hosts.filter(h => !h.own)
+      const categories = new Set(foreign.map(h => h.service?.category))
+      const trackers = foreign.some(h => isTracker(h.service))
       // a session replay is a tracker too, and records how the visit goes: it gets a note of its own
-      const trackers = categories.has('tracking') || categories.has('session-replay')
-      const replays = [...new Set(r.hosts.filter(h => !h.own && h.service?.category === 'session-replay').map(h => h.service?.name ?? ''))]
+      const replays = [...new Set(foreign.filter(h => h.service?.category === 'session-replay').map(h => h.service?.name ?? ''))]
       // a tag manager counts nothing itself: it starts trackers when the site is set up to, so it gets a note of its own
       const tagManager = categories.has('tag-manager')
       const before = trackers ? [t.consentButTrackers] : tagManager ? [t.consentButTagManager] : []
@@ -97,10 +111,10 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       ]
       return {
         value: `${r.hosts.length}`,
-        items: r.hosts.map(h => {
+        items: r.hosts.map((h): Item => {
           const about = [h.service?.name, h.own ? t.ownBy[h.own] : undefined].filter(Boolean).join(', ') || undefined
           const count = h.preconnect ? t.preconnectOnly : t.requests(h.requests) + (h.afterMove ? `, ${t.afterMove}` : '')
-          return item(key.host(h.host), hostLevel(h), h.host, about ? `${about} (${count})` : count)
+          return { ...item(key.host(h.host), hostLevel(h), h.host, about ? `${about} (${count})` : count), shared: true }
         }).concat(modeItems, bannerItems),
         notes: [
           t.thirdParty,
@@ -127,7 +141,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       const items = [
         ...r.cookies.map(c => {
           const about = [
-            c.own ? t.ownBy[c.own] : c.thirdParty ? t.cookieForeign : t.cookieOwn,
+            whose(t, c),
             c.service?.name ?? t.unknown,
             lifetime(t, c.expires, now) + (c.long ? ` (${t.cookieLong})` : ''),
             ...(c.afterMove ? [t.afterMove] : []),
@@ -199,7 +213,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       return {
         value: `${r.findings.length}`,
         // shortened: a query is noise here and may hold an API key; --json keeps the full address
-        items: r.findings.map(f => item(key.resource(f), resourceLevel(f), `${f.tag} ${withoutQuery(f.url)}${withoutQuery(f.url) === f.url ? '' : '?…'}`, t.resource[f.problem])),
+        items: r.findings.map(f => item(key.resource(f), resourceLevel(f), `${f.tag} ${short(f.url)}`, t.resource[f.problem])),
         notes: [...(has('insecure') ? [t.resourcesInsecure] : []), ...(has('no-integrity') ? [t.resourcesIntegrity] : [])],
       }
     }
@@ -220,11 +234,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       if (!r.findings.length) return { value: t.none, items: [], notes: [t.fingerprintNone] }
       return {
         value: `${r.findings.length}`,
-        items: r.findings.map(f => {
-          const about = [t.fingerprintApi[f.api], f.own ? t.ownBy[f.own] : f.thirdParty ? t.cookieForeign : t.cookieOwn, f.service?.name].filter(Boolean).join(', ')
-          const script = withoutQuery(f.script)
-          return item(key.fingerprint(f), fingerprintLevel(f), `${script}${script === f.script ? '' : '?…'}`, about)
-        }),
+        items: r.findings.map(f => item(key.fingerprint(f), fingerprintLevel(f), short(f.script), [t.fingerprintApi[f.api], whose(t, f), f.service?.name].filter(Boolean).join(', '))),
         notes: [t.fingerprintWhy, ...(r.findings.some(f => fingerprintLevel(f) === 'yellow') ? [t.fingerprintYellow] : [])],
       }
     }
@@ -234,11 +244,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
       const asks = r.findings.filter(a => a.api !== 'service-worker').length
       return {
         value: asks ? `${asks}` : t.accessWorkerOnly,
-        items: r.findings.map(a => {
-          const about = [t.accessApi[a.api], a.own ? t.ownBy[a.own] : a.thirdParty ? t.cookieForeign : t.cookieOwn, a.service?.name].filter(Boolean).join(', ')
-          const script = withoutQuery(a.script)
-          return item(key.access(a), accessLevel(a), `${script}${script === a.script ? '' : '?…'}`, about)
-        }),
+        items: r.findings.map(a => item(key.access(a), accessLevel(a), short(a.script), [t.accessApi[a.api], whose(t, a), a.service?.name].filter(Boolean).join(', '))),
         notes: [...(asks ? [t.accessWhy] : []), ...(r.findings.some(a => a.api === 'service-worker') ? [t.accessWorker] : [])],
       }
     }
@@ -289,9 +295,8 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
         notes: [t.indexingWhy],
       }
 
-    case 'forms':
+    case 'forms': {
       if (!r.forms.length) return { value: t.formsNone, items: [], notes: [] }
-    {
       // the same form twice, a search in header and menu, is one line; --json and --baseline keep each
       const same = new Map<string, { form: (typeof r.forms)[number]; count: number }>()
       for (const f of r.forms) {
@@ -356,6 +361,7 @@ const UNSAFE = /[\u0000-\u001f\u007f-\u009f\u061c\u200e\u200f\u2028\u2029\u202a-
 export const clean = (s: string) => s.replace(UNSAFE, '\ufffd')
 // what JSON.stringify leaves as it is: DEL, C1 and the bidi marks; C0 it escapes itself, and its own line breaks must stay
 const UNSAFE_IN_JSON = /[\u007f-\u009f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g
+const safeJson = (value: unknown) => JSON.stringify(value, null, 2).replace(UNSAFE_IN_JSON, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
 
 /** what --json holds for one page: the screenshot stays out, it is only for the eye */
 function data({ scan, results, compare }: Report, lang: Lang) {
@@ -375,7 +381,7 @@ export function json(scan: Scan, results: Result[], lang: Lang, compare?: Report
 
 export function jsonReports(reports: Report[], lang: Lang): string {
   const out = reports.length === 1 && reports[0] ? data(reports[0], lang) : reports.map(r => data(r, lang))
-  return JSON.stringify(out, null, 2).replace(UNSAFE_IN_JSON, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
+  return safeJson(out)
 }
 
 /**
@@ -420,8 +426,15 @@ export function sarifReports(reports: Report[], lang: Lang, now = Date.now()): s
       },
     ],
   }
-  return JSON.stringify(sarif, null, 2).replace(UNSAFE_IN_JSON, c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
+  return safeJson(sarif)
 }
+
+/** how many checks have each light, worst first, lights none has left out */
+const tally = (results: Result[]) => SEVERITY.map(level => [level, results.filter(r => r.level === level).length] as const).filter(([, n]) => n)
+
+/** the checks as the report shows them, the worst first, so a reader sees at once what to fix; checks with the same light keep their order */
+const sections = (t: Messages, results: Result[], now: number) =>
+  results.map(r => ({ r, s: section(t, r, now) })).sort((a, b) => SEVERITY.indexOf(a.r.level) - SEVERITY.indexOf(b.r.level))
 
 /** words to lines of at most max characters; a longer word keeps a line of its own */
 function wrap(s: string, max: number): string[] {
@@ -452,7 +465,7 @@ export function text(scan: Scan, results: Result[], lang: Lang, options: TextOpt
   const titleWidth = Math.max(...Object.values(t.title).map(s => s.length))
   const fresh = new Set(compare?.comparison.fresh.map(f => f.key))
 
-  const counts = SEVERITY.map(level => [level, results.filter(r => r.level === level).length] as const).filter(([, n]) => n)
+  const counts = tally(results)
   const summary = color
     ? counts.map(([l, n]) => style(BADGE[l], ` ${t.summary[l](n).toLocaleUpperCase(lang)} `)).join(' ')
     : counts.map(([l, n]) => t.summary[l](n)).join(' · ')
@@ -474,8 +487,7 @@ export function text(scan: Scan, results: Result[], lang: Lang, options: TextOpt
     return [head, ...tree, ...notes]
   }
 
-  // the worst first, so a reader sees at once what to fix; checks with the same light keep their order
-  const sorted = results.map(r => ({ r, s: section(t, r, now) })).sort((a, b) => SEVERITY.indexOf(a.r.level) - SEVERITY.indexOf(b.r.level))
+  const sorted = sections(t, results, now)
   const blocks = sorted.map(({ r, s }) => block(r, s))
   // single lines stay together, anything longer gets air around it
   const body = blocks.flatMap((b, i) => (b.length > 1 || (blocks[i + 1]?.length ?? 0) > 1 || i === blocks.length - 1 ? [...b, ''] : b))
@@ -574,7 +586,7 @@ export function htmlReports(reports: Report[], lang: Lang, options: Omit<HtmlOpt
   }).format(now)
 
   const report = ({ scan, results, compare }: Report, first: boolean): string => {
-    const counts = SEVERITY.map(level => [level, results.filter(r => r.level === level).length] as const).filter(([, n]) => n)
+    const counts = tally(results)
     const fresh = new Set(compare?.comparison.fresh.map(f => f.key))
     const block = (r: Result, s: Section): string => {
       const head = `<span class="mark">${MARK[r.level]}</span><span class="title">${escape(t.title[r.check])}</span><span class="value">${escape(s.value)}</span>`
@@ -587,7 +599,7 @@ export function htmlReports(reports: Report[], lang: Lang, options: Omit<HtmlOpt
       const notes = s.notes.map(n => `<p class="note">${escape(n)}</p>`).join('')
       return `<details class="check ${r.level}"${r.level === 'green' ? '' : ' open'}><summary class="head">${head}</summary>${list}${notes}</details>`
     }
-    const sorted = results.map(r => ({ r, s: section(t, r, now) })).sort((a, b) => SEVERITY.indexOf(a.r.level) - SEVERITY.indexOf(b.r.level))
+    const sorted = sections(t, results, now)
     const meta = [
       ...(scan.finalUrl !== scan.url ? [t.openedAs(scan.url)] : []),
       ...(scan.mobile ? [t.asPhone] : []),

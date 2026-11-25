@@ -1,9 +1,9 @@
 import { createInterface } from 'node:readline'
 import type { Readable, Writable } from 'node:stream'
 import { runChecks } from './checks.ts'
-import { LANGS, MESSAGES, type Lang } from './lang/index.ts'
+import { isLang, LANGS, MESSAGES, type Lang } from './lang/index.ts'
 import { clean, json, text } from './report.ts'
-import { ownHost, scan, toUrl, VERSION, type Scan, type ScanOptions } from './scan.ts'
+import { firstLine, messageOf, ownHosts, scan, toUrl, VERSION, warnsNoSandbox, type Scan, type ScanOptions } from './scan.ts'
 
 /**
  * A Model Context Protocol server over stdio, so an AI assistant can run spurlos itself: one JSON-RPC message
@@ -97,7 +97,7 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 
 async function call(params: Record<string, unknown>, context: Context) {
   const args = isObject(params.arguments) ? params.arguments : {}
-  const lang = typeof args.lang === 'string' && (LANGS as string[]).includes(args.lang) ? (args.lang as Lang) : context.lang
+  const lang = typeof args.lang === 'string' && isLang(args.lang) ? args.lang : context.lang
   const say = MESSAGES[lang]
   // wrong arguments go back to the model as a tool error, so it can correct them
   if (args.lang !== undefined && lang !== args.lang) return reply(clean(say.unknownLang('lang', JSON.stringify(args.lang), LANGS.join('|'))), true)
@@ -106,14 +106,9 @@ async function call(params: Record<string, unknown>, context: Context) {
   const url = toUrl(args.url)
   if (!url) return reply(clean(say.invalidUrl(args.url)), true)
   for (const flag of ['mobile', 'gpc'] as const) if (args[flag] !== undefined && typeof args[flag] !== 'boolean') return reply(say.notBoolean(flag), true)
-  const own: string[] = []
-  if (args.own !== undefined) {
-    for (const value of Array.isArray(args.own) ? args.own : [args.own]) {
-      const host = typeof value === 'string' ? ownHost(value) : undefined
-      if (!host) return reply(clean(say.invalidOwn(JSON.stringify(value))), true)
-      own.push(host)
-    }
-  }
+  const owned = ownHosts(args.own === undefined ? [] : Array.isArray(args.own) ? args.own : [args.own])
+  if ('invalid' in owned) return reply(clean(say.invalidOwn(JSON.stringify(owned.invalid))), true)
+  const own = owned.hosts
 
   try {
     const options: ScanOptions = { ...(context.userAgent ? { userAgent: context.userAgent } : {}), ...(own.length ? { own } : {}), ...(args.mobile ? { mobile: true } : {}), ...(args.gpc ? { gpc: true } : {}) }
@@ -121,10 +116,9 @@ async function call(params: Record<string, unknown>, context: Context) {
     const results = runChecks(s)
     const report = args.format === 'json' ? json(s, results, lang) : text(s, results, lang, { verbose: true, width: 100 })
     // in either format, so the model can pass it on
-    return reply(!s.sandbox && process.env.SPURLOS_NO_SANDBOX !== '1' ? [report, say.noSandbox] : report)
+    return reply(warnsNoSandbox(s) ? [report, say.noSandbox] : report)
   } catch (e) {
-    const reason = (e instanceof Error ? e.message : String(e)).split('\n')[0] ?? ''
-    return reply(clean(say.failed(url, reason)), true)
+    return reply(clean(say.failed(url, firstLine(e))), true)
   }
 }
 
@@ -157,7 +151,7 @@ export async function handle(message: unknown, context: Context): Promise<Messag
         return fail(id, -32601, `Method not found: ${method}`)
     }
   } catch (e) {
-    return fail(id, -32603, e instanceof Error ? e.message : String(e))
+    return fail(id, -32603, messageOf(e))
   }
 }
 

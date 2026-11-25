@@ -84,7 +84,7 @@ Oben steht die Bilanz, darunter die Prüfungen mit den roten zuerst. Rote und ge
 | `SPURLOS_NO_SANDBOX` | `1` startet Chromium gleich ohne Sandbox und ohne Hinweis darauf; das Docker-Image setzt das, dort ist der Container die Grenze |
 | `NO_COLOR` | keine Farben, auch im Terminal |
 
-Die Seite selbst darf bis zu 30 Sekunden zum Laden brauchen. Danach wartet spurlos bis zu 10 Sekunden, bis sie nichts mehr nachlädt, und nach der ersten Bewegung der Maus noch einmal bis zu 5 Sekunden; lädt sie dann noch, sagt der Bericht das. Impressum, Datenschutzerklärung und die Anfrage über http bekommen je 15 Sekunden.
+Die Seite selbst darf bis zu 30 Sekunden zum Laden brauchen. Danach wartet spurlos bis zu 10 Sekunden, bis sie nichts mehr nachlädt, und nach der ersten Bewegung der Maus noch einmal bis zu 5 Sekunden; lädt sie dann noch, sagt der Bericht das. Impressum, Datenschutzerklärung und die Anfrage über http bekommen je 15 Sekunden. Eine Prüfung endet nach höchstens 2 Minuten: Eine Seite, die ihre eigene Darstellung blockiert, etwa mit einem Skript, das nicht endet, kann sie nicht länger aufhalten.
 
 spurlos selbst meldet nichts nach Hause: keine Telemetrie, keine Statistik. Angefragt wird nur die Seite, die du prüfst, samt allem, was sie selbst nachlädt.
 

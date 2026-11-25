@@ -78,6 +78,16 @@ test('new findings since the baseline are marked, gone ones listed', () => {
   })
 })
 
+test('the hosts of one service are one finding: new since the baseline, each is marked', () => {
+  const now = [third('region1.google-analytics.com', 'www.google-analytics.com')]
+  const c = { file: 'baseline.json', comparison: compare(now, [third()]), before: [third()] }
+  const report = text(page('https://shop.example/'), now, 'de', { compare: c })
+  expect(report).toContain('[neu] region1.google-analytics.com')
+  expect(report).toContain('[neu] www.google-analytics.com')
+  const sarif = JSON.parse(sarifReports([{ scan: page('https://shop.example/'), results: now, compare: c }], 'en'))
+  expect(sarif.runs[0].results.map((r: { baselineState: string }) => r.baselineState)).toEqual(['new', 'new'])
+})
+
 test('the screenshot goes into the HTML report, not into the JSON', () => {
   const shot = Buffer.from([0xff, 0xd8, 0xff, 0xe0]).toString('base64')
   const s = page('https://shop.example/', { screenshot: shot })

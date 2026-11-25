@@ -149,6 +149,13 @@ describe('leaks', () => {
     expect(r.findings.map(l => l.requests)).toEqual([2, 1])
     expect(leaks(base).level).toBe('green')
   })
+
+  test('a leak names the service as the third-party check does, by the path too', () => {
+    const at = (url: string) => ({ url, host: new URL(url).hostname, type: 'script', carries: ['query:token'] })
+    const r = leaks({ ...base, requests: [at('https://www.google.com/recaptcha/api2/reload?k=x'), at('https://stats.agentur.de/matomo.php?idsite=3')] })
+    if (r.check !== 'leaks') throw new Error()
+    expect(r.findings.map(l => l.service?.name)).toEqual(['Matomo', 'Google reCAPTCHA'])
+  })
 })
 
 describe('preconnect', () => {
@@ -638,6 +645,15 @@ describe('cookie banners', () => {
     expect(r.level).toBe('yellow')
     expect(r.hosts.map(h => [h.host, h.service?.name])).toEqual([['www.google.com', 'Google reCAPTCHA'], ['www.gstatic.com', 'Google reCAPTCHA']])
     expect(thirdParty({ ...base, requests: [at('https://www.gstatic.com/images/logo.png')] }).level).toBe('red')
+    // reCAPTCHA next to other files of Google's on the same server: the server is Google's, and red
+    const mixed = thirdParty({ ...base, requests: [at('https://www.google.com/recaptcha/api.js'), at('https://www.google.com/pagead/1p-user-list/123/')] })
+    if (mixed.check !== 'third-party') throw new Error()
+    expect(mixed.hosts.map(h => h.service?.name)).toEqual(['Google'])
+    expect(mixed.level).toBe('red')
+    // an unknown server still goes by the first path that names a service
+    const matomo = thirdParty({ ...base, requests: [at('https://stats.agentur.de/logo.png'), at('https://stats.agentur.de/matomo.php?idsite=3')] })
+    if (matomo.check !== 'third-party') throw new Error()
+    expect(matomo.hosts[0]?.service?.name).toBe('Matomo')
     // a known service keeps its name, whatever path it serves
     const ads = thirdParty({ ...base, requests: [at('https://googleads.g.doubleclick.net/recaptcha/api2/x')] })
     if (ads.check !== 'third-party') throw new Error()
@@ -662,17 +678,21 @@ describe('cookie banners', () => {
     expect(findings(thirdParty({ ...base, banner: ['Alle akzeptieren'] }))).toEqual([{ key: 'consent-banner no-reject', level: 'yellow' }])
   })
 
-  test('a video, map or post embedded as a frame on load is named; a script or the site’s own frame is not', () => {
+  test('a video, map or post embedded as a frame that loads with the page is named; a script, the site’s own frame or one never loaded is not', () => {
     const frame = (url: string) => ({ tag: 'iframe', url, integrity: false })
+    const loaded = (url: string) => ({ url, host: new URL(url).hostname, type: 'document' })
     const scan = {
       ...base,
       resources: [
-        frame('https://www.youtube-nocookie.com/embed/abc'),
+        frame('https://www.youtube-nocookie.com/embed/abc#t=30'),
         frame('https://www.google.com/maps/embed?pb=xyz'),
         frame('https://www.firma.de/karte.html'),
         frame('https://www.google.com/recaptcha/api2/anchor'),
+        // loading="lazy" far below: the browser never asked for it
+        frame('https://player.vimeo.com/video/123'),
         { tag: 'script', url: 'https://player.vimeo.com/api/player.js', integrity: false },
       ],
+      requests: ['https://www.youtube-nocookie.com/embed/abc', 'https://www.google.com/maps/embed?pb=xyz', 'https://www.firma.de/karte.html', 'https://www.google.com/recaptcha/api2/anchor', 'https://player.vimeo.com/api/player.js'].map(loaded),
     }
     expect(embeds(scan)).toEqual(['YouTube (youtube-nocookie.com)', 'Google Maps'])
     const r = thirdParty(scan)
@@ -823,16 +843,16 @@ describe('cookie syncing', () => {
   const page = ['https://www.firma.de/']
 
   test('another site\'s cookie value in the address of a request to a third site is an id, encoded too', () => {
-    expect(cookieIds('https://px.partner.example/sync?u=AB12CD34EF56', jar, page)).toEqual(['id:uid@ads.anders.de'])
-    expect(cookieIds('https://px.partner.example/r?to=' + encodeURIComponent('https://x.example/?id=AB12CD34EF56'), jar, page)).toEqual(['id:uid@ads.anders.de'])
+    expect(cookieIds(jar, page)('https://px.partner.example/sync?u=AB12CD34EF56')).toEqual(['id:uid@ads.anders.de'])
+    expect(cookieIds(jar, page)('https://px.partner.example/r?to=' + encodeURIComponent('https://x.example/?id=AB12CD34EF56'))).toEqual(['id:uid@ads.anders.de'])
   })
 
   test('back to its own site, the page\'s own cookies, the page as receiver, short or digitless values: none', () => {
-    expect(cookieIds('https://www.anders.de/seen?uid=AB12CD34EF56', jar, page)).toEqual([])
-    expect(cookieIds('https://www.google-analytics.com/g/collect?cid=1234567890.1700000000', jar, page)).toEqual([])
-    expect(cookieIds('https://www.firma.de/?uid=AB12CD34EF56', jar, page)).toEqual([])
-    expect(cookieIds('https://px.partner.example/?a=abc123&b=abcdefghijklmnop', jar, page)).toEqual([])
-    expect(cookieIds('stun:stun.l.google.com:19302', jar, page)).toEqual([])
+    expect(cookieIds(jar, page)('https://www.anders.de/seen?uid=AB12CD34EF56')).toEqual([])
+    expect(cookieIds(jar, page)('https://www.google-analytics.com/g/collect?cid=1234567890.1700000000')).toEqual([])
+    expect(cookieIds(jar, page)('https://www.firma.de/?uid=AB12CD34EF56')).toEqual([])
+    expect(cookieIds(jar, page)('https://px.partner.example/?a=abc123&b=abcdefghijklmnop')).toEqual([])
+    expect(cookieIds(jar, page)('stun:stun.l.google.com:19302')).toEqual([])
   })
 
   test('an id is red per server and cookie, yellow where the server seems to belong to the page', () => {

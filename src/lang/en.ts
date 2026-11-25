@@ -1,4 +1,4 @@
-import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED } from '../scan.ts'
+import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED, SCAN_TIMEOUT_MS, TIMED_OUT } from '../scan.ts'
 import type { Messages } from './de.ts'
 import { plural } from './plural.ts'
 
@@ -59,6 +59,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   pdfToTerminal: 'The PDF belongs in a file, not in the terminal: spurlos <url> -o report.pdf',
   written: file => `Report written to ${file}.`,
   cannotWrite: (file, reason) => `${file} could not be written: ${reason}`,
+  pdfFailed: reason => `The PDF could not be made: ${reason}`,
   mcpOnly: flags => `spurlos mcp only takes --lang and --user-agent, not ${flags}.`,
   notBoolean: name => `${name} is true or false.`,
   urlMissing: 'url is missing: the address of the site as a string, e.g. example.com.',
@@ -72,6 +73,7 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
       reason === NO_RESPONSE ? 'no response'
       : reason === AUTH_REQUIRED ? 'The page asks for a login. --auth or SPURLOS_AUTH only applies to exactly the address given (scheme, host, port).'
       : reason === AUTH_REJECTED ? 'The login was rejected.'
+      : reason === TIMED_OUT ? `The check took longer than ${SCAN_TIMEOUT_MS / 60_000} minutes and was stopped. Usually the page then blocks its own rendering, for example with a script that never ends.`
       : /^page\.goto: Timeout \d+ms exceeded/.test(reason) ? `no answer after ${Number(/(\d+)ms/.exec(reason)?.[1]) / 1000} seconds`
       : /net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH/.test(reason) ? 'The server offers no TLS version and cipher current browsers accept, often only the outdated TLS 1.0 or 1.1. Visitors get an error page.'
       : /net::ERR_CERT_/.test(reason) ? `The certificate is invalid (${/ERR_CERT_\w+/.exec(reason)?.[0]}). Browsers show visitors a warning instead of the page.`

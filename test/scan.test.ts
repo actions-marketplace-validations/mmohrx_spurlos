@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { hostLevel, runChecks, type Result } from '../src/checks.ts'
 import { text } from '../src/report.ts'
 import { MESSAGES } from '../src/lang/index.ts'
-import { BOT_AGENT, PHONE, REFUSED, scan } from '../src/scan.ts'
+import { BOT_AGENT, PHONE, REFUSED, scan, TIMED_OUT } from '../src/scan.ts'
 import { fetched, offline, redirects, seen, SITE, staysOnHttp } from './site.ts'
 
 const pick = <C extends Result['check']>(results: Result[], check: C) => {
@@ -65,7 +65,7 @@ describe('scan', { timeout: 30_000 }, () => {
     expect(s.legal.map(v => v.url)).toEqual([`${SITE}/impressum`, `${SITE}/datenschutz`])
   })
 
-  test('a banner that agrees in one click and refuses on no button is yellow; one in a frame that refuses is green', async () => {
+  test('a banner that agrees in one click and refuses on no button is yellow; one in its provider’s frame that refuses is green, a chat’s frame no banner', async () => {
     const s = await scan(`${SITE}/banner.html`, { setup: offline, fetch: redirects })
     expect(s.banner).toEqual(['Einstellungen', 'Alle akzeptieren'])
     const r = pick(runChecks(s), 'third-party')
@@ -75,6 +75,12 @@ describe('scan', { timeout: 30_000 }, () => {
 
     const framed = await scan(`${SITE}/banner-frame.html`, { setup: offline, fetch: redirects })
     expect(pick(runChecks(framed), 'third-party').banner).toEqual({ accept: 'Akzeptieren', reject: 'Nur notwendige Cookies' })
+    expect(framed.banner).not.toContain('Verstanden')
+  })
+
+  test('a page that blocks its own renderer ends the scan at the deadline instead of holding it for good', async () => {
+    await expect(scan(`${SITE}/hang.html`, { setup: offline, fetch: redirects, timeoutMs: 5000 })).rejects.toThrow(TIMED_OUT)
+    expect(MESSAGES.de.failed('https://shop.example/hang.html', TIMED_OUT)).toContain('länger als 2 Minuten')
   })
 
   test('a page that takes window.localStorage away is still checked', async () => {

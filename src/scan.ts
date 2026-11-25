@@ -1,7 +1,7 @@
 import { X509Certificate } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { chromium, type Browser, type BrowserContext, type CDPSession, type Page, type Request as PlaywrightRequest, type Response as PlaywrightResponse } from 'playwright'
-import { carried, cookieIds, legalLinks, servicesNamed } from './checks.ts'
+import { carried, cookieIds, legalLinks, serviceOfHost, servicesNamed } from './checks.ts'
 
 // src/ and dist/ both sit next to package.json
 export const VERSION: string = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version
@@ -216,6 +216,23 @@ export function ownHost(value: string): string | undefined {
   }
 }
 
+/** The hosts given with --own, or the first value that is none. */
+export function ownHosts(values: unknown[]): { hosts: string[] } | { invalid: unknown } {
+  const hosts: string[] = []
+  for (const value of values) {
+    const host = typeof value === 'string' ? ownHost(value) : undefined
+    if (!host) return { invalid: value }
+    hosts.push(host)
+  }
+  return { hosts }
+}
+
+export const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e))
+/** what went wrong, in a line: Playwright adds a call log below the first */
+export const firstLine = (e: unknown) => messageOf(e).split('\n')[0] ?? ''
+/** whether to warn of a scan without Chromium's sandbox; the Docker image sets SPURLOS_NO_SANDBOX and stays quiet */
+export const warnsNoSandbox = (s: Scan) => !s.sandbox && process.env.SPURLOS_NO_SANDBOX !== '1'
+
 /** what a Visit's error says when the server sent nothing at all; the report translates it */
 export const NO_RESPONSE = 'no response'
 /** why a scan stops at a 401: the page wants a login, or turned the one given down; the report translates both */
@@ -223,6 +240,10 @@ export const AUTH_REQUIRED = 'login required'
 export const AUTH_REJECTED = 'login rejected'
 /** why a scan stops at a 403 or 429, as `refused 403`: the page turned spurlos away, often a bot check; the report translates it */
 export const REFUSED = 'refused'
+/** why a scan stops after SCAN_TIMEOUT_MS: the page held it, as one that blocks its own renderer does; the report translates it */
+export const TIMED_OUT = 'scan timed out'
+/** the most a scan may take, the legal pages included; one that loads normally ends long before */
+export const SCAN_TIMEOUT_MS = 120_000
 
 /** Where a URL ended up when opened on its own: status and final URL, or why it could not be opened. */
 export type Visit = { url: string; status: number; finalUrl: string } | { url: string; error: string }
@@ -299,6 +320,8 @@ export type Scan = {
 export type ScanOptions = {
   /** how long to wait for the network to go quiet after load, in ms */
   settleMs?: number
+  /** the most the whole scan may take, in ms: SCAN_TIMEOUT_MS unless a test needs less */
+  timeoutMs?: number
   /** hook for tests: route requests before a page is opened */
   setup?: (context: BrowserContext) => Promise<void>
   /** hook for tests: the fetch used to ask the server about http:// */
@@ -377,6 +400,13 @@ export async function launch(): Promise<{ browser: Browser; sandbox: boolean }> 
 /** Opens the URL in a fresh browser, as a first-time visitor who clicks nothing, and records what happens. */
 export async function scan(url: string, options: ScanOptions = {}): Promise<Scan> {
   const { browser, sandbox } = await launch()
+  // A page that blocks its own renderer (an endless loop) would hold every call into it, and with it the scan and an
+  // MCP slot, for good: closing the browser ends them all
+  let timedOut = false
+  const deadline = setTimeout(() => {
+    timedOut = true
+    void browser.close().catch(() => {})
+  }, options.timeoutMs ?? SCAN_TIMEOUT_MS)
   try {
     const chrome = browser.version()
     const mobile = options.mobile === true
@@ -477,8 +507,9 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
 
     const jar = await context.cookies()
     // what other sites' cookies hold turns up in requests to a third: cookie syncing. Only the values are compared, none kept
+    const idsIn = cookieIds(jar, [url, page.url()])
     for (const r of requests) {
-      const ids = cookieIds(r.url, jar, [url, page.url()])
+      const ids = idsIn(r.url)
       if (ids.length) r.carries = [...(r.carries ?? []), ...ids]
     }
     const cookies = jar.map((c): Cookie => ({
@@ -615,7 +646,10 @@ export async function scan(url: string, options: ScanOptions = {}): Promise<Scan
     const text = legal.find(v => v?.url === privacy)?.text ?? ''
     if (privacy && text.trim().length >= 200) result.policy = { url: privacy, named: servicesNamed(text) }
     return result
+  } catch (e) {
+    throw timedOut ? new Error(TIMED_OUT) : e
   } finally {
+    clearTimeout(deadline)
     await browser.close()
   }
 }
@@ -650,15 +684,24 @@ async function firstMove(page: Page, requests: Request[], settleMs: number): Pro
 /**
  * The texts of the buttons a visitor sees in a cookie banner, without clicking any: clickable elements on screen inside
  * a box that lies over the page (fixed, sticky or a dialog, found up through shadow roots) and speaks of cookies or
- * consent. A frame counts as such a box, as some banners sit in one of their provider's.
+ * consent. A frame of a known cookie banner's server counts as such a box, as some banners sit in one of their
+ * provider's; any other frame only by boxes inside it, as a chat or an ad that speaks of privacy is no banner.
  */
+const isConsentHost = (url: string) => {
+  try {
+    return serviceOfHost(new URL(url).hostname)?.category === 'consent'
+  } catch {
+    return false
+  }
+}
+
 async function bannerButtons(page: Page): Promise<string[]> {
   // a frame that does not answer (an ad still loading, say) gives no buttons rather than holding up the scan
   const late = () => new Promise<string[]>(resolve => setTimeout(() => resolve([]), 3000).unref())
   const found = await Promise.all(
     page.frames().map(frame =>
       Promise.race([late(), frame
-        .evaluate(main => {
+        .evaluate(consentFrame => {
           const CONSENT = /cookie|einwillig|zustimm|consent|datenschutz|privacy|tracking/i
           const roots: (Document | ShadowRoot)[] = [document]
           for (let i = 0; i < roots.length; i++) for (const el of roots[i]!.querySelectorAll('*')) if (el.shadowRoot) roots.push(el.shadowRoot)
@@ -673,6 +716,8 @@ async function bannerButtons(page: Page): Promise<string[]> {
           }
           // the parent, or the host of the shadow root it sits in
           const up = (el: Element) => el.parentElement ?? ((el.getRootNode() as ShadowRoot).host as Element | undefined) ?? null
+          // read once, and only in a cookie banner's frame
+          let frameText: string | undefined
           // a banner lies over the page (fixed, sticky or a dialog) and speaks of cookies; in a frame of its own, the frame is the box
           const inBanner = (el: Element) => {
             for (let box: Element | null = el; box; box = up(box)) {
@@ -683,9 +728,10 @@ async function bannerButtons(page: Page): Promise<string[]> {
               const text = (box as HTMLElement).innerText ?? ''
               if (text.length <= 3000 && CONSENT.test(text)) return true
             }
-            const frameText = document.body?.innerText ?? ''
+            if (!consentFrame) return false
+            frameText ??= document.body?.innerText ?? ''
             // a provider's frame may hold a long text, but not a whole page
-            return !main && frameText.length <= 10000 && CONSENT.test(frameText)
+            return frameText.length <= 10000 && CONSENT.test(frameText)
           }
           // a link inside a sentence („… jetzt ablehnen“ in the text) is no button of the banner; one on its own, or in a row of them, may be
           const button = (el: Element, text: string) => {
@@ -701,10 +747,11 @@ async function bannerButtons(page: Page): Promise<string[]> {
           const texts: string[] = []
           for (const el of clickable) {
             const text = ((el as HTMLElement).innerText || (el as HTMLInputElement).value || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ')
-            if (text && text.length <= 80 && button(el, text) && shown(el) && inBanner(el)) texts.push(text)
+            // button() last: for a link it compares the text of the block around it with every link in it, so a block of many links costs most
+            if (text && text.length <= 80 && shown(el) && inBanner(el) && button(el, text)) texts.push(text)
           }
           return texts
-        }, frame === page.mainFrame())
+        }, frame !== page.mainFrame() && isConsentHost(frame.url()))
         .catch(() => [] as string[])]),
     ),
   )
@@ -733,9 +780,8 @@ async function documentsOnly(browser: Browser, url: string, options: ScanOptions
       const text = await page.evaluate(() => (document.body?.innerText ?? '').slice(0, 1_000_000)).catch(() => '')
       return { ...visit, text }
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
-      if (answer && /Download is starting/.test(message)) return { url, status: answer.status(), finalUrl: answer.url() }
-      return { url, error: message.split('\n')[0] ?? message }
+      if (answer && /Download is starting/.test(messageOf(e))) return { url, status: answer.status(), finalUrl: answer.url() }
+      return { url, error: firstLine(e) }
     } finally {
       await page.close()
     }

@@ -9,8 +9,8 @@ export type Level = 'green' | 'yellow' | 'red'
  * aliases: other names a privacy policy may give it (Facebook for Meta Pixel).
  * headers: a platform that hosts the page itself, known by a response header of the page: a name (x-wix-request-id), or
  * a name and a part of its value (powered-by: Shopify).
+ * country: where the provider has its seat (of its parent company), as ISO 3166 code; not where its servers stand.
  */
-/** country: where the provider has its seat (of its parent company), as ISO 3166 code; not where its servers stand */
 export type Service = { name: string; category: string; country?: string; hosts: string[]; cookies?: string[]; storage?: string[]; paths?: string[]; httpOnly?: boolean; headers?: string[]; aliases?: string[] }
 
 /**
@@ -21,14 +21,14 @@ export type Service = { name: string; category: string; country?: string; hosts:
  */
 export type OwnReason = 'option' | 'certificate' | 'name' | 'platform'
 /**
- * preconnect: no request went to it, the page only opened a connection ahead (<link rel="preconnect">, Link header) ·
- * afterMove: every request to it came only once spurlos moved the mouse and scrolled
- */
-/**
  * What Google Consent Mode tells Google's tags before any click, by gcs=G1<ads><analytics> in their requests: 1 for
  * granted, 0 for denied. Present only where the page uses Consent Mode.
  */
 export type ConsentMode = { gcs: string; ads: 'granted' | 'denied'; analytics: 'granted' | 'denied' }
+/**
+ * preconnect: no request went to it, the page only opened a connection ahead (<link rel="preconnect">, Link header) ·
+ * afterMove: every request to it came only once spurlos moved the mouse and scrolled
+ */
 export type ThirdParty = { host: string; service: Service | undefined; requests: number; own?: OwnReason; preconnect?: true; afterMove?: true }
 /**
  * missing: attributes the cookie should have – Secure on an https page, HttpOnly for a session cookie ·
@@ -61,7 +61,7 @@ export type AccessFinding = Access & Caller
 export type Leak = { host: string; what: 'email' | 'query' | 'id'; param?: string; from?: string; requests: number; service: Service | undefined; own?: OwnReason }
 /** where the page tells search engines to leave it out: the X-Robots-Tag header or <meta name="robots"> (or googlebot) */
 export type Noindex = { source: 'header' | 'meta'; value: string }
-/** what of the accessibility basics is missing; statement: the link to an accessibility statement */
+/** what of the accessibility basics is missing */
 export type AccessibilityProblem = 'lang' | 'images' | 'fields' | 'zoom'
 /** viewport: no width=device-width, so a phone shows the desktop page shrunk · overflow: the page is wider than the window */
 export type MobileProblem = 'viewport' | 'overflow'
@@ -103,8 +103,12 @@ const ownSite = (scan: Scan) => site(new URL(scan.finalUrl).hostname)
 const ownSites = (scan: Scan) => new Set([site(new URL(scan.url).hostname), ownSite(scan)])
 const isHttps = (scan: Scan) => scan.finalUrl.startsWith('https:')
 
+/** a host is domain itself or one of its subdomains */
+const within = (host: string, domain: string) => host === domain || host.endsWith('.' + domain)
+const hostEntry = (host: string) => byHost.find(({ h }) => within(host, h))
+
 export function serviceOfHost(host: string): Service | undefined {
-  return byHost.find(({ h }) => host === h || host.endsWith('.' + h))?.s
+  return hostEntry(host)?.s
 }
 
 /**
@@ -112,7 +116,7 @@ export function serviceOfHost(host: string): Service | undefined {
  * some pick a new subdomain on every visit (Nielsen's <random>.nuid.nmrodam.com); any other host stands for itself.
  */
 export function hostKey(host: string): string {
-  return byHost.find(({ h }) => host === h || host.endsWith('.' + h))?.h ?? host
+  return hostEntry(host)?.h ?? host
 }
 
 /**
@@ -121,7 +125,7 @@ export function hostKey(host: string): string {
  */
 const isNecessary = (s: Service | undefined) => s?.category === 'necessary' || s?.category === 'consent'
 // a session replay records the visit: a tracker, and more
-const isTracker = (s: Service | undefined) => s?.category === 'tracking' || s?.category === 'session-replay'
+export const isTracker = (s: Service | undefined) => s?.category === 'tracking' || s?.category === 'session-replay'
 
 // names in services.json are prefixes (_ga also covers GA4's _ga_ABC123),
 // or with a leading * suffixes (*-session covers Laravel's <app>-session)
@@ -158,6 +162,8 @@ export function abroad(hosts: ThirdParty[]): { name: string; country: string }[]
 /** A host's service, unless a path names one more exactly: Google's servers (category other) also serve reCAPTCHA. */
 const preferPath = (byHost: Service | undefined, byPath: Service | undefined) =>
   byPath && (!byHost || byHost.category === 'other') ? byPath : byHost
+/** the service of a request to host, by its host and the path of its url */
+const serviceOfRequest = (host: string, url: string) => preferPath(serviceOfHost(host), serviceOfPath(url))
 
 /** The platform the page runs on, by its headers (Wix, Shopify): it serves the page, so it knows the visitor's IP anyway. */
 export function platformOf(scan: Scan): Service | undefined {
@@ -216,7 +222,7 @@ export function ownership(scan: Scan): (host: string) => OwnReason | undefined {
     const service = serviceOfHost(host)
     if (service && service === platform) return 'platform'
     if (service && !itself.has(service)) return undefined
-    if (declared.some(d => host === d || host.endsWith('.' + d))) return 'option'
+    if (declared.some(d => within(host, d))) return 'option'
     if (certified.has(site(host))) return 'certificate'
     const names = namesOf(getDomainWithoutSuffix(host) ?? host)
     if (labels.some(l => (word(l) && names.has(l)) || l.split('-').filter(word).some(w => names.has(w)))) return 'name'
@@ -281,24 +287,28 @@ export function consentMode(scan: Scan): ConsentMode | undefined {
 export const consentModeGranted = (c: ConsentMode | undefined): boolean => c !== undefined && (c.ads === 'granted' || c.analytics === 'granted')
 
 // what a site can embed as a frame that waits for a click: a video, a map, a post
-const EMBEDDED = ['video', 'maps', 'social']
+export const EMBEDDED = ['video', 'maps', 'social']
 
 /**
- * The known services the markup embeds as a frame from another site, so they load with the page: no placeholder that
- * waits for a click. youtube-nocookie.com is named as such, as it sets cookies only once the video plays.
+ * The known services the markup embeds as a frame from another site that loaded with the page: no placeholder that
+ * waits for a click. A frame whose address the browser never asked for (loading="lazy" far below) does not count.
+ * youtube-nocookie.com is named as such, as it sets cookies only once the video plays.
  */
 export function embeds(scan: Scan): string[] {
   const own = ownSites(scan)
+  // a request goes out without the fragment: #t=30 on a video
+  const bare = (url: string) => url.split('#')[0]
+  const asked = new Set(list(scan.requests).map(r => bare(r.url)))
   const names = new Set<string>()
   for (const r of list(scan.resources)) {
-    if (r.tag !== 'iframe') continue
+    if (r.tag !== 'iframe' || !asked.has(bare(r.url))) continue
     let host = ''
     try {
       host = new URL(r.url).hostname
     } catch {
       continue
     }
-    const service = preferPath(serviceOfHost(host), serviceOfPath(r.url))
+    const service = serviceOfRequest(host, r.url)
     if (own.has(site(host)) || !service || !EMBEDDED.includes(service.category)) continue
     names.add(site(host) === 'youtube-nocookie.com' ? `${service.name} (youtube-nocookie.com)` : service.name)
   }
@@ -333,7 +343,7 @@ export const bannerLevel = (b: Banner): Level => (b.reject ? 'green' : 'yellow')
  * (/matomo.php on an agency's server). selfHosted: known services the page runs on its own site, by their paths (a
  * Sentry or Matomo of its own); they change no light, as the IP stays with the site, but the reader learns of them.
  */
-export function thirdParty(scan: Scan): Result {
+export function thirdParty(scan: Scan): Extract<Result, { check: 'third-party' }> {
   const { hosts, selfHosted } = thirdPartyFound(scan)
   const platform = platformOf(scan)
   const mode = consentMode(scan)
@@ -343,7 +353,16 @@ export function thirdParty(scan: Scan): Result {
   return { check: 'third-party', level, hosts, consent: consentManagers(scan), selfHosted, ...(platform ? { platform: platform.name } : {}), ...(mode ? { consentMode: mode } : {}), ...(choice ? { banner: choice } : {}), ...(framed.length ? { embeds: framed } : {}) }
 }
 
-const thirdPartyHosts = (scan: Scan) => thirdPartyFound(scan).hosts
+/**
+ * A host's service, by its name and the paths asked for there. An unknown host goes by the first path that names one
+ * (/matomo.php on an agency's server). A known server of category other (Google's) goes by a path only if every request
+ * to it names the same: reCAPTCHA alone is a captcha, reCAPTCHA next to Google's ads is still Google.
+ */
+function hostService(host: string, paths: Set<Service | undefined> = new Set()): Service | undefined {
+  const byHost = serviceOfHost(host)
+  const named = [...paths]
+  return preferPath(byHost, byHost ? (named.length === 1 ? named[0] : undefined) : named.find(s => s))
+}
 
 function thirdPartyFound(scan: Scan): { hosts: ThirdParty[]; selfHosted: string[] } {
   const own = ownSites(scan)
@@ -351,7 +370,8 @@ function thirdPartyFound(scan: Scan): { hosts: ThirdParty[]; selfHosted: string[
   const counts = new Map<string, number>()
   // hosts with a request before the first move
   const early = new Set<string>()
-  const byPath = new Map<string, Service>()
+  // per host, the services the paths of its requests name, undefined for a request whose path names none
+  const byPath = new Map<string, Set<Service | undefined>>()
   const selfHosted = new Set<string>()
   for (const r of scan.requests) {
     const service = serviceOfPath(r.url)
@@ -362,7 +382,7 @@ function thirdPartyFound(scan: Scan): { hosts: ThirdParty[]; selfHosted: string[
     }
     counts.set(r.host, (counts.get(r.host) ?? 0) + 1)
     if (!r.afterMove) early.add(r.host)
-    if (service && !byPath.has(r.host)) byPath.set(r.host, service)
+    byPath.set(r.host, (byPath.get(r.host) ?? new Set()).add(service))
   }
   // a connection opened ahead hands over the IP as well, in the TLS handshake, though no request follows
   const ahead = new Set<string>()
@@ -373,7 +393,7 @@ function thirdPartyFound(scan: Scan): { hosts: ThirdParty[]; selfHosted: string[
   const hosts = [...counts, ...[...ahead].map(h => [h, 0] as const)]
     .map(([host, requests]): ThirdParty => {
       const reason = owner(host)
-      return { host, service: preferPath(serviceOfHost(host), byPath.get(host)), requests, ...(reason ? { own: reason } : {}), ...(requests ? {} : { preconnect: true as const }), ...(requests && !early.has(host) ? { afterMove: true as const } : {}) }
+      return { host, service: hostService(host, byPath.get(host)), requests, ...(reason ? { own: reason } : {}), ...(requests ? {} : { preconnect: true as const }), ...(requests && !early.has(host) ? { afterMove: true as const } : {}) }
     })
     .sort((a, b) => a.host.localeCompare(b.host))
   return { hosts, selfHosted: [...selfHosted] }
@@ -513,6 +533,11 @@ function namesOfService(s: Service): string[] {
   return [...new Set(names.map(n => words(n).trim()))].filter(n => n.length >= 3)
 }
 
+// compiled once: a policy is read on every scan, and may run to a megabyte
+const NAMES = services
+  .filter(s => s.category !== 'necessary')
+  .map(s => ({ s, names: namesOfService(s).map(n => new RegExp(`(?<![\\p{L}\\p{N}])${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u')) }))
+
 /**
  * The services of services.json a text names, by name or alias, as whole words in any case: what scan.ts keeps of the
  * privacy policy instead of its text. Those needed to run a site (category necessary) are left out: their names
@@ -520,10 +545,7 @@ function namesOfService(s: Service): string[] {
  */
 export function servicesNamed(text: string): string[] {
   const t = words(text)
-  const named = services.filter(
-    s => s.category !== 'necessary' && namesOfService(s).some(n => new RegExp(`(?<![\\p{L}\\p{N}])${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').test(t)),
-  )
-  return [...new Set(named.map(s => s.name))]
+  return [...new Set(NAMES.filter(({ names }) => names.some(n => n.test(t))).map(({ s }) => s.name))]
 }
 
 /**
@@ -533,9 +555,9 @@ export function servicesNamed(text: string): string[] {
  * as text (no link, unreachable, a PDF, or text that only scripts load) leaves it open: the services are listed, but
  * none is a finding.
  */
-export function policy(scan: Scan): Result {
+export function policy(scan: Scan, hosts: ThirdParty[] = thirdPartyFound(scan).hosts): Result {
   const names = new Set(
-    thirdPartyHosts(scan)
+    hosts
       .filter(h => !h.own && h.service && h.service.category !== 'necessary')
       .map(h => h.service?.name ?? ''),
   )
@@ -730,28 +752,30 @@ export function carried(url: string, body: string | undefined, pageUrl: string):
  * id:<name>@<domain> of the cookie. A site's own cookie going back to it is none, nor is the page's own cookie: that
  * its analytics gets its ID is how analytics works.
  */
-export function cookieIds(url: string, cookies: { name: string; domain: string; value: string }[], pageUrls: string[]): string[] {
-  let host: string
-  try {
-    host = new URL(url).hostname
-  } catch {
-    return []
-  }
+export function cookieIds(cookies: { name: string; domain: string; value: string }[], pageUrls: string[]): (url: string) => string[] {
   const own = new Set(pageUrls.map(u => site(new URL(u).hostname)))
-  const to = site(host)
-  if (own.has(to)) return []
-  const text = decoded(url)
-  const out: string[] = []
-  for (const c of cookies) {
+  // worked out once for all requests: the cookies whose value can be such an ID
+  const candidates = cookies.flatMap(c => {
     const domain = c.domain.replace(/^\./, '')
     const from = site(domain)
-    if (own.has(from) || from === to) continue
     const value = decoded(c.value)
-    if (value.length < 10 || !/\d/.test(value) || !text.includes(value)) continue
-    const id = `id:${c.name}@${domain}`
-    if (!out.includes(id)) out.push(id)
+    return own.has(from) || value.length < 10 || !/\d/.test(value) ? [] : [{ id: `id:${c.name}@${domain}`, from, value }]
+  })
+  return url => {
+    if (!candidates.length) return []
+    let host: string
+    try {
+      host = new URL(url).hostname
+    } catch {
+      return []
+    }
+    const to = site(host)
+    if (own.has(to)) return []
+    const text = decoded(url)
+    const out: string[] = []
+    for (const c of candidates) if (c.from !== to && text.includes(c.value) && !out.includes(c.id)) out.push(c.id)
+    return out
   }
-  return out
 }
 
 /**
@@ -781,7 +805,7 @@ export function leaks(scan: Scan): Result {
         continue
       }
       const reason = owner(r.host)
-      found.set(k, { host: r.host, what, ...(param !== undefined ? { param } : {}), ...(from !== undefined ? { from } : {}), requests: 1, service: serviceOfHost(r.host), ...(reason ? { own: reason } : {}) })
+      found.set(k, { host: r.host, what, ...(param !== undefined ? { param } : {}), ...(from !== undefined ? { from } : {}), requests: 1, service: serviceOfRequest(r.host, r.url), ...(reason ? { own: reason } : {}) })
     }
   }
   const findings = [...found.values()].sort((a, b) => a.host.localeCompare(b.host) || a.what.localeCompare(b.what))
@@ -801,7 +825,7 @@ function callers(scan: Scan): (script: string) => Caller {
     }
     const thirdParty = host !== '' && !own.has(site(host))
     const reason = thirdParty ? owner(host) : undefined
-    const service = host ? preferPath(serviceOfHost(host), serviceOfPath(script)) : undefined
+    const service = host ? serviceOfRequest(host, script) : undefined
     return { host, thirdParty, service, ...(reason ? { own: reason } : {}) }
   }
 }
@@ -902,8 +926,10 @@ export function mobile(scan: Scan): Result {
   return { check: 'mobile', level: problems.length ? 'yellow' : 'green', problems, mobile: scan.mobile === true, ...(viewport !== undefined ? { viewport } : {}), width }
 }
 
+/** policy reuses the hosts of third-party, so the requests are worked through once */
 export function runChecks(scan: Scan, now = Date.now()): Result[] {
-  return [thirdParty(scan), cookies(scan, now), leaks(scan), fingerprinting(scan), access(scan), legal(scan), policy(scan), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), indexing(scan), mobile(scan), accessibility(scan)]
+  const third = thirdParty(scan)
+  return [third, cookies(scan, now), leaks(scan), fingerprinting(scan), access(scan), legal(scan), policy(scan, third.hosts), https(scan, now), headers(scan), resources(scan), forms(scan), disclosure(scan), indexing(scan), mobile(scan), accessibility(scan)]
 }
 
 /**

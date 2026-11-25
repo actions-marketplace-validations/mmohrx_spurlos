@@ -82,7 +82,7 @@ The summary comes first, then the checks, red ones first. Red and yellow checks 
 | `SPURLOS_NO_SANDBOX` | `1` starts Chromium without a sandbox right away, and without a note about it; the Docker image sets it, there the container is the boundary |
 | `NO_COLOR` | no colors, even in a terminal |
 
-The page itself may take up to 30 seconds to load. After that spurlos waits up to 10 seconds for it to stop loading more, and after the first move of the mouse up to 5 seconds again; if it still does, the report says so. Impressum, privacy policy and the request over http get 15 seconds each.
+The page itself may take up to 30 seconds to load. After that spurlos waits up to 10 seconds for it to stop loading more, and after the first move of the mouse up to 5 seconds again; if it still does, the report says so. Impressum, privacy policy and the request over http get 15 seconds each. A check ends after 2 minutes at most: a page that blocks its own rendering, with a script that never ends, cannot hold it longer.
 
 spurlos itself does not phone home: no telemetry, no statistics. It requests only the page you check, plus whatever that page loads itself.
 

@@ -7,7 +7,7 @@ import { LANGS, MESSAGES, pickLang } from './lang/index.ts'
 import { serve } from './mcp.ts'
 import { pdf } from './pdf.ts'
 import { banner, clean, htmlReports, jsonReports, sarifReports, text, type Report } from './report.ts'
-import { ownHost, scan, toUrl } from './scan.ts'
+import { firstLine, messageOf, ownHosts, scan, toUrl, warnsNoSandbox } from './scan.ts'
 
 // colors only in a terminal that wants them: tty.hasColors() honours NO_COLOR, FORCE_COLOR and TERM
 const color = process.stdout.isTTY && process.stdout.hasColors()
@@ -36,7 +36,7 @@ try {
   parsed = parseArgs({ allowPositionals: true, options: OPTIONS })
 } catch (e) {
   // a wrong option is a usage error (2), not a red finding (1)
-  console.error(`spurlos: ${e instanceof Error ? e.message : String(e)}\n\n${MESSAGES[pickLang(undefined).lang].usage(langList)}`)
+  console.error(`spurlos: ${messageOf(e)}\n\n${MESSAGES[pickLang(undefined).lang].usage(langList)}`)
   process.exit(2)
 }
 const { values, positionals } = parsed
@@ -93,7 +93,7 @@ async function readBaseline(file: string): Promise<(url: string, finalUrl: strin
   try {
     parsed = JSON.parse(await readFile(file, 'utf8'))
   } catch (e) {
-    console.error(clean(`spurlos: ${e instanceof SyntaxError ? say.notBaseline(file) : say.cannotRead(file, e instanceof Error ? e.message : String(e))}`))
+    console.error(clean(`spurlos: ${e instanceof SyntaxError ? say.notBaseline(file) : say.cannotRead(file, messageOf(e))}`))
     process.exit(2)
   }
   type Entry = { scan?: { url?: unknown; finalUrl?: unknown }; results?: unknown }
@@ -162,15 +162,12 @@ async function check(args: string[]) {
   if (auth && urls.some(u => u.startsWith('http:'))) console.error(`spurlos: ${say.authOverHttp}`)
 
   // host names only, as the browser writes them (Bäckerei.de as xn--bckerei-5wa.de); *.cdn.de means cdn.de and its subdomains
-  const own: string[] = []
-  for (const value of (values.own ?? []).flatMap(v => v.split(','))) {
-    const host = ownHost(value)
-    if (!host) {
-      console.error(clean(`spurlos: ${say.invalidOwn(value)}`))
-      process.exit(2)
-    }
-    own.push(host)
+  const owned = ownHosts((values.own ?? []).flatMap(v => v.split(',')))
+  if ('invalid' in owned) {
+    console.error(clean(`spurlos: ${say.invalidOwn(String(owned.invalid))}`))
+    process.exit(2)
   }
+  const own = owned.hosts
 
   const baselineFile = values.baseline
   const baseline = baselineFile ? await readBaseline(baselineFile) : undefined
@@ -187,12 +184,11 @@ async function check(args: string[]) {
       const results = runChecks(s)
       const before = baseline?.(s.url, s.finalUrl, urls.length === 1)
       reports.push({ scan: s, results, ...(before && baselineFile ? { compare: { file: baselineFile, comparison: compare(results, before), before } } : {}) })
-      // on stderr, so it neither ends up in --json nor gets lost; the Docker image sets SPURLOS_NO_SANDBOX and stays quiet
-      if (!s.sandbox && process.env.SPURLOS_NO_SANDBOX !== '1' && reports.length === 1) console.error(`spurlos: ${say.noSandbox}`)
+      // on stderr, so it neither ends up in --json nor gets lost
+      if (warnsNoSandbox(s) && reports.length === 1) console.error(`spurlos: ${say.noSandbox}`)
     } catch (e) {
-      // the first line says what went wrong (Playwright adds a call log below); it may quote what the server sent
-      const reason = (e instanceof Error ? e.message : String(e)).split('\n')[0] ?? ''
-      console.error(clean(`spurlos: ${say.failed(url, reason)}`))
+      // it may quote what the server sent
+      console.error(clean(`spurlos: ${say.failed(url, firstLine(e))}`))
       failed = true
     }
   }
@@ -201,20 +197,33 @@ async function check(args: string[]) {
     return
   }
 
+  // html and pdf share one page
+  let page: string | undefined
+  const htmlPage = () => (page ??= htmlReports(reports, lang))
   for (const { file, format } of targets) {
     // into a file plain text at the usual width, as when redirected
     const width = file ? 80 : Math.min(process.stdout.columns || 80, 100)
-    const report =
-      format === 'pdf' ? await pdf(htmlReports(reports, lang))
-      : format === 'json' ? jsonReports(reports, lang)
-      : format === 'sarif' ? sarifReports(reports, lang)
-      : format === 'html' ? htmlReports(reports, lang)
-      : reports.map(r => text(r.scan, r.results, lang, { color: color && !file, verbose: values.verbose ?? false, width, ...(r.compare ? { compare: r.compare } : {}) })).join('\n\n\n')
+    let report: string | Buffer
+    if (format === 'pdf') {
+      try {
+        report = await pdf(htmlPage())
+      } catch (e) {
+        // printing starts a browser of its own, which may fail: an error (2), and the other files still get written
+        console.error(clean(`spurlos: ${say.pdfFailed(firstLine(e))}`))
+        failed = true
+        continue
+      }
+    } else
+      report =
+        format === 'json' ? jsonReports(reports, lang)
+        : format === 'sarif' ? sarifReports(reports, lang)
+        : format === 'html' ? htmlPage()
+        : reports.map(r => text(r.scan, r.results, lang, { color: color && !file, verbose: values.verbose ?? false, width, ...(r.compare ? { compare: r.compare } : {}) })).join('\n\n\n')
     if (file) {
       try {
         await writeFile(file, typeof report === 'string' ? report + '\n' : report)
       } catch (e) {
-        console.error(clean(`spurlos: ${say.cannotWrite(file, e instanceof Error ? e.message : String(e))}`))
+        console.error(clean(`spurlos: ${say.cannotWrite(file, messageOf(e))}`))
         failed = true
         continue
       }

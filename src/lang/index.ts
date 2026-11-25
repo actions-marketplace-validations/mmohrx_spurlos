@@ -13,7 +13,7 @@ export type { Messages }
 export const LANGS = Object.keys(MESSAGES) as Lang[]
 export const DEFAULT_LANG: Lang = 'en'
 
-const isLang = (s: string): s is Lang => Object.hasOwn(MESSAGES, s)
+export const isLang = (s: string): s is Lang => Object.hasOwn(MESSAGES, s)
 /** the language part of a code or locale: en_US.UTF-8, en-GB and EN all mean en */
 const code = (s: string) => s.split(/[_.@-]/)[0]?.toLowerCase() ?? ''
 

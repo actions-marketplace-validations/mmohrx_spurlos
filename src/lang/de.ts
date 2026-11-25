@@ -1,6 +1,6 @@
 import type { AccessApi, FingerprintApi } from '../scan.ts'
 import type { AccessibilityProblem, FormFinding, Leak, MobileProblem, HttpRedirect, LegalKind, Level, OwnReason, ResourceFinding, Result } from '../checks.ts'
-import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED } from '../scan.ts'
+import { AUTH_REJECTED, AUTH_REQUIRED, NO_RESPONSE, REFUSED, SCAN_TIMEOUT_MS, TIMED_OUT } from '../scan.ts'
 import { plural } from './plural.ts'
 
 // The reference language: its shape is the type every other language has to fill (Messages below).
@@ -62,6 +62,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   pdfToTerminal: 'Das PDF gehört in eine Datei, nicht ins Terminal: spurlos <url> -o bericht.pdf',
   written: (file: string) => `Bericht in ${file} geschrieben.`,
   cannotWrite: (file: string, reason: string) => `${file} ließ sich nicht schreiben: ${reason}`,
+  pdfFailed: (reason: string) => `Das PDF ließ sich nicht erstellen: ${reason}`,
   mcpOnly: (flags: string) => `spurlos mcp nimmt nur --lang und --user-agent, nicht ${flags}.`,
   notBoolean: (name: string) => `${name} ist true oder false.`,
   urlMissing: 'url fehlt: die Adresse der Seite als Text, etwa firma.de.',
@@ -75,6 +76,7 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
       reason === NO_RESPONSE ? 'keine Antwort'
       : reason === AUTH_REQUIRED ? 'Die Seite verlangt eine Anmeldung. --auth oder SPURLOS_AUTH gilt nur für genau die angegebene Adresse (Schema, Host, Port).'
       : reason === AUTH_REJECTED ? 'Die Anmeldung wurde abgelehnt.'
+      : reason === TIMED_OUT ? `Die Prüfung dauerte länger als ${SCAN_TIMEOUT_MS / 60_000} Minuten und wurde abgebrochen. Oft blockiert die Seite dann ihre eigene Darstellung, etwa mit einem Skript, das nicht endet.`
       : /^page\.goto: Timeout \d+ms exceeded/.test(reason) ? `keine Antwort nach ${Number(/(\d+)ms/.exec(reason)?.[1]) / 1000} Sekunden`
       : /net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH/.test(reason) ? 'Der Server bietet keine TLS-Version und Verschlüsselung an, die aktuelle Browser annehmen, oft nur das veraltete TLS 1.0 oder 1.1. Besucher bekommen eine Fehlerseite.'
       : /net::ERR_CERT_/.test(reason) ? `Das Zertifikat ist ungültig (${/ERR_CERT_\w+/.exec(reason)?.[0]}). Browser zeigen Besuchern eine Warnung statt der Seite.`

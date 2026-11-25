@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Blockiert sich selbst</title>
+</head>
+<body>
+  <p>Diese Seite hält nach dem Laden ihre eigene Darstellung an.</p>
+  <!-- an endless loop once loaded: every later call into the page waits for good -->
+  <script>onload = () => setTimeout(() => { for (;;) {} }, 50)</script>
+</body>
+</html>
