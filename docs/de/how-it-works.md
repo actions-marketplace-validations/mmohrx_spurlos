@@ -5,7 +5,7 @@
 Die Seite selbst öffnet spurlos als normaler Chrome und hängt seinen Namen an die Kennung an:
 
 ```
-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.5.4
+Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Safari/537.36 spurlos/0.6.0
 ```
 
 „HeadlessChrome“ fehlt darin mit Absicht, auch in den Client Hints (`sec-ch-ua`). Viele Cookie-Banner und Tracker laden für Aufrufe, die sie für Bots halten, gar nicht erst. spurlos würde dann eine saubere Seite melden, während echte Besucher getrackt werden. Verstecken will sich spurlos trotzdem nicht: Der eigene Name steht in jeder Kennung, und `navigator.webdriver` bleibt `true`. Um Fingerprinting und Fragen nach Berechtigungen zu bemerken, ersetzt spurlos einige Funktionen von Canvas, WebGL, Audio, WebRTC, Benachrichtigungen, Standort, Kamera und Service Workern durch eigene, die das Original aufrufen, und legt die Funktion `__spurlos` an; beides kann die Seite sehen.
@@ -13,13 +13,13 @@ Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/15
 Mit `--mobile` öffnet spurlos die Seite als Smartphone, mit dem Bildschirm eines Pixel 7 (412 × 915 Pixel), Touch und der Kennung von Chrome auf Android, in den Client Hints mit `mobile` und der Plattform `Android`:
 
 ```
-Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Mobile Safari/537.36 spurlos/0.5.4
+Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.0.0 Mobile Safari/537.36 spurlos/0.6.0
 ```
 
 Mit derselben Kennung fragt spurlos ab, ob http auf https weiterleitet: Manche Server antworten dort einem Bot anders als einem Browser (DuckDuckGo liefert einem Bot die Seite über http aus, einen Browser leitet es weiter). Impressum und Datenschutzerklärung fragt spurlos offen als Bot ab, nur das HTML, ohne Skripte, Bilder oder Schriften, denn dort geht es nicht um Tracker, die sich vor Bots verstecken:
 
 ```
-spurlos/0.5.4 (+https://github.com/mmohrx/spurlos)
+spurlos/0.6.0 (+https://github.com/mmohrx/spurlos)
 ```
 
 Manche Bot-Schutzdienste lehnen diese Abfragen ab. Antwortet http:// mit einem Fehler, meldet spurlos das gelb, denn ob der Server weiterleitet, bleibt dann offen. Ebenso bei Impressum und Datenschutz, wenn sie spurlos abweisen oder hängen lassen. spurlos versucht nicht, den Bot-Schutz zu umgehen.

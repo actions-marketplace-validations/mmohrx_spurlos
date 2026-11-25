@@ -8,12 +8,12 @@
     "source": "github"
   },
   "websiteUrl": "https://mohrwurm.de/projekte/spurlos/",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "spurlos",
-      "version": "0.5.4",
+      "version": "0.6.0",
       "packageArguments": [
         {
           "type": "positional",

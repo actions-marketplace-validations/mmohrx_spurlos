@@ -1,4 +1,4 @@
-spurlos 0.5.4  https://shop.example/
+spurlos 0.6.0  https://shop.example/
 beim Aufruf 2 Anfragen, 1 kB; keine an andere Domains
 15 in Ordnung
 

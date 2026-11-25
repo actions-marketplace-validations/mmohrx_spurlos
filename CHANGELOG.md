@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 – 2026-11-25
 
 - Known services now carry where their provider has its seat (`country` in `services.json`, that of the parent company), for 193 of 247. The check "Third-party servers" names those based outside the EU and the EEA with their country, such as "United States: Google Analytics, Meta Pixel". It is the company's seat, not where its servers stand, and changes no light.
 - The check "Third-party servers" names the videos, maps and social media posts a page embeds as a frame that loads with the page, instead of behind a placeholder that waits for a click (`embeds` in `--json`). A frame the browser never asks for, such as one with `loading="lazy"` further down, does not count. A frame from `youtube-nocookie.com` is named as such, with what it changes and what not. Google Maps embedded from `www.google.com/maps/embed` is now known as Google Maps, not only as Google.
