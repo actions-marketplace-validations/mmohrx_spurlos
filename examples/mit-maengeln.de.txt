@@ -1,4 +1,4 @@
-spurlos 0.5.3  https://shop.example/tracked.html
+spurlos 0.5.4  https://shop.example/tracked.html
 beim Aufruf 15 Anfragen, 4 kB; davon 9 mit 1 kB an andere Domains
 7 Mängel · 6 Hinweise · 2 in Ordnung
 

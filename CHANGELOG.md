@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.4 – 2026-11-25
 
 - Google Tag Manager, Adobe Tags and Tealium iQ are now their own category, `tag-manager`. When only a tag manager loads before the cookie banner's choice, the report no longer says "the trackers above still load" but has a note of its own: it counts nothing itself, but starts trackers once the site is set up to. The server stays red. Tealium's collect server (`tealiumiq.com`) stays a tracker.
 - New known services, found in a check of 1000 German websites: Salesforce Commerce Cloud Einstein, Google Merchant Center, BidSwitch, Index Exchange, an OpenAI pixel, Stape, PagePulse, New Relic, Pandectes (cookie banner), Eye-Able, Doofinder, Bazaarvoice, Reviews.io, Loox, Judge.me, Trustindex, DIRS21, Apotheken Umschau, IhreApotheken.de, Cloudflare Network Error Logging, Speed Kit, Duda, CM4all, and the session cookies of Salesforce Commerce Cloud, JTL-Shop and Magento. More servers and cookies for Google Ads (`www.google.de`, `NID`, `test_cookie`), Microsoft Advertising (`bat.bing.net`, `c.bing.com`, `MUID`), TikTok, Awin, Kameleoon, Google Maps and Trusted Shops (`etrusted.com`).

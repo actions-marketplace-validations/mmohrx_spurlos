@@ -1,4 +1,4 @@
-spurlos 0.5.3  https://shop.example/
+spurlos 0.5.4  https://shop.example/
 2 requests on load, 1 kB; none to other domains
 15 fine
 
