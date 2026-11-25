@@ -146,6 +146,8 @@ Does spurlos help you? https://ko-fi.com/mmohrx`,
   embedded: names =>
     `Embedded without a click: ${names}. The frame loads with the page, and its provider learns the IP address before anyone asks for the content.`,
   embeddedNoCookie: 'youtube-nocookie.com, as YouTube says, sets cookies only once the video plays. YouTube still learns the IP address when it loads.',
+  country: code => new Intl.DisplayNames(['en'], { type: 'region' }).of(code) ?? code,
+  abroad: names => `Providers based outside the EU and the EEA – ${names}. This is where the company has its seat, not where its servers stand.`,
   consentModeGranted: (ads, analytics) => `tells Google consent was given for ${ads && analytics ? 'ads and analytics' : ads ? 'ads' : 'analytics'} before anyone chose anything`,
   consentModeGrantedNote: 'Google Consent Mode tells Google\'s tags whether the visitor agreed. Set to “granted” up front, they set cookies and use the data as if the visitor had agreed. The usual default is “denied” until the cookie banner reports the choice.',
   consentModeDenied: gcs => `Google Consent Mode reports ads and analytics as denied (gcs=${gcs}). Google's tags still send requests, without cookies, and learn the IP address that way.`,

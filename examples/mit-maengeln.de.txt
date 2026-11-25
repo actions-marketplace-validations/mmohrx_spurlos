@@ -22,6 +22,9 @@ beim Aufruf 15 Anfragen, 4 kB; davon 9 mit 1 kB an andere Domains
      → Cookie-Banner erkannt: Usercentrics.
      → Die Tracker oben laden trotzdem schon, bevor jemand im Banner etwas
        wählt.
+     → Anbieter mit Sitz außerhalb von EU und EWR – Vereinigte Staaten: Meta
+       Pixel, Google Fonts, Google Analytics, Google Tag Manager, YouTube.
+       Gemeint ist der Sitz des Unternehmens, nicht der Standort seiner Server.
      → Ohne Klick eingebettet: YouTube. Der Rahmen lädt mit der Seite, und der
        Anbieter erfährt die IP-Adresse, bevor jemand den Inhalt sehen will.
      → Google Consent Mode sagt den Google-Tags, ob der Besucher zugestimmt hat.

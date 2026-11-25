@@ -217,6 +217,23 @@ test('frames embedded on load are named, youtube-nocookie.com with what it chang
   expect(text(page('https://shop.example/'), [{ ...r, embeds: [] }], 'de')).not.toContain('Ohne Klick eingebettet')
 })
 
+test('providers based outside the EU and the EEA are named with their country, once each', () => {
+  const svc = (name: string, country?: string) => ({ name, category: 'tracking', hosts: [], ...(country ? { country } : {}) })
+  const hosts = [
+    { host: 'www.google-analytics.com', service: svc('Google Analytics', 'US'), requests: 2 },
+    { host: 'region1.google-analytics.com', service: svc('Google Analytics', 'US'), requests: 1 },
+    { host: 'static.criteo.net', service: svc('Criteo', 'FR'), requests: 1 },
+    { host: 'cdn.unbekannt.example', service: svc('Unbekannt'), requests: 1 },
+    { host: 'cdn.shopify.com', service: svc('Shopify', 'CA'), requests: 1, own: 'platform' as const },
+  ]
+  const r: Result = { check: 'third-party', level: 'red', hosts, consent: [], selfHosted: [] }
+  // the report wraps long notes
+  const flat = (lang: 'de' | 'en') => text(page('https://shop.example/'), [r], lang).replace(/\s+/g, ' ')
+  expect(flat('de')).toContain('Anbieter mit Sitz außerhalb von EU und EWR – Vereinigte Staaten: Google Analytics.')
+  expect(flat('en')).toContain('Providers based outside the EU and the EEA – United States: Google Analytics.')
+  expect(text(page('https://shop.example/'), [{ ...r, hosts: hosts.slice(2, 4) }], 'de')).not.toContain('außerhalb von EU und EWR')
+})
+
 test('SARIF: one rule per check, a result per red or yellow finding at the page, its key as fingerprint', () => {
   const scan = page('https://shop.example/')
   const results: Result[] = [

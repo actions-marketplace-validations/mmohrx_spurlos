@@ -1,6 +1,6 @@
 import {
-  bannerLevel, certLevel, consentModeGranted, load, cookieLevel, leakLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
-  type Comparison, type Level, type Result,
+  abroad, bannerLevel, certLevel, consentModeGranted, load, cookieLevel, leakLevel, accessLevel, fingerprintLevel, legalBlocked, SEVERITY, disclosureLevel, formLevel, httpLevel, hostLevel, key, legalLevel, numbered, resourceLevel, storageLevel, withoutQuery,
+  type Comparison, type Level, type Result, type ThirdParty,
 } from './checks.ts'
 import { readFileSync } from 'node:fs'
 import { styleText } from 'node:util'
@@ -50,6 +50,16 @@ function goneLabels(t: Messages, compare: NonNullable<Report['compare']>, now: n
     }
   }
   return compare.comparison.gone.map(f => labels.get(f.key) ?? f.key)
+}
+
+/** the providers with a seat outside the EU and the EEA, their country named in the report's language */
+function abroadNote(t: Messages, hosts: ThirdParty[]): string[] {
+  const found = abroad(hosts)
+  if (!found.length) return []
+  // by country: most often it is one, and its name once is enough
+  const byCountry = new Map<string, string[]>()
+  for (const f of found) byCountry.set(f.country, [...(byCountry.get(f.country) ?? []), f.name])
+  return [t.abroad([...byCountry].map(([country, names]) => `${t.country(country)}: ${names.join(', ')}`).join('; '))]
 }
 
 function unkeyed(t: Messages, r: Result, now: number): Section {
@@ -102,6 +112,7 @@ function unkeyed(t: Messages, r: Result, now: number): Section {
           ...consent,
           ...(replays.length ? [t.sessionReplay(replays.join(', '))] : []),
           ...bannerNotes,
+          ...abroadNote(t, r.hosts),
           // a baseline from an older spurlos has none
           ...(r.embeds?.length ? [t.embedded(r.embeds.join(', '))] : []),
           ...(r.embeds?.some(e => e.includes('youtube-nocookie.com')) ? [t.embeddedNoCookie] : []),

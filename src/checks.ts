@@ -10,7 +10,8 @@ export type Level = 'green' | 'yellow' | 'red'
  * headers: a platform that hosts the page itself, known by a response header of the page: a name (x-wix-request-id), or
  * a name and a part of its value (powered-by: Shopify).
  */
-export type Service = { name: string; category: string; hosts: string[]; cookies?: string[]; storage?: string[]; paths?: string[]; httpOnly?: boolean; headers?: string[]; aliases?: string[] }
+/** country: where the provider has its seat (of its parent company), as ISO 3166 code; not where its servers stand */
+export type Service = { name: string; category: string; country?: string; hosts: string[]; cookies?: string[]; storage?: string[]; paths?: string[]; httpOnly?: boolean; headers?: string[]; aliases?: string[] }
 
 /**
  * Why another site counts as the page's own: named with --own · listed in the page's own certificate · named like
@@ -142,6 +143,16 @@ export function serviceOfStorage(key: string): Service | undefined {
 export function serviceOfPath(url: string): Service | undefined {
   const path = new URL(url).pathname
   return services.find(s => s.paths?.some(p => (p.endsWith('/') ? path.includes(p) : path.endsWith(p))))
+}
+
+// the EU and the other countries of the EEA
+const EEA = new Set('AT BE BG CY CZ DE DK EE ES FI FR GR HR HU IE IS IT LI LT LU LV MT NL NO PL PT RO SE SI SK'.split(' '))
+
+/** the known services of other sites the page asks, whose provider has its seat outside the EU and the EEA, once each */
+export function abroad(hosts: ThirdParty[]): { name: string; country: string }[] {
+  const found = new Map<string, string>()
+  for (const h of hosts) if (!h.own && h.service?.country && !EEA.has(h.service.country)) found.set(h.service.name, h.service.country)
+  return [...found].map(([name, country]) => ({ name, country }))
 }
 
 /** A host's service, unless a path names one more exactly: Google's servers (category other) also serve reCAPTCHA. */

@@ -150,6 +150,9 @@ Hilft dir spurlos? https://ko-fi.com/mmohrx`,
   embedded: (names: string) =>
     `Ohne Klick eingebettet: ${names}. Der Rahmen lädt mit der Seite, und der Anbieter erfährt die IP-Adresse, bevor jemand den Inhalt sehen will.`,
   embeddedNoCookie: 'youtube-nocookie.com setzt laut YouTube erst Cookies, wenn das Video abgespielt wird. Die IP-Adresse erfährt YouTube beim Laden trotzdem.',
+  country: (code: string) => new Intl.DisplayNames(['de'], { type: 'region' }).of(code) ?? code,
+  abroad: (names: string) =>
+    `Anbieter mit Sitz außerhalb von EU und EWR – ${names}. Gemeint ist der Sitz des Unternehmens, nicht der Standort seiner Server.`,
   consentModeGranted: (ads: boolean, analytics: boolean) => `meldet Google Zustimmung zu ${ads && analytics ? 'Werbung und Analyse' : ads ? 'Werbung' : 'Analyse'}, bevor jemand etwas gewählt hat`,
   consentModeGrantedNote: 'Google Consent Mode sagt den Google-Tags, ob der Besucher zugestimmt hat. Steht es vorab auf „granted“, setzen sie Cookies und nutzen die Daten, als hätte er zugestimmt. Üblich ist „denied“, bis der Cookie-Banner die Wahl meldet.',
   consentModeDenied: (gcs: string) => `Google Consent Mode meldet Werbung und Analyse als abgelehnt (gcs=${gcs}). Die Google-Tags senden trotzdem schon, ohne Cookies, und erfahren dabei die IP-Adresse.`,
